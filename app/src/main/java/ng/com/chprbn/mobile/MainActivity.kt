@@ -3,71 +3,38 @@ package ng.com.chprbn.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import dagger.hilt.android.AndroidEntryPoint
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
-import ng.com.chprbn.mobile.core.designsystem.components.PrimaryButton
-import ng.com.chprbn.mobile.core.designsystem.components.Status
-import ng.com.chprbn.mobile.core.designsystem.components.StatusBadge
+import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+import ng.com.chprbn.mobile.core.navigation.AppNavHost
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ChprbnTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    DesignSystemPreviewScreen()
+                val view = LocalView.current
+                if (!view.isInEditMode) {
+                    SideEffect {
+                        val window = (view.context as ComponentActivity).window
+                        window.statusBarColor = PrimaryGreen.toArgb()
+                        WindowCompat.getInsetsController(window, view).apply {
+                            isAppearanceLightStatusBars = false
+                        }
+                    }
+                }
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    AppNavHost()
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DesignSystemPreviewScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "CHPRBN Design System",
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Text(
-            text = "Buttons & status badges preview",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        PrimaryButton(
-            text = "Primary action",
-            onClick = { /* no-op sample */ }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        StatusBadge(status = Status.Active)
-        StatusBadge(status = Status.Pending)
-        StatusBadge(status = Status.Expired)
     }
 }

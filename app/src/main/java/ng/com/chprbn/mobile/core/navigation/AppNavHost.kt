@@ -1,6 +1,10 @@
 package ng.com.chprbn.mobile.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 
 /**
  * Single-activity navigation host.
@@ -8,6 +12,15 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun AppNavHost() {
-    // TODO: Wire up Navigation Compose once features are defined.
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = Routes.Splash
+    ) {
+        composable(Routes.Splash) {
+            SplashScreen()
+        }
+    }
 }
 
