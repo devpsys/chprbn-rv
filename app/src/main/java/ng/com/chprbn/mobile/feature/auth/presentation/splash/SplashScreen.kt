@@ -22,7 +22,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -37,8 +39,13 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 
 @Composable
 fun SplashScreen(
-    modifier: Modifier = Modifier.Companion
+    modifier: Modifier = Modifier,
+    onNavigateToLogin: () -> Unit = {}
 ) {
+    LaunchedEffect(Unit) {
+        delay(2500L)
+        onNavigateToLogin()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
