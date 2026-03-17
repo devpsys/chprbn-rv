@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
+import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 
 /**
  * Single-activity navigation host.
@@ -30,9 +31,21 @@ fun AppNavHost() {
         }
         composable(Routes.Login) {
             LoginScreen(
-                onSignIn = { /* TODO: navigate to dashboard */ },
+                onSignIn = {
+                    navController.navigate(Routes.Dashboard) {
+                        popUpTo(Routes.Login) { inclusive = true }
+                    }
+                },
                 onRecovery = { /* TODO: recovery flow */ },
                 onRequestAccess = { /* TODO: request access */ }
+            )
+        }
+        composable(Routes.Dashboard) {
+            DashboardScreen(
+                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onVerifiedList = { /* TODO: navigate to verified list */ },
+                onSync = { /* TODO: sync */ },
+                onProfile = { /* TODO: navigate to profile */ }
             )
         }
     }
