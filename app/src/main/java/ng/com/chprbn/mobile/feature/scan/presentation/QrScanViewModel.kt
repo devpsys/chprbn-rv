@@ -20,7 +20,7 @@ sealed class ScanUiEvent {
     object StartScan : ScanUiEvent()
     object StopScan : ScanUiEvent()
     object EnterManually : ScanUiEvent()
-    data class RegistrationScanned(val registrationNumber: String) : ScanUiEvent()
+    data class RegistrationScanned(val registrationNumber: String?) : ScanUiEvent()
 }
 
 class QrScanViewModel : ViewModel() {
@@ -55,7 +55,7 @@ class QrScanViewModel : ViewModel() {
 
             is ScanUiEvent.RegistrationScanned -> {
                 viewModelScope.launch {
-                    val cleaned = event.registrationNumber.trim()
+                    val cleaned = event.registrationNumber?.trim()
                     _uiState.value = _uiState.value.copy(
                         scannedRegistrationNumber = cleaned,
                         scanStatus = "Card detected!",

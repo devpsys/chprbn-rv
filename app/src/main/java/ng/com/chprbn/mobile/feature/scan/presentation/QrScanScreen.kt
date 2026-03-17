@@ -87,8 +87,8 @@ fun QrScanScreen(
     // Navigate to student details when a registration is scanned
     LaunchedEffect(uiState.scannedRegistrationNumber) {
         uiState.scannedRegistrationNumber?.let { registrationNumber ->
-            Log.d("ScanScreen", "Scanned: $registrationNumber")
             onQrScanned(registrationNumber)
+            viewModel.handleEvent(ScanUiEvent.RegistrationScanned(null))
         }
     }
 
