@@ -8,6 +8,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
+import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncHistoryScreen
 import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
@@ -46,7 +47,11 @@ fun AppNavHost() {
         }
         composable(Routes.Dashboard) {
             DashboardScreen(
-                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.Scan) {
+                        navController.navigate(Routes.Scan)
+                    }
+                },
                 onVerifiedList = {
                     if (navController.currentDestination?.route != Routes.Verified) {
                         navController.navigate(Routes.Verified)
@@ -90,7 +95,11 @@ fun AppNavHost() {
                         navController.navigate(Routes.Verified)
                     }
                 },
-                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.Scan) {
+                        navController.navigate(Routes.Scan)
+                    }
+                },
                 onSync = {
                     if (navController.currentDestination?.route != Routes.Sync) {
                         navController.navigate(Routes.Sync)
@@ -122,7 +131,11 @@ fun AppNavHost() {
                         navController.navigate(Routes.Verified)
                     }
                 },
-                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.Scan) {
+                        navController.navigate(Routes.Scan)
+                    }
+                },
                 onProfile = {
                     if (navController.currentDestination?.route != Routes.Profile) {
                         navController.navigate(Routes.Profile)
@@ -146,7 +159,11 @@ fun AppNavHost() {
                         navController.navigate(Routes.Verified)
                     }
                 },
-                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.Scan) {
+                        navController.navigate(Routes.Scan)
+                    }
+                },
                 onProfile = {
                     if (navController.currentDestination?.route != Routes.Profile) {
                         navController.navigate(Routes.Profile)
@@ -166,7 +183,11 @@ fun AppNavHost() {
                         }
                     }
                 },
-                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.Scan) {
+                        navController.navigate(Routes.Scan)
+                    }
+                },
                 onSync = {
                     if (navController.currentDestination?.route != Routes.Sync) {
                         navController.navigate(Routes.Sync)
@@ -177,6 +198,12 @@ fun AppNavHost() {
                         navController.navigate(Routes.Profile)
                     }
                 }
+            )
+        }
+        composable(Routes.Scan) {
+            QrScanScreen(
+                onManualEntry = { /* TODO: navigate to manual entry flow */ },
+                onQrScanned = { /* TODO: handle scanned QR value */ }
             )
         }
     }
