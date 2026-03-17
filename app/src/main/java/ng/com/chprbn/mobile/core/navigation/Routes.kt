@@ -5,4 +5,5 @@ object Routes {
     const val Login = "login"
     const val Dashboard = "dashboard"
     const val Profile = "profile"
+    const val Sync = "sync"
 }

@@ -8,6 +8,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
+import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
 
 /**
  * Single-activity navigation host.
@@ -45,7 +46,11 @@ fun AppNavHost() {
             DashboardScreen(
                 onScanQr = { /* TODO: navigate to QR scanner */ },
                 onVerifiedList = { /* TODO: navigate to verified list */ },
-                onSync = { /* TODO: sync */ },
+                onSync = {
+                    if (navController.currentDestination?.route != Routes.Sync) {
+                        navController.navigate(Routes.Sync)
+                    }
+                },
                 onProfile = {
                     if (navController.currentDestination?.route != Routes.Profile) {
                         navController.navigate(Routes.Profile)
@@ -72,8 +77,34 @@ fun AppNavHost() {
                 },
                 onVerified = { /* TODO: navigate to verified list */ },
                 onScanQr = { /* TODO: navigate to QR scanner */ },
-                onSync = { /* TODO: navigate to sync */ },
+                onSync = {
+                    if (navController.currentDestination?.route != Routes.Sync) {
+                        navController.navigate(Routes.Sync)
+                    }
+                },
                 onProfile = { /* already on profile */ }
+            )
+        }
+        composable(Routes.Sync) {
+            SyncScreen(
+                onBack = { navController.popBackStack() },
+                onRefresh = { /* TODO: trigger refresh */ },
+                onSyncAll = { /* TODO: sync all */ },
+                onRetryFailed = { /* TODO: retry failed */ },
+                onHome = {
+                    if (navController.currentDestination?.route != Routes.Dashboard) {
+                        navController.navigate(Routes.Dashboard) {
+                            popUpTo(Routes.Dashboard) { inclusive = false }
+                        }
+                    }
+                },
+                onVerified = { /* TODO: navigate to verified list */ },
+                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                }
             )
         }
     }
