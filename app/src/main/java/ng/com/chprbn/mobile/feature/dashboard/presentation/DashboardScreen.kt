@@ -25,13 +25,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +43,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -61,6 +55,7 @@ import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
+import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.DashboardFeature
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.FeatureType
 
@@ -149,7 +144,7 @@ fun DashboardScreen(
                 }
             }
         }
-        DashboardBottomBar(
+        BottomNavBar(
             modifier = Modifier.align(Alignment.BottomCenter),
             onHome = onHome,
             onSearch = onSearch,
@@ -597,112 +592,6 @@ fun SystemStatusCard() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-@Composable
-fun DashboardBottomBar(
-    modifier: Modifier = Modifier,
-    onHome: () -> Unit,
-    onSearch: () -> Unit,
-    onScanQr: () -> Unit,
-    onSync: () -> Unit,
-    onSettings: () -> Unit
-) {
-    // Bottom bar: top border only, no bottom border; floating center FAB
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Top border only (full width)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(PrimaryGreen.copy(alpha = 0.15f))
-        ) {}
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomNavItem(
-                icon = Icons.Filled.Home,
-                label = "Home",
-                selected = true,
-                onClick = onHome
-            )
-            BottomNavItem(
-                icon = Icons.Filled.Search,
-                label = "Search",
-                selected = false,
-                onClick = onSearch
-            )
-            // Floating center FAB: offset -24.dp, 4.dp surface border, shadow
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .offset(y = (-24).dp)
-                    .shadow(8.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.25f))
-                    .clip(CircleShape)
-                    .background(PrimaryGreen)
-                    .border(
-                        width = 4.dp,
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = CircleShape
-                    )
-                    .clickable(onClick = onScanQr),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.QrCodeScanner,
-                    contentDescription = "Scan QR",
-                    modifier = Modifier.size(28.dp),
-                    tint = Color.White
-                )
-            }
-            BottomNavItem(
-                icon = Icons.Filled.Sync,
-                label = "Sync",
-                selected = false,
-                onClick = onSync
-            )
-            BottomNavItem(
-                icon = Icons.Filled.Settings,
-                label = "Settings",
-                selected = false,
-                onClick = onSettings
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomNavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .width(64.dp)
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier = Modifier.size(24.dp),
-            tint = if (selected) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = if (selected) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
