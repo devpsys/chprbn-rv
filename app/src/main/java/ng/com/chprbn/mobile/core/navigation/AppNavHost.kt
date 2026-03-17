@@ -9,6 +9,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
+import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
 
 /**
  * Single-activity navigation host.
@@ -45,7 +46,11 @@ fun AppNavHost() {
         composable(Routes.Dashboard) {
             DashboardScreen(
                 onScanQr = { /* TODO: navigate to QR scanner */ },
-                onVerifiedList = { /* TODO: navigate to verified list */ },
+                onVerifiedList = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
                 onSync = {
                     if (navController.currentDestination?.route != Routes.Sync) {
                         navController.navigate(Routes.Sync)
@@ -57,7 +62,11 @@ fun AppNavHost() {
                     }
                 },
                 onHome = { /* already on home */ },
-                onSearch = { /* TODO: navigate to verified list from bottom bar */ },
+                onSearch = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
                 onSettings = { /* TODO: settings/profile options */ }
             )
         }
@@ -75,7 +84,11 @@ fun AppNavHost() {
                         }
                     }
                 },
-                onVerified = { /* TODO: navigate to verified list */ },
+                onVerified = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
                 onScanQr = { /* TODO: navigate to QR scanner */ },
                 onSync = {
                     if (navController.currentDestination?.route != Routes.Sync) {
@@ -98,8 +111,37 @@ fun AppNavHost() {
                         }
                     }
                 },
-                onVerified = { /* TODO: navigate to verified list */ },
+                onVerified = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
                 onScanQr = { /* TODO: navigate to QR scanner */ },
+                onProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                }
+            )
+        }
+        composable(Routes.Verified) {
+            VerifiedListScreen(
+                onBack = { navController.popBackStack() },
+                onMenu = { /* TODO: overflow menu */ },
+                onPractitionerClicked = { /* TODO: navigate to practitioner detail */ },
+                onHome = {
+                    if (navController.currentDestination?.route != Routes.Dashboard) {
+                        navController.navigate(Routes.Dashboard) {
+                            popUpTo(Routes.Dashboard) { inclusive = false }
+                        }
+                    }
+                },
+                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onSync = {
+                    if (navController.currentDestination?.route != Routes.Sync) {
+                        navController.navigate(Routes.Sync)
+                    }
+                },
                 onProfile = {
                     if (navController.currentDestination?.route != Routes.Profile) {
                         navController.navigate(Routes.Profile)

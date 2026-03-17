@@ -6,4 +6,5 @@ object Routes {
     const val Dashboard = "dashboard"
     const val Profile = "profile"
     const val Sync = "sync"
+    const val Verified = "verified"
 }
