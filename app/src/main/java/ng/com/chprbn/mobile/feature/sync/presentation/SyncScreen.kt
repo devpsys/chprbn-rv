@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,6 +73,7 @@ fun SyncScreen(
     onRefresh: () -> Unit = {},
     onSyncAll: () -> Unit = {},
     onRetryFailed: () -> Unit = {},
+    onViewAllHistory: () -> Unit = {},
     onHome: () -> Unit = {},
     onVerified: () -> Unit = {},
     onScanQr: () -> Unit = {},
@@ -103,7 +105,7 @@ fun SyncScreen(
                     onRetryFailed = onRetryFailed
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                SyncRecentStatusSection()
+                SyncRecentStatusSection(onViewAll = onViewAllHistory)
                 Spacer(modifier = Modifier.height(96.dp))
             }
         }
@@ -399,7 +401,9 @@ private fun SyncActionsSection(
 }
 
 @Composable
-private fun SyncRecentStatusSection() {
+private fun SyncRecentStatusSection(
+    onViewAll: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -420,7 +424,7 @@ private fun SyncRecentStatusSection() {
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
                 color = PrimaryGreen,
-                modifier = Modifier
+                modifier = Modifier.clickable(onClick = onViewAll)
             )
         }
 

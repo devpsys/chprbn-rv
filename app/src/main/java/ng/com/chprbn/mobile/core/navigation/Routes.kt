@@ -7,4 +7,5 @@ object Routes {
     const val Profile = "profile"
     const val Sync = "sync"
     const val Verified = "verified"
+    const val SyncHistory = "sync_history"
 }

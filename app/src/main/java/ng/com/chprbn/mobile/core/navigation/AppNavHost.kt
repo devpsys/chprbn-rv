@@ -9,6 +9,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
+import ng.com.chprbn.mobile.feature.sync.presentation.SyncHistoryScreen
 import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
 
 /**
@@ -104,6 +105,35 @@ fun AppNavHost() {
                 onRefresh = { /* TODO: trigger refresh */ },
                 onSyncAll = { /* TODO: sync all */ },
                 onRetryFailed = { /* TODO: retry failed */ },
+                onViewAllHistory = {
+                    if (navController.currentDestination?.route != Routes.SyncHistory) {
+                        navController.navigate(Routes.SyncHistory)
+                    }
+                },
+                onHome = {
+                    if (navController.currentDestination?.route != Routes.Dashboard) {
+                        navController.navigate(Routes.Dashboard) {
+                            popUpTo(Routes.Dashboard) { inclusive = false }
+                        }
+                    }
+                },
+                onVerified = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
+                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                }
+            )
+        }
+        composable(Routes.SyncHistory) {
+            SyncHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onItemClick = { /* TODO: navigate to record detail */ },
                 onHome = {
                     if (navController.currentDestination?.route != Routes.Dashboard) {
                         navController.navigate(Routes.Dashboard) {
