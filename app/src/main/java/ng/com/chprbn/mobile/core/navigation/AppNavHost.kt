@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
+import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
 
 /**
  * Single-activity navigation host.
@@ -45,7 +46,34 @@ fun AppNavHost() {
                 onScanQr = { /* TODO: navigate to QR scanner */ },
                 onVerifiedList = { /* TODO: navigate to verified list */ },
                 onSync = { /* TODO: sync */ },
-                onProfile = { /* TODO: navigate to profile */ }
+                onProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                },
+                onHome = { /* already on home */ },
+                onSearch = { /* TODO: navigate to verified list from bottom bar */ },
+                onSettings = { /* TODO: settings/profile options */ }
+            )
+        }
+        composable(Routes.Profile) {
+            ProfileScreen(
+                onBack = { navController.popBackStack() },
+                onMenu = { /* TODO: overflow menu */ },
+                onEditProfile = { /* TODO: edit profile */ },
+                onChangePassword = { /* TODO */ },
+                onLogout = { /* TODO */ },
+                onHome = {
+                    if (navController.currentDestination?.route != Routes.Dashboard) {
+                        navController.navigate(Routes.Dashboard) {
+                            popUpTo(Routes.Dashboard) { inclusive = false }
+                        }
+                    }
+                },
+                onVerified = { /* TODO: navigate to verified list */ },
+                onScanQr = { /* TODO: navigate to QR scanner */ },
+                onSync = { /* TODO: navigate to sync */ },
+                onProfile = { /* already on profile */ }
             )
         }
     }

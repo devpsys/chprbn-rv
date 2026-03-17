@@ -19,11 +19,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,8 +30,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+
+/** Indicates which bottom nav tab is selected (for styling). */
+enum class BottomNavTab { Home, Verified, Sync, Profile }
 
 /**
  * Global bottom navigation bar used across screens.
@@ -43,11 +46,12 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 @Composable
 fun BottomNavBar(
     modifier: Modifier = Modifier,
+    selectedTab: BottomNavTab = BottomNavTab.Home,
     onHome: () -> Unit,
-    onSearch: () -> Unit,
+    onVerified: () -> Unit,
     onScanQr: () -> Unit,
     onSync: () -> Unit,
-    onSettings: () -> Unit
+    onProfile: () -> Unit
 ) {
     // Bottom bar: top border only, no bottom border; floating center FAB
     Column(modifier = modifier.fillMaxWidth()) {
@@ -69,14 +73,14 @@ fun BottomNavBar(
             BottomNavItem(
                 icon = Icons.Filled.Home,
                 label = "Home",
-                selected = true,
+                selected = selectedTab == BottomNavTab.Home,
                 onClick = onHome
             )
             BottomNavItem(
                 icon = Icons.Filled.People,
-                label = "Practitioners",
-                selected = false,
-                onClick = onSearch
+                label = "Verified",
+                selected = selectedTab == BottomNavTab.Verified,
+                onClick = onVerified
             )
             // Floating center FAB: offset -24.dp, 4.dp surface border, shadow
             Box(
@@ -104,14 +108,14 @@ fun BottomNavBar(
             BottomNavItem(
                 icon = Icons.Filled.Sync,
                 label = "Sync",
-                selected = false,
+                selected = selectedTab == BottomNavTab.Sync,
                 onClick = onSync
             )
             BottomNavItem(
                 icon = Icons.Filled.Person,
                 label = "Profile",
-                selected = false,
-                onClick = onSettings
+                selected = selectedTab == BottomNavTab.Profile,
+                onClick = onProfile
             )
         }
     }
@@ -137,10 +141,10 @@ fun BottomNavItem(
             modifier = Modifier.size(24.dp),
             tint = if (selected) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
         )
-        androidx.compose.material3.Text(
+        Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = if (selected) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

@@ -56,6 +56,7 @@ import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
+import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.DashboardFeature
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.FeatureType
 
@@ -146,11 +147,12 @@ fun DashboardScreen(
         }
         BottomNavBar(
             modifier = Modifier.align(Alignment.BottomCenter),
+            selectedTab = BottomNavTab.Home,
             onHome = onHome,
-            onSearch = onSearch,
+            onVerified = onSearch,
             onScanQr = onScanQr,
             onSync = onSync,
-            onSettings = onSettings
+            onProfile = onProfile
         )
     }
 }
