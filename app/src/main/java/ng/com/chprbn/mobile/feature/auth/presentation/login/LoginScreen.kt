@@ -45,7 +45,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,12 +59,18 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.components.PrimaryButton
+import ng.com.chprbn.mobile.feature.auth.domain.model.AuthResult
+import ng.com.chprbn.mobile.feature.auth.domain.model.User
+import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
+import ng.com.chprbn.mobile.feature.auth.domain.usecase.LoginUseCase
 
 private val LightMeshBackground = Brush.verticalGradient(
     colors = listOf(
@@ -86,19 +93,19 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     onSignIn: () -> Unit = {},
     onRecovery: () -> Unit = {},
-    onRequestAccess: () -> Unit = {}
+    onRequestAccess: () -> Unit = {},
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var email by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("offline@chprbn.gov.ng") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(isLoading) {
-        if (isLoading) {
-            delay(2500L)
+    LaunchedEffect(uiState.authenticatedUser) {
+        if (uiState.authenticatedUser != null) {
             onSignIn()
-            isLoading = false
+            viewModel.consumeAuthSuccess()
         }
     }
     val isDark = isSystemInDarkTheme()
@@ -247,9 +254,19 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        isLoading = isLoading,
-                        onClick = { isLoading = true }
+                        isLoading = uiState.isLoading,
+                        onClick = { viewModel.signIn(email = email, password = password) }
                     )
+                    if (!uiState.errorMessage.isNullOrBlank()) {
+                        Text(
+                            text = uiState.errorMessage ?: "",
+                            color = ErrorRed,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
@@ -417,6 +434,26 @@ private fun IllustrationIcon(icon: ImageVector) {
 @Composable
 private fun LoginScreenPreview() {
     ChprbnTheme {
-        LoginScreen()
+        val fakeRepo = remember {
+            object : AuthRepository {
+                override suspend fun login(email: String, password: String): AuthResult {
+                    return AuthResult.Success(
+                        user = User(
+                            id = "preview-user",
+                            email = email.ifEmpty { "preview@chprbn.gov.ng" },
+                            fullName = "Preview Practitioner",
+                            accessToken = "preview-token",
+                            permissions = listOf("auth:login"),
+                            userPhoto = null
+                        )
+                    )
+                }
+            }
+        }
+        val fakeUseCase =
+            remember { LoginUseCase(fakeRepo) }
+        val fakeViewModel = remember { LoginViewModel(fakeUseCase) }
+
+        LoginScreen(viewModel = fakeViewModel)
     }
 }
