@@ -182,12 +182,12 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onMenu = { /* TODO: overflow menu */ },
                 onPractitionerClicked = { practitioner ->
-                    navController.navigate(
-                        Routes.verificationFormRoute(
-                            practitioner.name,
-                            practitioner.license
-                        )
-                    )
+//                    navController.navigate(
+//                        Routes.verificationFormRoute(
+//                            practitioner.name,
+//                            practitioner.license
+//                        )
+//                    )
                 },
                 onHome = {
                     if (navController.currentDestination?.route != Routes.Dashboard) {

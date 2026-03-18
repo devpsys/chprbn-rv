@@ -283,7 +283,6 @@ private fun VerifiedPractitionerRow(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
