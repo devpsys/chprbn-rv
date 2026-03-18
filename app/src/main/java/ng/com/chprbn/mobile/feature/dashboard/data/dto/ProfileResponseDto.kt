@@ -1,6 +1,9 @@
-package ng.com.chprbn.mobile.feature.auth.data.dto
+package ng.com.chprbn.mobile.feature.dashboard.data.dto
 
-data class UserDto(
+/**
+ * API response for dashboard profile. Align with backend; map to domain [User] in repository.
+ */
+data class ProfileResponseDto(
     val id: String,
     val email: String,
     val fullName: String?,
@@ -10,4 +13,3 @@ data class UserDto(
     val staffId: String? = null,
     val unit: String? = null
 )
-

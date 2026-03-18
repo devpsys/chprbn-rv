@@ -57,6 +57,7 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
+import ng.com.chprbn.mobile.feature.auth.domain.model.User
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.DashboardFeature
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.FeatureType
 
@@ -87,6 +88,7 @@ fun DashboardScreen(
             )
             if (featuresOverride != null) {
                 DashboardContent(
+                    user = null,
                     featureList = featuresOverride,
                     onFeatureClick = { feature ->
                         when (feature.id) {
@@ -105,6 +107,7 @@ fun DashboardScreen(
             } else {
                 when (val state = uiState) {
                     is DashboardUiState.Loading -> DashboardContent(
+                        user = null,
                         featureList = emptyList(),
                         onFeatureClick = { },
                         onScanQr = onScanQr,
@@ -115,6 +118,7 @@ fun DashboardScreen(
                     )
 
                     is DashboardUiState.Success -> DashboardContent(
+                        user = state.user,
                         featureList = state.features,
                         onFeatureClick = { feature ->
                             when (feature.id) {
@@ -132,6 +136,7 @@ fun DashboardScreen(
                     )
 
                     is DashboardUiState.Error -> DashboardContent(
+                        user = null,
                         featureList = emptyList(),
                         onFeatureClick = { },
                         onScanQr = onScanQr,
@@ -159,6 +164,7 @@ fun DashboardScreen(
 
 @Composable
 private fun DashboardContent(
+    user: User?,
     featureList: List<DashboardFeature>,
     onFeatureClick: (DashboardFeature) -> Unit,
     onScanQr: () -> Unit,
@@ -176,7 +182,7 @@ private fun DashboardContent(
             .padding(16.dp)
             .padding(bottom = 100.dp)
     ) {
-        WelcomeCard()
+        WelcomeCard(user = user)
         Spacer(modifier = Modifier.height(24.dp))
         when {
             isLoading -> {
@@ -221,7 +227,15 @@ private fun DashboardContent(
 }
 
 @Composable
-fun WelcomeCard() {
+fun WelcomeCard(user: User? = null) {
+    val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "Officer"
+    val role = user?.role?.takeIf { it.isNotBlank() } ?: "Senior Field Officer"
+    val idAndUnit = when {
+        user?.staffId != null && user.unit != null -> "ID: ${user.staffId} • ${user.unit}"
+        user?.staffId != null -> "ID: ${user.staffId}"
+        user?.unit != null -> user.unit
+        else -> "ID: — • Unit —"
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -261,18 +275,18 @@ fun WelcomeCard() {
             }
             Column {
                 Text(
-                    text = "Welcome, Officer Smith",
+                    text = "Welcome, $displayName",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Senior Field Officer",
+                    text = role,
                     style = MaterialTheme.typography.bodyMedium,
                     color = PrimaryGreen.copy(alpha = 0.7f)
                 )
                 Text(
-                    text = "ID: 44920 • Unit 7B",
+                    text = idAndUnit,
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

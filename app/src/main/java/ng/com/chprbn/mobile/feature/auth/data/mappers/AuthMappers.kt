@@ -8,11 +8,13 @@ import ng.com.chprbn.mobile.feature.auth.domain.model.User
 fun UserDto.toDomain(): User = User(
     id = id,
     email = email,
-    fullName = fullName
-        ?: "",
+    fullName = fullName,
     accessToken = "", // access token is added by the response mapper
     permissions = permissions,
-    userPhoto = userPhoto
+    userPhoto = userPhoto,
+    role = role,
+    staffId = staffId,
+    unit = unit
 )
 
 fun LoginResponseDto.toDomainUser(): User = User(
@@ -21,7 +23,10 @@ fun LoginResponseDto.toDomainUser(): User = User(
     fullName = user.fullName,
     accessToken = accessToken,
     permissions = user.permissions,
-    userPhoto = user.userPhoto
+    userPhoto = user.userPhoto,
+    role = user.role,
+    staffId = user.staffId,
+    unit = user.unit
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -39,6 +44,9 @@ fun UserEntity.toDomain(): User = User(
     fullName = fullName,
     accessToken = accessToken,
     permissions = permissions,
-    userPhoto = userPhoto
+    userPhoto = userPhoto,
+    role = role,
+    staffId = staffId,
+    unit = unit
 )
 

@@ -11,5 +11,5 @@ import javax.inject.Inject
 class GetDashboardFeaturesUseCase @Inject constructor(
     private val repository: DashboardRepository
 ) {
-    operator fun invoke(): List<DashboardFeature> = repository.getFeatures()
+    suspend operator fun invoke(): List<DashboardFeature> = repository.getFeatures()
 }

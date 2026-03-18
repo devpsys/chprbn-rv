@@ -11,6 +11,12 @@ data class User(
     val fullName: String?,
     val accessToken: String,
     val permissions: List<String>,
-    val userPhoto: String?
+    val userPhoto: String?,
+    /** Role/title for Dashboard (e.g. "Senior Field Officer"). */
+    val role: String? = null,
+    /** Staff ID for display (e.g. "44920"). */
+    val staffId: String? = null,
+    /** Unit for display (e.g. "Unit 7B"). */
+    val unit: String? = null
 )
 

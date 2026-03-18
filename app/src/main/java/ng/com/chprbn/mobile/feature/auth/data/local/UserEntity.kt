@@ -19,6 +19,9 @@ data class UserEntity(
     val accessToken: String,
     @TypeConverters(ng.com.chprbn.mobile.core.persistence.converters.JsonStringListTypeConverter::class)
     val permissions: List<String>,
-    val userPhoto: String?
+    val userPhoto: String?,
+    val role: String? = null,
+    val staffId: String? = null,
+    val unit: String? = null
 )
 

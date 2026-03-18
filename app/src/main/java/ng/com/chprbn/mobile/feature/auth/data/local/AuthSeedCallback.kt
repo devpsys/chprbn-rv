@@ -15,17 +15,19 @@ class AuthSeedCallback : RoomDatabase.Callback() {
         super.onCreate(db)
 
         // Store permissions as JSON string because we use a Gson-backed TypeConverter.
-        // Table schema:
-        // - auth_user(id TEXT PRIMARY KEY, email TEXT, fullName TEXT, accessToken TEXT, permissions TEXT, userPhoto TEXT)
+        // Table schema includes role, staffId, unit (nullable).
         val sql = """
-            INSERT OR IGNORE INTO auth_user(id, email, fullName, accessToken, permissions, userPhoto)
+            INSERT OR IGNORE INTO auth_user(id, email, fullName, accessToken, permissions, userPhoto, role, staffId, unit)
             VALUES (
               'offline-test-user',
               'offline@chprbn.gov.ng',
-              'Offline Test Practitioner',
+              'Sylux Endyusa',
               'offline-token',
               '["auth:login"]',
-              NULL
+              NULL,
+              'Field Officer',
+              '44920',
+              'Unit 7B'
             )
         """.trimIndent()
 
