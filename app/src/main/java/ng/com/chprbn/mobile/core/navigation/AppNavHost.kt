@@ -11,6 +11,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
+import ng.com.chprbn.mobile.feature.scan.presentation.ManualLicenseEntryScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.RecordDetailScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
@@ -181,7 +182,12 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onMenu = { /* TODO: overflow menu */ },
                 onPractitionerClicked = { practitioner ->
-                    navController.navigate(Routes.verificationFormRoute(practitioner.name, practitioner.license))
+                    navController.navigate(
+                        Routes.verificationFormRoute(
+                            practitioner.name,
+                            practitioner.license
+                        )
+                    )
                 },
                 onHome = {
                     if (navController.currentDestination?.route != Routes.Dashboard) {
@@ -214,8 +220,10 @@ fun AppNavHost() {
                 navArgument("licenseNumber") { type = NavType.StringType; defaultValue = "" }
             )
         ) { backStackEntry ->
-            val practitionerName = Uri.decode(backStackEntry.arguments?.getString("practitionerName").orEmpty())
-            val licenseNumber = Uri.decode(backStackEntry.arguments?.getString("licenseNumber").orEmpty())
+            val practitionerName =
+                Uri.decode(backStackEntry.arguments?.getString("practitionerName").orEmpty())
+            val licenseNumber =
+                Uri.decode(backStackEntry.arguments?.getString("licenseNumber").orEmpty())
             VerificationFormScreen(
                 practitionerName = practitionerName.ifEmpty { "Dr. Sarah Elizabeth Jenkins" },
                 licenseNumber = licenseNumber.ifEmpty { "MED-99284-TX" },
@@ -223,9 +231,21 @@ fun AppNavHost() {
                 onSaveVerification = { navController.popBackStack() }
             )
         }
+        composable(Routes.ManualLicenseEntry) {
+            ManualLicenseEntryScreen(
+                onBack = { navController.popBackStack() },
+                onVerifyLicense = { enteredLicense ->
+                    navController.navigate(Routes.recordDetailRoute(enteredLicense))
+                }
+            )
+        }
         composable(Routes.Scan) {
             QrScanScreen(
-                onManualEntry = { /* TODO: navigate to manual entry flow */ },
+                onManualEntry = {
+                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
+                        navController.navigate(Routes.ManualLicenseEntry)
+                    }
+                },
                 onQrScanned = { registrationNumber ->
                     navController.navigate(Routes.recordDetailRoute(registrationNumber))
                 }
@@ -247,7 +267,12 @@ fun AppNavHost() {
                 },
                 onMenu = { /* TODO: overflow menu */ },
                 onProceedToVerification = {
-                    navController.navigate(Routes.verificationFormRoute("Dr. Jane Doe", registrationNumber))
+                    navController.navigate(
+                        Routes.verificationFormRoute(
+                            "Dr. Jane Doe",
+                            registrationNumber
+                        )
+                    )
                 }
             )
         }

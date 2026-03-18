@@ -8,6 +8,7 @@ object Routes {
     const val Dashboard = "dashboard"
     const val Profile = "profile"
     const val Scan = "scan"
+    const val ManualLicenseEntry = "manual_license_entry"
     const val Sync = "sync"
     const val Verified = "verified"
     /** Optional: practitionerName, licenseNumber. Use [verificationFormRoute] to build with args. */
