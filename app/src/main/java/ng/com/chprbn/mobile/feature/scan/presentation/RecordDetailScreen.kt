@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -23,8 +24,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SyncProblem
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.PersonSearch
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -50,7 +55,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.TextButton
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
@@ -274,19 +278,163 @@ private fun RecordDetailErrorContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onRetry) {
-            Text("Retry", color = PrimaryGreen)
+        // Network error illustration (design: cloud_off circle + floating wifi_off + sync_problem)
+        Box(
+            modifier = Modifier.size(256.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Circle with dashed-style border and cloud_off icon
+            Box(
+                modifier = Modifier
+                    .size(192.dp)
+                    .clip(CircleShape)
+                    .background(PrimaryGreen.copy(alpha = 0.12f))
+                    .border(
+                        width = 4.dp,
+                        color = PrimaryGreen.copy(alpha = 0.2f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CloudOff,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(80.dp)
+                )
+            }
+            // Floating badge: wifi_off (top-right of circle)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 8.dp, y = (-8).dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 4.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            ) {
+                Box(modifier = Modifier.padding(12.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.WifiOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            // Floating badge: sync_problem (bottom-left of circle)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = (-16).dp, y = 32.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            ) {
+                Box(modifier = Modifier.padding(8.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.SyncProblem,
+                        contentDescription = null,
+                        tint = Color(0xFFFFA000),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
+
+        Text(
+            text = "Connection lost",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "We’re having trouble connecting to the national database. Please check your internet connection and try again.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clickable(onClick = onRetry),
+                shape = RoundedCornerShape(12.dp),
+                color = PrimaryGreen,
+                shadowElevation = 4.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = "Retry connection",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+//            Surface(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(52.dp),
+//                shape = RoundedCornerShape(12.dp),
+//                color = MaterialTheme.colorScheme.surface,
+//                border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.2f))
+//            ) {
+//                Row(
+//                    modifier = Modifier.fillMaxSize(),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.Center
+//                ) {
+//                    Text(
+//                        text = "Work offline",
+//                        style = MaterialTheme.typography.titleSmall,
+//                        fontWeight = FontWeight.Bold,
+//                        color = PrimaryGreen
+//                    )
+//                }
+//            }
+        }
+
+//        Row(
+//            modifier = Modifier.padding(top = 8.dp),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            Box(
+//                modifier = Modifier
+//                    .size(8.dp)
+//                    .clip(CircleShape)
+//                    .background(MaterialTheme.colorScheme.error),
+//            )
+//            Text(
+//                text = "Offline mode available",
+//                style = MaterialTheme.typography.bodySmall,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+//        }
     }
 }
 
