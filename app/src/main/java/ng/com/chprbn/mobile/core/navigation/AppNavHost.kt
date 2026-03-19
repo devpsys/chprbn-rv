@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.gson.Gson
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
+import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
@@ -225,17 +227,19 @@ fun AppNavHost() {
         composable(
             route = Routes.VerificationForm,
             arguments = listOf(
-                navArgument("practitionerName") { type = NavType.StringType; defaultValue = "" },
-                navArgument("licenseNumber") { type = NavType.StringType; defaultValue = "" }
+                navArgument("licenseRecordJson") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
             )
         ) { backStackEntry ->
-            val practitionerName =
-                Uri.decode(backStackEntry.arguments?.getString("practitionerName").orEmpty())
-            val licenseNumber =
-                Uri.decode(backStackEntry.arguments?.getString("licenseNumber").orEmpty())
+            val encodedJson = backStackEntry.arguments?.getString("licenseRecordJson").orEmpty()
+            val licenseRecord = runCatching {
+                val json = Uri.decode(encodedJson)
+                if (json.isBlank()) null else Gson().fromJson(json, LicenseRecord::class.java)
+            }.getOrNull()
             VerificationFormScreen(
-                practitionerName = practitionerName.ifEmpty { "Dr. Sarah Elizabeth Jenkins" },
-                licenseNumber = licenseNumber.ifEmpty { "MED-99284-TX" },
+                licenseRecord = licenseRecord,
                 onBack = { navController.popBackStack() },
                 onSaveVerification = { navController.popBackStack() }
             )
@@ -278,13 +282,10 @@ fun AppNavHost() {
                     navController.popBackStack(Routes.Scan, inclusive = true)
                 },
                 onMenu = { /* TODO: overflow menu */ },
-                onProceedToVerification = { practitionerName, regNumber ->
-                    navController.navigate(
-                        Routes.verificationFormRoute(
-                            practitionerName,
-                            regNumber
-                        )
-                    )
+                onProceedToVerification = { record ->
+                    val json = Gson().toJson(record)
+                    val encoded = Uri.encode(json)
+                    navController.navigate(Routes.verificationFormRoute(encoded))
                 },
                 onManualEntry = {
                     if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {

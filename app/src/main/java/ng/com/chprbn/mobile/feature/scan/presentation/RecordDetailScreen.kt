@@ -70,7 +70,7 @@ fun RecordDetailScreen(
     registrationNumber: String,
     onBack: () -> Unit = {},
     onMenu: () -> Unit = {},
-    onProceedToVerification: (practitionerName: String, registrationNumber: String) -> Unit = { _, _ -> },
+    onProceedToVerification: (LicenseRecord) -> Unit = {},
     onManualEntry: () -> Unit = {},
     viewModel: RecordDetailViewModel = hiltViewModel(),
     recordOverride: LicenseRecord? = null
@@ -130,12 +130,7 @@ fun RecordDetailScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(onClick = {
-                                    onProceedToVerification(
-                                        record.fullName,
-                                        record.registrationNumber
-                                    )
-                                }),
+                                .clickable(onClick = { onProceedToVerification(record) }),
                             shape = RoundedCornerShape(12.dp),
                             color = PrimaryGreen
                         ) {
@@ -961,7 +956,7 @@ private fun RecordDetailScreenPreview() {
             registrationNumber = "MED-12345",
             onBack = {},
             onMenu = {},
-            onProceedToVerification = { _, _ -> },
+            onProceedToVerification = { },
             recordOverride = previewRecord
         )
     }

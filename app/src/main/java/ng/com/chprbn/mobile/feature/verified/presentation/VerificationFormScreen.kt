@@ -15,13 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,21 +42,23 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 
 /**
- * Verification form screen (presentation layer) matching ui-designs/verification_form/code.html.
+ * Verification form screen (presentation layer).
+ * Receives full [licenseRecord] as single source of truth; "Mark as Verified" is enabled only when [LicenseRecord.licenseStatus] is Active.
  */
 @Composable
 fun VerificationFormScreen(
     modifier: Modifier = Modifier,
-    practitionerName: String = "Dr. Sarah Elizabeth Jenkins",
-    licenseNumber: String = "MED-99284-TX",
+    licenseRecord: LicenseRecord? = null,
     lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
     onBack: () -> Unit = {},
     onSaveVerification: () -> Unit = {},
     viewModel: VerificationFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val record = licenseRecord ?: uiState.licenseRecord
 
     Column(
         modifier = modifier
@@ -75,13 +75,27 @@ fun VerificationFormScreen(
         ) {
             ReadonlyField(
                 label = "Practitioner Name",
-                value = practitionerName
+                value = record?.fullName?.ifBlank { "—" } ?: "—"
             )
             Spacer(modifier = Modifier.height(24.dp))
             ReadonlyField(
                 label = "License Number",
-                value = licenseNumber
+                value = record?.registrationNumber?.ifBlank { "—" } ?: "—"
             )
+            if (record?.profession != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                if (record.profession.isNotBlank()) {
+                    ReadonlyField(label = "Profession", value = record.profession)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                if (record.licenseStatus.isNotBlank()) {
+                    ReadonlyField(label = "License Status", value = record.licenseStatus)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                if (record.expiryDate.isNotBlank()) {
+                    ReadonlyField(label = "Expiry Date", value = record.expiryDate)
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Box(
                 modifier = Modifier
@@ -106,7 +120,7 @@ fun VerificationFormScreen(
                     .height(56.dp),
                 placeholder = {
                     Text(
-                        "Enter clinic or hospital name",
+                        "Enter facility name",
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 },
@@ -127,13 +141,6 @@ fun VerificationFormScreen(
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            PractitionerPresentCard(
-                checked = uiState.practitionerPresent,
-                onCheckedChange = viewModel::onPractitionerPresentChange
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -166,6 +173,13 @@ fun VerificationFormScreen(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     cursorColor = PrimaryGreen
                 )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            PractitionerPresentCard(
+                checked = uiState.practitionerPresent,
+                onCheckedChange = viewModel::onPractitionerPresentChange,
             )
         }
 
@@ -276,54 +290,58 @@ private fun PractitionerPresentCard(
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(PrimaryGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.VerifiedUser,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = PrimaryGreen
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(PrimaryGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.VerifiedUser,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = PrimaryGreen
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "Mark Verified",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Confirm license is verified",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-                Column {
-                    Text(
-                        text = "Mark Verified",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                Switch(
+                    checked = checked,
+                    onCheckedChange = onCheckedChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.surface,
+                        checkedTrackColor = PrimaryGreen,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.surface,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
                     )
-                    Text(
-                        text = "Confirm license is active",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.surface,
-                    checkedTrackColor = PrimaryGreen,
-                    uncheckedThumbColor = MaterialTheme.colorScheme.surface,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
                 )
-            )
+            }
         }
     }
 }
@@ -389,10 +407,19 @@ private fun VerificationFormFooter(
 @Preview(showBackground = true)
 @Composable
 private fun VerificationFormScreenPreview() {
+    val previewRecord = LicenseRecord(
+        registrationNumber = "MED-99284-TX",
+        fullName = "Dr. Sarah Elizabeth Jenkins",
+        photoUrl = null,
+        profession = "Physician",
+        authority = "Medical and Dental Council",
+        licenseStatus = "Active",
+        expiryDate = "Mar 2027",
+        subtitle = "Registered Practitioner"
+    )
     ChprbnTheme {
         VerificationFormScreen(
-            practitionerName = "Dr. Sarah Elizabeth Jenkins",
-            licenseNumber = "MED-99284-TX",
+            licenseRecord = previewRecord,
             onBack = {},
             onSaveVerification = {}
         )
