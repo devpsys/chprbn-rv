@@ -294,7 +294,7 @@ private fun PractitionerPresentCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Person,
+                        imageVector = Icons.Filled.VerifiedUser,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
                         tint = PrimaryGreen
@@ -302,13 +302,13 @@ private fun PractitionerPresentCard(
                 }
                 Column {
                     Text(
-                        text = "Practitioner Present",
+                        text = "Mark Verified",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Confirm physical presence",
+                        text = "Confirm license is active",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
