@@ -188,8 +188,14 @@ fun AppNavHost() {
                 }
             )
         }
-        composable(Routes.Verified) {
+        composable(Routes.Verified) { backStackEntry ->
+            val refreshRequested =
+                backStackEntry.savedStateHandle.get<Boolean>("verified_list_refresh") == true
             VerifiedListScreen(
+                refreshRequested = refreshRequested,
+                onRefreshConsumed = {
+                    backStackEntry.savedStateHandle["verified_list_refresh"] = false
+                },
                 onBack = { navController.popBackStack() },
                 onMenu = { /* TODO: overflow menu */ },
                 onPractitionerClicked = { practitioner ->
@@ -241,7 +247,16 @@ fun AppNavHost() {
             VerificationFormScreen(
                 licenseRecord = licenseRecord,
                 onBack = { navController.popBackStack() },
-                onSaveVerification = { navController.popBackStack() }
+                onSaveVerification = {
+                    runCatching {
+                        navController.getBackStackEntry(Routes.Verified)
+                            .savedStateHandle["verified_list_refresh"] = true
+                    }
+                    val poppedBoth = navController.popBackStack(Routes.Scan, inclusive = true)
+                    if (!poppedBoth) {
+                        navController.popBackStack()
+                    }
+                }
             )
         }
         composable(Routes.ManualLicenseEntry) {

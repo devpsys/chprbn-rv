@@ -3,20 +3,32 @@ package ng.com.chprbn.mobile.feature.verified.presentation
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
+import ng.com.chprbn.mobile.feature.verified.domain.model.SaveVerifiedLicenseResult
+import ng.com.chprbn.mobile.feature.verified.domain.usecase.SaveVerifiedLicenseUseCase
 import javax.inject.Inject
+
+sealed interface SaveVerificationState {
+    data object Idle : SaveVerificationState
+    data object Saving : SaveVerificationState
+    data object Success : SaveVerificationState
+    data class Error(val message: String) : SaveVerificationState
+}
 
 data class VerificationFormUiState(
     val licenseRecord: LicenseRecord? = null,
     val verificationLocation: String = "",
     val practitionerPresent: Boolean = false,
-    val officerRemarks: String = ""
+    val officerRemarks: String = "",
+    val saveState: SaveVerificationState = SaveVerificationState.Idle
 ) {
     /** True when license status is "Active", so the "Mark as Verified" switch can be enabled. */
     val isVerifiedSwitchEnabled: Boolean =
@@ -26,7 +38,8 @@ data class VerificationFormUiState(
 @HiltViewModel
 class VerificationFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val gson: Gson
+    private val gson: Gson,
+    private val saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(run {
@@ -53,6 +66,49 @@ class VerificationFormViewModel @Inject constructor(
     }
 
     fun saveVerification() {
-        // TODO: domain/data layer — submit verification using uiState.value.licenseRecord
+        if (uiState.value.saveState is SaveVerificationState.Saving) return
+        val record = uiState.value.licenseRecord
+        if (record == null) {
+            _uiState.update { it.copy(saveState = SaveVerificationState.Error("No license record found to verify.")) }
+            return
+        }
+
+//        if (!record.licenseStatus.equals("Active", ignoreCase = true)) {
+//            _uiState.update {
+//                it.copy(
+//                    saveState = SaveVerificationState.Error(
+//                        "Only practitioners with an active license can be verified."
+//                    )
+//                )
+//            }
+//            return
+//        }
+
+        val verificationLocation = uiState.value.verificationLocation
+        val practitionerPresent = uiState.value.practitionerPresent
+        val officerRemarks = uiState.value.officerRemarks
+
+        _uiState.update { it.copy(saveState = SaveVerificationState.Saving) }
+        viewModelScope.launch {
+            val result = saveVerifiedLicenseUseCase(
+                licenseRecord = record,
+                verificationLocation = verificationLocation,
+                practitionerPresent = practitionerPresent,
+                remark = officerRemarks
+            )
+            _uiState.update {
+                when (result) {
+                    SaveVerifiedLicenseResult.Success ->
+                        it.copy(saveState = SaveVerificationState.Success)
+
+                    is SaveVerifiedLicenseResult.Error ->
+                        it.copy(saveState = SaveVerificationState.Error(result.message))
+                }
+            }
+        }
+    }
+
+    fun consumeSaveState() {
+        _uiState.update { it.copy(saveState = SaveVerificationState.Idle) }
     }
 }

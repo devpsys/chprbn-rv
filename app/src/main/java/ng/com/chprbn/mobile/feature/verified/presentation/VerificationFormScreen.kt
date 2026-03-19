@@ -31,6 +31,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,6 +60,13 @@ fun VerificationFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val record = licenseRecord ?: uiState.licenseRecord
+
+    LaunchedEffect(uiState.saveState) {
+        if (uiState.saveState is SaveVerificationState.Success) {
+            viewModel.consumeSaveState()
+            onSaveVerification()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -181,12 +189,21 @@ fun VerificationFormScreen(
                 checked = uiState.practitionerPresent,
                 onCheckedChange = viewModel::onPractitionerPresentChange,
             )
+
+            val saveError = uiState.saveState as? SaveVerificationState.Error
+            if (saveError != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = saveError.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         VerificationFormFooter(
             onSaveVerification = {
                 viewModel.saveVerification()
-                onSaveVerification()
             },
             lastVerifiedText = lastVerifiedText
         )
