@@ -8,15 +8,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
-data class ManualLicenseEntryUiState(
+data class ManualEntryUiState(
     val licenseNumber: String = ""
 )
 
 @HiltViewModel
-class ManualLicenseEntryViewModel @Inject constructor() : ViewModel() {
+class ManualEntryViewModel @Inject constructor() : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ManualLicenseEntryUiState())
-    val uiState: StateFlow<ManualLicenseEntryUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ManualEntryUiState())
+    val uiState: StateFlow<ManualEntryUiState> = _uiState.asStateFlow()
 
     fun onLicenseNumberChange(value: String) {
         _uiState.update { it.copy(licenseNumber = value) }

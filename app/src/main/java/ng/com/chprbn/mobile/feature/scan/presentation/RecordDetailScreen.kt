@@ -31,7 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,13 +46,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
+import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 
 /**
- * Record detail screen (presentation layer) matching ui-designs/record_detail/code.html.
- * Verification panel: avatar, name, license status/expiry cards, detail rows, proceed button.
+ * Record detail screen: loads license record by registration number (local-first, then API), displays or error.
  */
 @Composable
 fun RecordDetailScreen(
@@ -56,10 +62,17 @@ fun RecordDetailScreen(
     registrationNumber: String,
     onBack: () -> Unit = {},
     onMenu: () -> Unit = {},
-    onProceedToVerification: () -> Unit = {},
+    onProceedToVerification: (practitionerName: String, registrationNumber: String) -> Unit = { _, _ -> },
+    viewModel: RecordDetailViewModel = hiltViewModel(),
+    recordOverride: LicenseRecord? = null
 ) {
-    val licenseNumber = registrationNumber.ifEmpty { "—" }
-    val digitalLicenseId = registrationNumber.ifEmpty { "—" }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(registrationNumber) {
+        if (recordOverride == null) viewModel.loadRecord(registrationNumber)
+    }
+
+    val record = recordOverride ?: (state as? RecordDetailUiState.Success)?.record
+    val digitalLicenseId = record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
 
     Box(
         modifier = modifier
@@ -67,161 +80,207 @@ fun RecordDetailScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(Modifier.fillMaxSize()) {
-            // Header: back | VERIFICATION PANEL | more_vert
             RecordDetailHeader(onBack = onBack, onMenu = onMenu)
 
-            // Scrollable content (pb for bottom bar clearance)
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 140.dp)
             ) {
-                // Centered avatar (size-28 = 112dp)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp, bottom = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
+                when {
+                    record != null -> RecordDetailContent(record = record)
+                    state is RecordDetailUiState.Loading -> Box(
                         modifier = Modifier
-                            .size(112.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryGreen.copy(alpha = 0.1f))
-                            .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
-                            .padding(4.dp)
-                            .clip(CircleShape),
+                            .fillMaxWidth()
+                            .padding(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = "https://lh3.googleusercontent.com/aida-public/AB6AXuDGwNrw6oZQaZ3azGcP4PrP56q5MV3bz6F2bl-IuygmFXDriKJgdpSy_ndOO9YBkKsOQRk5TrJCLaOwOJNwGnnK5PqCLWyvbNrkAhkwQJD1mE2BcM0rn2nG23k3fmuanXead12LR4L8GCyJieC4dL2mbIFUzchSlO0WQIbmqu6v6paUkf3jYicZtQBrEIOXDf7WFpm6jPbtSsfYHwaEHzuwCfqDNp81YmnQS40CoNyYqqVIxgzym_iSQA5hGYhPX6ekEVIMS63rA6t9",
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                        CircularProgressIndicator(color = PrimaryGreen)
                     }
-                }
-
-                // Name + subtitle
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 0.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Dr. Jane Doe",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen,
-                        textAlign = TextAlign.Center
+                    state is RecordDetailUiState.NotFound -> RecordDetailErrorContent(
+                        message = "License record not found.",
+                        onRetry = { viewModel.retry(registrationNumber) }
                     )
-                    Text(
-                        text = "Medical Professional ID",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryGreen.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp)
+                    state is RecordDetailUiState.Error -> RecordDetailErrorContent(
+                        message = (state as RecordDetailUiState.Error).message,
+                        onRetry = { viewModel.retry(registrationNumber) }
                     )
-                }
-
-                // Two cards: License Status | Expiry Date
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp)
-                        .height(90.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    LicenseStatusCard(modifier = Modifier.weight(1f))
-                    ExpiryDateCard(modifier = Modifier.weight(1f))
-                }
-
-                // Detail list: License Number, Profession, Authority
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.05f))
-                ) {
-                    Column {
-                        DetailRow(
-                            label = "LICENSE NUMBER",
-                            value = licenseNumber,
-                            showDivider = true
-                        )
-                        DetailRow(
-                            label = "PROFESSION",
-                            value = "General Practitioner",
-                            showDivider = true
-                        )
-                        DetailRow(
-                            label = "AUTHORITY",
-                            value = "Medical Council",
-                            showDivider = false
-                        )
-                    }
                 }
             }
-
         }
-        // Fixed bottom bar: button + digital license id (sibling to Column so it stays at bottom)
-        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
-                shadowElevation = 0.dp,
-                border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+        if (record != null) {
+            Column(modifier = Modifier.align(Alignment.BottomCenter)) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
                 ) {
-                    Surface(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = onProceedToVerification),
-                        shape = RoundedCornerShape(12.dp),
-                        color = PrimaryGreen
+                            .padding(16.dp)
                     ) {
-                        Row(
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp, horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                                .clickable(onClick = { onProceedToVerification(record.fullName, record.registrationNumber) }),
+                            shape = RoundedCornerShape(12.dp),
+                            color = PrimaryGreen
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.VerifiedUser,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(
-                                text = "Proceed to Verification",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp, horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.VerifiedUser,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = "Proceed to Verification",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
                         }
+                        Text(
+                            text = "Digital License ID: $digitalLicenseId",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PrimaryGreen.copy(alpha = 0.5f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            textAlign = TextAlign.Center
+                        )
                     }
-                    Text(
-                        text = "Digital License ID: $digitalLicenseId",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PrimaryGreen.copy(alpha = 0.5f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp),
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RecordDetailContent(record: LicenseRecord) {
+    val photoUrl = record.photoUrl?.takeIf { it.isNotBlank() }
+        ?: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGwNrw6oZQaZ3azGcP4PrP56q5MV3bz6F2bl-IuygmFXDriKJgdpSy_ndOO9YBkKsOQRk5TrJCLaOwOJNwGnnK5PqCLWyvbNrkAhkwQJD1mE2BcM0rn2nG23k3fmuanXead12LR4L8GCyJieC4dL2mbIFUzchSlO0WQIbmqu6v6paUkf3jYicZtQBrEIOXDf7WFpm6jPbtSsfYHwaEHzuwCfqDNp81YmnQS40CoNyYqqVIxgzym_iSQA5hGYhPX6ekEVIMS63rA6t9"
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(112.dp)
+                .clip(CircleShape)
+                .background(PrimaryGreen.copy(alpha = 0.1f))
+                .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                .padding(4.dp)
+                .clip(CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = record.fullName.ifEmpty { "—" },
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryGreen,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = record.subtitle?.takeIf { it.isNotBlank() } ?: "Medical Professional ID",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PrimaryGreen.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 24.dp)
+            .height(90.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        LicenseStatusCard(
+            modifier = Modifier.weight(1f),
+            status = record.licenseStatus.ifEmpty { "Active" }
+        )
+        ExpiryDateCard(
+            modifier = Modifier.weight(1f),
+            expiryDate = record.expiryDate.ifEmpty { "Dec 2026" }
+        )
+    }
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.05f))
+    ) {
+        Column {
+            DetailRow(
+                label = "LICENSE NUMBER",
+                value = record.registrationNumber.ifEmpty { "—" },
+                showDivider = true
+            )
+            DetailRow(
+                label = "PROFESSION",
+                value = record.profession.ifEmpty { "—" },
+                showDivider = true
+            )
+            DetailRow(
+                label = "AUTHORITY",
+                value = record.authority.ifEmpty { "—" },
+                showDivider = false
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecordDetailErrorContent(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = onRetry) {
+            Text("Retry", color = PrimaryGreen)
         }
     }
 }
@@ -270,7 +329,10 @@ private fun RecordDetailHeader(onBack: () -> Unit, onMenu: () -> Unit) {
 }
 
 @Composable
-private fun LicenseStatusCard(modifier: Modifier = Modifier) {
+private fun LicenseStatusCard(
+    modifier: Modifier = Modifier,
+    status: String = "Active"
+) {
     Surface(
         modifier = modifier.fillMaxHeight(),
         shape = RoundedCornerShape(12.dp),
@@ -308,7 +370,7 @@ private fun LicenseStatusCard(modifier: Modifier = Modifier) {
                         tint = SuccessGreen
                     )
                     Text(
-                        text = "Active",
+                        text = status.ifEmpty { "Active" },
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = SuccessGreen
@@ -320,7 +382,10 @@ private fun LicenseStatusCard(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ExpiryDateCard(modifier: Modifier = Modifier) {
+private fun ExpiryDateCard(
+    modifier: Modifier = Modifier,
+    expiryDate: String = "Dec 2026"
+) {
     Surface(
         modifier = modifier.fillMaxHeight(),
         shape = RoundedCornerShape(12.dp),
@@ -352,7 +417,7 @@ private fun ExpiryDateCard(modifier: Modifier = Modifier) {
                     tint = PrimaryGreen.copy(alpha = 0.6f)
                 )
                 Text(
-                    text = "Dec 2026",
+                    text = expiryDate.ifEmpty { "—" },
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -403,6 +468,17 @@ private fun DetailRow(
     }
 }
 
+private val previewRecord = LicenseRecord(
+    registrationNumber = "MED-12345",
+    fullName = "Dr. Jane Doe",
+    photoUrl = null,
+    profession = "General Practitioner",
+    authority = "Medical Council",
+    licenseStatus = "Active",
+    expiryDate = "Dec 2026",
+    subtitle = "Medical Professional ID"
+)
+
 @Preview(showBackground = true)
 @Composable
 private fun RecordDetailScreenPreview() {
@@ -411,7 +487,8 @@ private fun RecordDetailScreenPreview() {
             registrationNumber = "MED-12345",
             onBack = {},
             onMenu = {},
-            onProceedToVerification = {}
+            onProceedToVerification = { _, _ -> },
+            recordOverride = previewRecord
         )
     }
 }

@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile.feature.scan.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,13 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,18 +40,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
-import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
-import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
 
 /**
  * Presentation-only screen matching `ui-designs/manually_license_entry/code.html`.
  */
 @Composable
-fun ManualLicenseEntryScreen(
+fun ManualEntryScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onVerifyLicense: (String) -> Unit = {},
-    viewModel: ManualLicenseEntryViewModel = hiltViewModel()
+    viewModel: ManualEntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -222,9 +217,9 @@ private fun ManualEntryHeader(onBack: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-private fun ManualLicenseEntryScreenPreview() {
+private fun ManualEntryScreenPreview() {
     ChprbnTheme {
-        ManualLicenseEntryScreen()
+        ManualEntryScreen()
     }
 }
 

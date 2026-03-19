@@ -11,7 +11,7 @@ import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
-import ng.com.chprbn.mobile.feature.scan.presentation.ManualLicenseEntryScreen
+import ng.com.chprbn.mobile.feature.scan.presentation.ManualEntryScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.RecordDetailScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
@@ -241,7 +241,7 @@ fun AppNavHost() {
             )
         }
         composable(Routes.ManualLicenseEntry) {
-            ManualLicenseEntryScreen(
+            ManualEntryScreen(
                 onBack = { navController.popBackStack() },
                 onVerifyLicense = { enteredLicense ->
                     navController.navigate(Routes.recordDetailRoute(enteredLicense))
@@ -275,11 +275,11 @@ fun AppNavHost() {
                     navController.popBackStack(Routes.Scan, inclusive = true)
                 },
                 onMenu = { /* TODO: overflow menu */ },
-                onProceedToVerification = {
+                onProceedToVerification = { practitionerName, regNumber ->
                     navController.navigate(
                         Routes.verificationFormRoute(
-                            "Dr. Jane Doe",
-                            registrationNumber
+                            practitionerName,
+                            regNumber
                         )
                     )
                 }
