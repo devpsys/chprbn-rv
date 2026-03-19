@@ -12,6 +12,10 @@ import ng.com.chprbn.mobile.feature.scan.data.api.ScanApiService
 import ng.com.chprbn.mobile.feature.scan.data.local.LicenseRecordDao
 import ng.com.chprbn.mobile.feature.scan.data.local.ScanDatabase
 import ng.com.chprbn.mobile.feature.scan.data.repository.ScanRepositoryImpl
+import ng.com.chprbn.mobile.feature.scan.data.source.ApiLicenseRecordRemoteSource
+import ng.com.chprbn.mobile.feature.scan.data.source.CompositeLicenseRecordRemoteSource
+import ng.com.chprbn.mobile.feature.scan.data.source.FakeLicenseRecordRemoteSource
+import ng.com.chprbn.mobile.feature.scan.data.source.LicenseRecordRemoteSource
 import ng.com.chprbn.mobile.feature.scan.domain.repository.ScanRepository
 import retrofit2.Retrofit
 import javax.inject.Singleton
@@ -40,5 +44,13 @@ abstract class ScanModule {
         @Singleton
         fun provideScanApiService(retrofit: Retrofit): ScanApiService =
             retrofit.create(ScanApiService::class.java)
+
+        @Provides
+        @Singleton
+        fun provideLicenseRecordRemoteSource(
+            api: ApiLicenseRecordRemoteSource,
+            fake: FakeLicenseRecordRemoteSource
+        ): LicenseRecordRemoteSource =
+            CompositeLicenseRecordRemoteSource(api, fake)
     }
 }

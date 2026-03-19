@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.material3.CircularProgressIndicator
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
@@ -823,8 +824,13 @@ private fun LicenseStatusCard(
             )
             Surface(
                 shape = RoundedCornerShape(999.dp),
-                color = SuccessGreen.copy(alpha = 0.2f),
-                border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.4f))
+                color = if (status == "Active") SuccessGreen.copy(alpha = 0.2f) else ErrorRed.copy(
+                    alpha = 0.2f
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    if (status == "Active") SuccessGreen.copy(alpha = 0.4f) else ErrorRed.copy(alpha = 0.4f)
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -832,16 +838,16 @@ private fun LicenseStatusCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.CheckCircle,
+                        imageVector = if (status == "Active") Icons.Filled.CheckCircle else Icons.Filled.Cancel,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = SuccessGreen
+                        tint = if (status == "Active") SuccessGreen else ErrorRed
                     )
                     Text(
                         text = status.ifEmpty { "Active" },
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = SuccessGreen
+                        color = if (status == "Active") SuccessGreen else ErrorRed
                     )
                 }
             }
