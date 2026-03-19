@@ -14,6 +14,9 @@ import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -41,7 +44,9 @@ class AuthRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body() ?: return AuthResult.Error("Empty response from server.")
 
-                val domainUser = body.toDomainUser()
+                val domainUser = body.toDomainUser().copy(
+                    lastLoginAt = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date())
+                )
                 // Cache authenticated user locally on success.
                 withContext(Dispatchers.IO) { userDao.upsertUser(domainUser.toEntity()) }
                 AuthResult.Success(domainUser)

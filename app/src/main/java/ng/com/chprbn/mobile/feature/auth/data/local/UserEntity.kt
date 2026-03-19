@@ -22,6 +22,8 @@ data class UserEntity(
     val userPhoto: String?,
     val role: String? = null,
     val staffId: String? = null,
-    val unit: String? = null
+    val unit: String? = null,
+    val organization: String? = null,
+    val lastLoginAt: String? = null
 )
 

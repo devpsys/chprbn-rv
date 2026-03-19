@@ -23,8 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -40,11 +42,17 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 @Composable
 fun SplashScreen(
     modifier: Modifier = Modifier,
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {},
+    viewModel: SplashViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
-        delay(2500L)
-        onNavigateToLogin()
+    val destination by viewModel.destination.collectAsStateWithLifecycle(null)
+    LaunchedEffect(destination) {
+        when (destination) {
+            SplashDestination.Dashboard -> onNavigateToDashboard()
+            SplashDestination.Login -> onNavigateToLogin()
+            null -> { /* still loading */ }
+        }
     }
     Box(
         modifier = modifier

@@ -14,7 +14,9 @@ fun UserDto.toDomain(): User = User(
     userPhoto = userPhoto,
     role = role,
     staffId = staffId,
-    unit = unit
+    unit = unit,
+    organization = organization,
+    lastLoginAt = lastLoginAt
 )
 
 fun LoginResponseDto.toDomainUser(): User = User(
@@ -26,7 +28,9 @@ fun LoginResponseDto.toDomainUser(): User = User(
     userPhoto = user.userPhoto,
     role = user.role,
     staffId = user.staffId,
-    unit = user.unit
+    unit = user.unit,
+    organization = user.organization,
+    lastLoginAt = user.lastLoginAt
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -35,7 +39,12 @@ fun User.toEntity(): UserEntity = UserEntity(
     fullName = fullName,
     accessToken = accessToken,
     permissions = permissions,
-    userPhoto = userPhoto
+    userPhoto = userPhoto,
+    role = role,
+    staffId = staffId,
+    unit = unit,
+    organization = organization,
+    lastLoginAt = lastLoginAt
 )
 
 fun UserEntity.toDomain(): User = User(
@@ -47,6 +56,8 @@ fun UserEntity.toDomain(): User = User(
     userPhoto = userPhoto,
     role = role,
     staffId = staffId,
-    unit = unit
+    unit = unit,
+    organization = organization,
+    lastLoginAt = lastLoginAt
 )
 

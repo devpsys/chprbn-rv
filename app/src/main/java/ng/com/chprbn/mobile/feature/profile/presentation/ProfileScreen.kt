@@ -33,7 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -47,9 +51,12 @@ import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
+import ng.com.chprbn.mobile.feature.auth.domain.model.User
+import ng.com.chprbn.mobile.feature.profile.presentation.ProfileUiState
 
 /**
  * Profile screen matching ui-designs/user_profile_updated/code.html.
+ * Loads user from local cache; logout clears session and triggers onLogout to navigate to login.
  */
 @Composable
 fun ProfileScreen(
@@ -63,8 +70,13 @@ fun ProfileScreen(
     onVerified: () -> Unit = {},
     onScanQr: () -> Unit = {},
     onSync: () -> Unit = {},
-    onProfile: () -> Unit = {}
+    onProfile: () -> Unit = {},
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(state) {
+        if (state is ProfileUiState.LoggedOut) onLogout()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -78,11 +90,24 @@ fun ProfileScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 96.dp)
             ) {
-                ProfileHeroSection(onEditProfile = onEditProfile)
-                AccountDetailsSection()
+                when (val s = state) {
+                    is ProfileUiState.Success -> {
+                        ProfileHeroSection(user = s.user, onEditProfile = onEditProfile)
+                        AccountDetailsSection(user = s.user)
+                    }
+
+                    is ProfileUiState.Loading,
+                    is ProfileUiState.Error -> {
+                        ProfileHeroSection(user = null, onEditProfile = onEditProfile)
+                        AccountDetailsSection(user = null)
+                    }
+
+                    is ProfileUiState.LoggedOut -> { /* onLogout will navigate */
+                    }
+                }
                 SecurityAndSessionSection(
                     onChangePassword = onChangePassword,
-                    onLogout = onLogout
+                    onLogout = { viewModel.logout() }
                 )
             }
         }
@@ -147,7 +172,9 @@ private fun ProfileHeader(
 }
 
 @Composable
-private fun ProfileHeroSection(onEditProfile: () -> Unit) {
+private fun ProfileHeroSection(user: User? = null, onEditProfile: () -> Unit) {
+    val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "John Smith"
+    val role = user?.role?.takeIf { it.isNotBlank() } ?: "Field Officer"
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -194,13 +221,13 @@ private fun ProfileHeroSection(onEditProfile: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "John Smith",
-                style = MaterialTheme.typography.headlineMedium,
+                text = displayName,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Field Officer",
+                text = role,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = PrimaryGreen.copy(alpha = 0.7f)
@@ -210,7 +237,10 @@ private fun ProfileHeroSection(onEditProfile: () -> Unit) {
 }
 
 @Composable
-private fun AccountDetailsSection() {
+private fun AccountDetailsSection(user: User? = null) {
+    val organization = user?.organization?.takeIf { it.isNotBlank() } ?: "Health Council"
+    val email = user?.email?.takeIf { it.isNotBlank() } ?: "john.s@regulator.gov"
+    val lastLogin = user?.lastLoginAt?.takeIf { it.isNotBlank() } ?: "Today, 10:30 AM"
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -227,17 +257,17 @@ private fun AccountDetailsSection() {
             AccountDetailRow(
                 icon = Icons.Outlined.Business,
                 label = "Organization",
-                value = "Health Council"
+                value = organization
             )
             AccountDetailRow(
                 icon = Icons.Outlined.Email,
                 label = "Email Address",
-                value = "john.s@regulator.gov"
+                value = email
             )
             AccountDetailRow(
                 icon = Icons.Filled.History,
                 label = "Last Login",
-                value = "Today, 10:30 AM"
+                value = lastLogin
             )
         }
     }

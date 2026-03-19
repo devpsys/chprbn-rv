@@ -16,5 +16,7 @@ fun ProfileResponseDto.toDomain(accessToken: String): User = User(
     userPhoto = userPhoto,
     role = role,
     staffId = staffId,
-    unit = unit
+    unit = unit,
+    organization = organization,
+    lastLoginAt = lastLoginAt
 )

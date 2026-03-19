@@ -8,6 +8,8 @@ data class UserDto(
     val userPhoto: String? = null,
     val role: String? = null,
     val staffId: String? = null,
-    val unit: String? = null
+    val unit: String? = null,
+    val organization: String? = null,
+    val lastLoginAt: String? = null
 )
 

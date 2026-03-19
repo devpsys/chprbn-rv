@@ -14,10 +14,9 @@ class AuthSeedCallback : RoomDatabase.Callback() {
     override fun onCreate(db: SupportSQLiteDatabase) {
         super.onCreate(db)
 
-        // Store permissions as JSON string because we use a Gson-backed TypeConverter.
-        // Table schema includes role, staffId, unit (nullable).
+        // Table schema includes role, staffId, unit, organization, lastLoginAt (nullable).
         val sql = """
-            INSERT OR IGNORE INTO auth_user(id, email, fullName, accessToken, permissions, userPhoto, role, staffId, unit)
+            INSERT OR IGNORE INTO auth_user(id, email, fullName, accessToken, permissions, userPhoto, role, staffId, unit, organization, lastLoginAt)
             VALUES (
               'offline-test-user',
               'offline@chprbn.gov.ng',
@@ -27,7 +26,9 @@ class AuthSeedCallback : RoomDatabase.Callback() {
               NULL,
               'Field Officer',
               '44920',
-              'Unit 7B'
+              'Unit 7B',
+              'Health Council',
+              'Today, 10:30 AM'
             )
         """.trimIndent()
 

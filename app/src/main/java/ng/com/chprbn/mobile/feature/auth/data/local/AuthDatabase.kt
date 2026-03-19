@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [UserEntity::class],
-    version = 1,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(JsonStringListTypeConverter::class)

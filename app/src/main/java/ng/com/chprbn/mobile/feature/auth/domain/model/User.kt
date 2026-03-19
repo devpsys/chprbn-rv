@@ -17,6 +17,10 @@ data class User(
     /** Staff ID for display (e.g. "44920"). */
     val staffId: String? = null,
     /** Unit for display (e.g. "Unit 7B"). */
-    val unit: String? = null
+    val unit: String? = null,
+    /** Organization for profile (e.g. "Health Council"). */
+    val organization: String? = null,
+    /** Last login display (e.g. "Today, 10:30 AM"); set on login success. */
+    val lastLoginAt: String? = null
 )
 

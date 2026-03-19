@@ -37,6 +37,11 @@ fun AppNavHost() {
                     navController.navigate(Routes.Login) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
+                },
+                onNavigateToDashboard = {
+                    navController.navigate(Routes.Dashboard) {
+                        popUpTo(Routes.Splash) { inclusive = true }
+                    }
                 }
             )
         }
@@ -88,7 +93,11 @@ fun AppNavHost() {
                 onMenu = { /* TODO: overflow menu */ },
                 onEditProfile = { /* TODO: edit profile */ },
                 onChangePassword = { /* TODO */ },
-                onLogout = { /* TODO */ },
+                onLogout = {
+                    navController.navigate(Routes.Login) {
+                        popUpTo(Routes.Splash) { inclusive = true }
+                    }
+                },
                 onHome = {
                     if (navController.currentDestination?.route != Routes.Dashboard) {
                         navController.navigate(Routes.Dashboard) {
