@@ -242,7 +242,10 @@ fun AppNavHost() {
         }
         composable(Routes.ManualLicenseEntry) {
             ManualEntryScreen(
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    // Pop QrScanScreen as well so we return to the screen before scan
+                    navController.popBackStack(Routes.Scan, inclusive = true)
+                },
                 onVerifyLicense = { enteredLicense ->
                     navController.navigate(Routes.recordDetailRoute(enteredLicense))
                 }
@@ -282,6 +285,11 @@ fun AppNavHost() {
                             regNumber
                         )
                     )
+                },
+                onManualEntry = {
+                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
+                        navController.navigate(Routes.ManualLicenseEntry)
+                    }
                 }
             )
         }

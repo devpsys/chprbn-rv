@@ -21,9 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.PersonSearch
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +66,7 @@ fun RecordDetailScreen(
     onBack: () -> Unit = {},
     onMenu: () -> Unit = {},
     onProceedToVerification: (practitionerName: String, registrationNumber: String) -> Unit = { _, _ -> },
+    onManualEntry: () -> Unit = {},
     viewModel: RecordDetailViewModel = hiltViewModel(),
     recordOverride: LicenseRecord? = null
 ) {
@@ -72,7 +76,8 @@ fun RecordDetailScreen(
     }
 
     val record = recordOverride ?: (state as? RecordDetailUiState.Success)?.record
-    val digitalLicenseId = record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
+    val digitalLicenseId =
+        record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
 
     Box(
         modifier = modifier
@@ -90,18 +95,13 @@ fun RecordDetailScreen(
             ) {
                 when {
                     record != null -> RecordDetailContent(record = record)
-                    state is RecordDetailUiState.Loading -> Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = PrimaryGreen)
-                    }
-                    state is RecordDetailUiState.NotFound -> RecordDetailErrorContent(
-                        message = "License record not found.",
-                        onRetry = { viewModel.retry(registrationNumber) }
+                    state is RecordDetailUiState.Loading -> RecordDetailLoadingContent()
+                    state is RecordDetailUiState.NotFound -> RecordDetailNoRecordContent(
+                        registrationNumber = registrationNumber,
+                        onRetry = { viewModel.retry(registrationNumber) },
+                        onManualEntry = onManualEntry
                     )
+
                     state is RecordDetailUiState.Error -> RecordDetailErrorContent(
                         message = (state as RecordDetailUiState.Error).message,
                         onRetry = { viewModel.retry(registrationNumber) }
@@ -125,7 +125,12 @@ fun RecordDetailScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(onClick = { onProceedToVerification(record.fullName, record.registrationNumber) }),
+                                .clickable(onClick = {
+                                    onProceedToVerification(
+                                        record.fullName,
+                                        record.registrationNumber
+                                    )
+                                }),
                             shape = RoundedCornerShape(12.dp),
                             color = PrimaryGreen
                         ) {
@@ -282,6 +287,321 @@ private fun RecordDetailErrorContent(
         TextButton(onClick = onRetry) {
             Text("Retry", color = PrimaryGreen)
         }
+    }
+}
+
+@Composable
+private fun RecordDetailLoadingContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        // Profile skeleton with spinning border
+        Box(
+            modifier = Modifier.size(128.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val borderColor = PrimaryGreen.copy(alpha = 0.2f)
+            val progressColor = PrimaryGreen
+            CircularProgressIndicator(
+                color = progressColor,
+                strokeWidth = 4.dp,
+                modifier = Modifier
+                    .matchParentSize()
+            )
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.VerifiedUser,
+                    contentDescription = null,
+                    tint = PrimaryGreen.copy(alpha = 0.5f),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+
+        // Text skeletons
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .height(24.dp)
+                    .then(Modifier)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            )
+            Box(
+                modifier = Modifier
+                    .height(18.dp)
+                    .then(Modifier)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+            )
+        }
+
+        // Progress card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Verification in progress",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "60%",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(PrimaryGreen)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Event,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Connecting to national database...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Detail skeleton section
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "LICENSE DETAILS",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryGreen.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+            )
+            repeat(3) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.05f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(14.dp)
+                                .then(Modifier)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .height(14.dp)
+                                .then(Modifier)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordDetailNoRecordContent(
+    registrationNumber: String,
+    onRetry: () -> Unit,
+    onManualEntry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        // Illustration
+        Box(modifier = Modifier.size(192.dp), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(192.dp)
+                    .clip(CircleShape)
+                    .background(PrimaryGreen.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(128.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryGreen.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.PersonSearch,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
+            }
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.background,
+                border = BorderStroke(2.dp, PrimaryGreen.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.Cancel,
+                        contentDescription = null,
+                        tint = Color.Red.copy(alpha = 0.9f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = "No record found",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = if (registrationNumber.isNotBlank()) {
+                "We couldn't find a practitioner matching license \"$registrationNumber\". Please try scanning again or enter the details manually."
+            } else {
+                "We couldn't find a practitioner matching this license number. Please try scanning again or enter the details manually."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clickable(onClick = onRetry),
+                shape = RoundedCornerShape(12.dp),
+                color = PrimaryGreen,
+                shadowElevation = 4.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.QrCodeScanner,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = "Try Again",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clickable(onClick = onManualEntry),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Manual Entry",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = "Need help with verification?",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 
