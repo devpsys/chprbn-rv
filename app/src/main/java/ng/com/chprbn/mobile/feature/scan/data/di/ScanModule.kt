@@ -32,6 +32,7 @@ abstract class ScanModule {
         @Singleton
         fun provideScanDatabase(@ApplicationContext context: Context): ScanDatabase =
             Room.databaseBuilder(context, ScanDatabase::class.java, "scan.db")
+                .addMigrations(ScanDatabase.MIGRATION_2_3)
                 .fallbackToDestructiveMigration()
                 .build()
 

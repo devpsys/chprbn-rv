@@ -5,14 +5,16 @@ import ng.com.chprbn.mobile.feature.verified.data.local.VerifiedLicenseEntity
 import ng.com.chprbn.mobile.feature.verified.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.verified.domain.model.VerifiedLicense
 
-private fun SyncStatus.toDbValue(): String = when (this) {
+internal fun SyncStatus.toDbValue(): String = when (this) {
     SyncStatus.Pending -> "Pending"
     SyncStatus.Synced -> "Synced"
+    SyncStatus.Failed -> "Failed"
 }
 
-private fun String.toSyncStatus(): SyncStatus = when (this) {
+internal fun String.toSyncStatus(): SyncStatus = when (this) {
     "Pending" -> SyncStatus.Pending
     "Synced" -> SyncStatus.Synced
+    "Failed" -> SyncStatus.Failed
     else -> SyncStatus.Pending
 }
 
@@ -29,7 +31,9 @@ fun VerifiedLicenseEntity.toDomain(): VerifiedLicense = VerifiedLicense(
     verificationLocation = verificationLocation,
     practitionerPresent = practitionerPresent,
     remark = remark,
-    syncStatus = syncStatus.toSyncStatus()
+    syncStatus = syncStatus.toSyncStatus(),
+    lastSyncAttempt = lastSyncAttempt,
+    syncError = syncError
 )
 
 fun VerifiedLicense.toEntity(): VerifiedLicenseEntity = VerifiedLicenseEntity(
@@ -45,7 +49,9 @@ fun VerifiedLicense.toEntity(): VerifiedLicenseEntity = VerifiedLicenseEntity(
     practitionerPresent = practitionerPresent,
     remark = remark,
     verifiedAt = verifiedAt,
-    syncStatus = syncStatus.toDbValue()
+    syncStatus = syncStatus.toDbValue(),
+    lastSyncAttempt = lastSyncAttempt,
+    syncError = syncError
 )
 
 /**
@@ -71,6 +77,8 @@ fun LicenseRecord.toVerifiedLicenseEntity(
     practitionerPresent = practitionerPresent,
     remark = remark,
     verifiedAt = verifiedAt,
-    syncStatus = syncStatus.toDbValue()
+    syncStatus = syncStatus.toDbValue(),
+    lastSyncAttempt = null,
+    syncError = null
 )
 

@@ -43,6 +43,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,23 +64,27 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
+import ng.com.chprbn.mobile.feature.sync.domain.model.SyncRecord
+import ng.com.chprbn.mobile.feature.verified.domain.model.SyncStatus
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
- * Presentation-only implementation of the `sync_status_updated` design.
+ * Sync hub: loads verified rows from local DB, shows counts, and runs upload use cases.
  */
 @Composable
 fun SyncScreen(
     modifier: Modifier = Modifier,
+    viewModel: SyncViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onRefresh: () -> Unit = {},
-    onSyncAll: () -> Unit = {},
-    onRetryFailed: () -> Unit = {},
     onViewAllHistory: () -> Unit = {},
     onHome: () -> Unit = {},
     onVerified: () -> Unit = {},
     onScanQr: () -> Unit = {},
     onProfile: () -> Unit = {}
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -88,7 +94,7 @@ fun SyncScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            SyncHeader(onBack = onBack, onRefresh = onRefresh)
+            SyncHeader(onBack = onBack, onRefresh = { viewModel.refresh() })
 
             Column(
                 modifier = Modifier
@@ -96,16 +102,52 @@ fun SyncScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
-                SyncProgressSection()
-                Spacer(modifier = Modifier.height(16.dp))
-                SyncStatsGrid()
-                Spacer(modifier = Modifier.height(16.dp))
-                SyncActionsSection(
-                    onSyncAll = onSyncAll,
-                    onRetryFailed = onRetryFailed
+                if (uiState.error != null) {
+                    Text(
+                        text = uiState.error!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFC62828),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                if (uiState.isLoading && uiState.records.isEmpty()) {
+                    Text(
+                        text = "Loading sync status…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PrimaryGreen.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+                SyncProgressSection(
+                    progress = uiState.syncProgress,
+                    lastSyncLabel = viewModel.formatRelativeLastSync(uiState.lastSuccessfulSyncMillis)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                SyncRecentStatusSection(onViewAll = onViewAllHistory)
+                SyncStatsGrid(
+                    total = uiState.total.toString(),
+                    synced = uiState.syncedCount.toString(),
+                    pending = uiState.pendingCount.toString(),
+                    failed = uiState.failedCount.toString()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                SyncActionsSection(
+                    actionsEnabled = !uiState.isSyncing,
+                    onSyncAll = { viewModel.syncAll() },
+                    onRetryFailed = { viewModel.retryFailed() }
+                )
+                if (uiState.lastBatchSummary != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = uiState.lastBatchSummary!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = PrimaryGreen.copy(alpha = 0.8f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                SyncRecentStatusSection(
+                    records = uiState.records,
+                    onViewAll = onViewAllHistory
+                )
                 Spacer(modifier = Modifier.height(96.dp))
             }
         }
@@ -167,7 +209,10 @@ private fun SyncHeader(
 }
 
 @Composable
-private fun SyncProgressSection() {
+private fun SyncProgressSection(
+    progress: Float,
+    lastSyncLabel: String
+) {
     val isConnected = rememberConnectivityStatus()
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -210,12 +255,11 @@ private fun SyncProgressSection() {
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
 
-                    // Foreground progress arc at 89%
-                    val progress = 0.89f
+                    val p = progress.coerceIn(0f, 1f)
                     drawArc(
                         color = PrimaryGreen,
                         startAngle = -90f,
-                        sweepAngle = 360f * progress,
+                        sweepAngle = 360f * p,
                         useCenter = false,
                         topLeft = topLeft,
                         size = arcSize,
@@ -223,14 +267,15 @@ private fun SyncProgressSection() {
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val pct = (progress.coerceIn(0f, 1f) * 100).toInt()
                     Text(
-                        text = "89%",
+                        text = "$pct%",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
                     )
                     Text(
-                        text = "COMPLETE",
+                        text = "SYNCED",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen.copy(alpha = 0.7f)
@@ -276,7 +321,7 @@ private fun SyncProgressSection() {
             }
 
             Text(
-                text = if (isConnected) "Last synced 2 minutes ago" else "Waiting for connection…",
+                text = if (isConnected) lastSyncLabel else "Waiting for connection…",
                 style = MaterialTheme.typography.bodySmall,
                 color = PrimaryGreen.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 6.dp)
@@ -286,29 +331,50 @@ private fun SyncProgressSection() {
 }
 
 @Composable
-private fun SyncStatsGrid() {
-    Row(
+private fun SyncStatsGrid(
+    total: String,
+    synced: String,
+    pending: String,
+    failed: String
+) {
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        SyncStatCard(
-            modifier = Modifier.weight(1f),
-            label = "Total",
-            value = "45",
-            valueColor = PrimaryGreen
-        )
-        SyncStatCard(
-            modifier = Modifier.weight(1f),
-            label = "Synced",
-            value = "40",
-            valueColor = PrimaryGreen
-        )
-        SyncStatCard(
-            modifier = Modifier.weight(1f),
-            label = "Pending",
-            value = "5",
-            valueColor = Color(0xFFC62828)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SyncStatCard(
+                modifier = Modifier.weight(1f),
+                label = "Total",
+                value = total,
+                valueColor = PrimaryGreen
+            )
+            SyncStatCard(
+                modifier = Modifier.weight(1f),
+                label = "Synced",
+                value = synced,
+                valueColor = PrimaryGreen
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SyncStatCard(
+                modifier = Modifier.weight(1f),
+                label = "Pending",
+                value = pending,
+                valueColor = Color(0xFFEF6C00)
+            )
+            SyncStatCard(
+                modifier = Modifier.weight(1f),
+                label = "Failed",
+                value = failed,
+                valueColor = Color(0xFFC62828)
+            )
+        }
     }
 }
 
@@ -348,6 +414,7 @@ private fun SyncStatCard(
 
 @Composable
 private fun SyncActionsSection(
+    actionsEnabled: Boolean,
     onSyncAll: () -> Unit,
     onRetryFailed: () -> Unit
 ) {
@@ -357,6 +424,7 @@ private fun SyncActionsSection(
     ) {
         Button(
             onClick = onSyncAll,
+            enabled = actionsEnabled,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -378,6 +446,7 @@ private fun SyncActionsSection(
         }
         Button(
             onClick = onRetryFailed,
+            enabled = actionsEnabled,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.outlinedButtonColors(
@@ -402,8 +471,15 @@ private fun SyncActionsSection(
 
 @Composable
 private fun SyncRecentStatusSection(
+    records: List<SyncRecord>,
     onViewAll: () -> Unit
 ) {
+    val timeFormat = remember {
+        SimpleDateFormat("h:mm a", Locale.getDefault())
+    }
+    val recent = remember(records) {
+        records.sortedByDescending { it.verifiedAt }.take(12)
+    }
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -429,34 +505,62 @@ private fun SyncRecentStatusSection(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SyncStatusItem(
-                iconBackground = Color(0xFFE8F5E9),
-                iconTint = SuccessGreen,
-                icon = Icons.Filled.CheckCircle,
-                title = "Record #8829-B",
-                subtitle = "Successfully uploaded to Central Registry",
-                time = "10:45 AM"
-            )
-            SyncStatusItem(
-                iconBackground = Color(0xFFE8F5E9),
-                iconTint = SuccessGreen,
-                icon = Icons.Filled.CheckCircle,
-                title = "Record #8830-A",
-                subtitle = "Successfully uploaded to Central Registry",
-                time = "10:42 AM"
-            )
-            SyncStatusItem(
-                iconBackground = Color(0xFFFFEBEE),
-                iconTint = Color(0xFFC62828),
-                icon = Icons.Filled.Error,
-                title = "Record #8831-C",
-                subtitle = "Network timeout during transmission",
-                time = "09:15 AM",
-                borderColor = Color(0xFFFFCDD2)
-            )
+            if (recent.isEmpty()) {
+                Text(
+                    text = "No verified records yet. Complete a verification to see it here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PrimaryGreen.copy(alpha = 0.6f)
+                )
+            } else {
+                recent.forEach { record ->
+                    val (bg, tint, icon, border, subtitle) = when (record.syncStatus) {
+                        SyncStatus.Synced -> Quintuple(
+                            Color(0xFFE8F5E9),
+                            SuccessGreen,
+                            Icons.Filled.CheckCircle,
+                            PrimaryGreen.copy(alpha = 0.05f),
+                            "Synced to central registry"
+                        )
+
+                        SyncStatus.Pending -> Quintuple(
+                            Color(0xFFFFF3E0),
+                            Color(0xFFEF6C00),
+                            Icons.Filled.CloudSync,
+                            PrimaryGreen.copy(alpha = 0.05f),
+                            "Waiting to upload"
+                        )
+
+                        SyncStatus.Failed -> Quintuple(
+                            Color(0xFFFFEBEE),
+                            Color(0xFFC62828),
+                            Icons.Filled.Error,
+                            Color(0xFFFFCDD2),
+                            record.syncError ?: "Sync failed"
+                        )
+                    }
+                    val ts = record.lastSyncAttempt ?: record.verifiedAt
+                    SyncStatusItem(
+                        iconBackground = bg,
+                        iconTint = tint,
+                        icon = icon,
+                        title = record.registrationNumber,
+                        subtitle = subtitle,
+                        time = timeFormat.format(Date(ts)),
+                        borderColor = border
+                    )
+                }
+            }
         }
     }
 }
+
+private data class Quintuple<A, B, C, D, E>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E
+)
 
 @Composable
 private fun SyncStatusItem(

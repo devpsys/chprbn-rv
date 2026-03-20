@@ -128,9 +128,6 @@ fun AppNavHost() {
         composable(Routes.Sync) {
             SyncScreen(
                 onBack = { navController.popBackStack() },
-                onRefresh = { /* TODO: trigger refresh */ },
-                onSyncAll = { /* TODO: sync all */ },
-                onRetryFailed = { /* TODO: retry failed */ },
                 onViewAllHistory = {
                     if (navController.currentDestination?.route != Routes.SyncHistory) {
                         navController.navigate(Routes.SyncHistory)

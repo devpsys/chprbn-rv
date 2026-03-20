@@ -28,6 +28,11 @@ data class VerifiedLicenseEntity(
 
     // Metadata
     val verifiedAt: Long,
-    val syncStatus: String // e.g. "Pending" / "Synced"
+    /** Stored as [ng.com.chprbn.mobile.feature.verified.domain.model.SyncStatus] name. */
+    val syncStatus: String,
+    /** Epoch millis of last upload attempt, or null if never attempted. */
+    val lastSyncAttempt: Long? = null,
+    /** Error message from last failed attempt, or null. */
+    val syncError: String? = null
 )
 

@@ -6,6 +6,7 @@ package ng.com.chprbn.mobile.feature.verified.domain.model
  */
 enum class SyncStatus {
     Pending,
-    Synced
+    Synced,
+    Failed
 }
 

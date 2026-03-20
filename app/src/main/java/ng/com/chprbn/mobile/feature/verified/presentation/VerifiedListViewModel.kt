@@ -33,7 +33,10 @@ data class VerifiedListUiState(
                 VerifiedFilter.All -> practitioners
                 VerifiedFilter.Active -> practitioners.filter { it.status == VerifiedStatus.Active }
                 VerifiedFilter.Expired -> practitioners.filter { it.status == VerifiedStatus.Expired }
-                VerifiedFilter.PendingSync -> practitioners.filter { it.syncStatus == VerifiedSyncStatus.Pending }
+                VerifiedFilter.PendingSync -> practitioners.filter {
+                    it.syncStatus == VerifiedSyncStatus.Pending ||
+                        it.syncStatus == VerifiedSyncStatus.Failed
+                }
             }
             val q = query.trim()
             if (q.isEmpty()) return byFilter
@@ -97,6 +100,7 @@ class VerifiedListViewModel @Inject constructor(
         val sync = when (syncStatus) {
             SyncStatus.Pending -> VerifiedSyncStatus.Pending
             SyncStatus.Synced -> VerifiedSyncStatus.Synced
+            SyncStatus.Failed -> VerifiedSyncStatus.Failed
         }
 
         val expiryText = "• Exp: ${expiryDate}"

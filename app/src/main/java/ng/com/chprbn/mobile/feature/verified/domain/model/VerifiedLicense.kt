@@ -21,6 +21,10 @@ data class VerifiedLicense(
     val verificationLocation: String,
     val practitionerPresent: Boolean,
     val remark: String,
-    val syncStatus: SyncStatus
+    val syncStatus: SyncStatus,
+    /** Epoch millis of last sync attempt (success or failure), if any. */
+    val lastSyncAttempt: Long? = null,
+    /** Server or network error from last failed sync, if any. */
+    val syncError: String? = null
 )
 

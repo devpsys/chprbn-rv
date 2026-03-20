@@ -551,12 +551,22 @@ private fun VerifiedPractitionerRow(
                     style = MaterialTheme.typography.labelSmall,
                     color = PrimaryGreen.copy(alpha = 0.7f)
                 )
-                if (practitioner.syncStatus == VerifiedSyncStatus.Pending) {
-                    Text(
-                        text = "Pending Sync",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = WarningYellow
-                    )
+                when (practitioner.syncStatus) {
+                    VerifiedSyncStatus.Pending -> {
+                        Text(
+                            text = "Pending Sync",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = WarningYellow
+                        )
+                    }
+                    VerifiedSyncStatus.Failed -> {
+                        Text(
+                            text = "Sync failed — retry from Sync tab",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ErrorRed
+                        )
+                    }
+                    VerifiedSyncStatus.Synced -> { /* no extra line */ }
                 }
                 Row(
                     modifier = Modifier.padding(top = 4.dp),
@@ -640,7 +650,7 @@ enum class VerifiedStatus {
 }
 
 enum class VerifiedSyncStatus {
-    Pending, Synced
+    Pending, Synced, Failed
 }
 
 // Static sample data matching the design content.
