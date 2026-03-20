@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CHPRBN Mobile — API Endpoints</title>
+  <style>
+    :root {
+      --bg: #f6f8f7;
+      --card: #ffffff;
+      --text: #1b2d24;
+      --muted: #5a6f63;
+      --accent: #2e7d32;
+      --border: #d4e3db;
+      --code-bg: #eef4ef;
+      --danger-bg: #ffebee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+      margin: 0;
+      padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 3rem;
+      max-width: 960px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 {
+      font-size: 1.75rem;
+      color: var(--accent);
+      margin-top: 0;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 2rem;
+      color: var(--accent);
+    }
+    h3 {
+      font-size: 1.05rem;
+      margin-top: 1.5rem;
+      color: var(--text);
+    }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.95rem; }
+    .toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; }
+    .toc ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+    .endpoint-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .method-path {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .method {
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--accent);
+      color: #fff;
+    }
+    .path { font-family: ui-monospace, monospace; font-size: 0.95rem; word-break: break-all; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.75rem 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #e8f3ea; color: var(--text); }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; }
+    .note {
+      background: #e3f2fd;
+      border-left: 4px solid #1976d2;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.92rem;
+    }
+    .warn {
+      background: var(--danger-bg);
+      border-left: 4px solid #c62828;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.92rem;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+    footer { margin-top: 3rem; font-size: 0.85rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <h1>CHPRBN Mobile — API Endpoints</h1>
+  <p class="muted">API contract reference for the backend team. Sourced from the chprbn_revamp Android app (Retrofit + DTOs). Mock license sources are out of scope.</p>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ul>
+      <li><a href="#conventions">Global conventions</a></li>
+      <li><a href="#base">Base URL</a></li>
+      <li><a href="#auth">Authentication header</a></li>
+      <li><a href="#errors">Standard error payload</a></li>
+      <li><a href="#login">Login</a></li>
+      <li><a href="#profile">Get user profile</a></li>
+      <li><a href="#license">Fetch license record</a></li>
+      <li><a href="#sync">Sync verified record</a></li>
+      <li><a href="#models">Data models</a></li>
+    </ul>
+  </div>
+
+  <h2 id="conventions">Global conventions</h2>
+  <table>
+    <tr><th>Item</th><th>Detail</th></tr>
+    <tr><td>Protocol</td><td>HTTPS</td></tr>
+    <tr><td>JSON body</td><td><code>application/json</code> where applicable</td></tr>
+    <tr><td><code>verified_at</code></td><td>Epoch <strong>milliseconds</strong> (UTC)</td></tr>
+  </table>
+
+  <div class="note">
+    <strong>Naming:</strong> Login DTOs use <strong>camelCase</strong> keys for Gson. License lookup response uses <strong>snake_case</strong> matching <code>LicenseRecordResponseDto</code>. Verified sync request uses <strong>snake_case</strong> via <code>@SerializedName</code>.
+  </div>
+
+  <h2 id="base">Base URL</h2>
+  <p>Configured in app: <code>https://chprbn.gov.ng/api/v1/</code></p>
+  <p>Paths below are relative (e.g. <code>auth/login</code> → full URL ending with <code>/api/v1/auth/login</code>).</p>
+
+  <h2 id="auth">Authentication</h2>
+  <p>For protected routes, use:</p>
+  <pre><code>Authorization: Bearer &lt;access_token&gt;</code></pre>
+  <div class="warn">
+    <strong>Client note:</strong> OkHttp in the app does not yet attach this header globally. Implement server-side auth as required; the mobile client should add an interceptor when endpoints are locked down.
+  </div>
+
+  <h2 id="errors">Standard error payload (login)</h2>
+  <p>Parsed as <code>ApiErrorDto</code>:</p>
+  <pre><code>{
+  "message": "Invalid email or password."
+}</code></pre>
+
+  <hr />
+
+  <h2 id="login">5.1 Login</h2>
+  <div class="endpoint-card">
+    <div class="method-path">
+      <span class="method">POST</span>
+      <span class="path">auth/login</span>
+    </div>
+
+    <h3>Request headers</h3>
+    <table>
+      <tr><th>Header</th><th>Value</th><th>Required</th></tr>
+      <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td>Yes</td></tr>
+    </table>
+
+    <h3>Request body</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>email</code></td><td>string</td><td>Yes</td><td>User email</td></tr>
+      <tr><td><code>password</code></td><td>string</td><td>Yes</td><td>Password</td></tr>
+    </table>
+    <pre><code>{
+  "email": "field.officer@chprbn.gov.ng",
+  "password": "SecurePass!2025"
+}</code></pre>
+
+    <h3>Success <code>200 OK</code></h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Required</th></tr>
+      <tr><td><code>accessToken</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>user</code></td><td>object</td><td>Yes</td></tr>
+    </table>
+    <p><code>user</code> fields: <code>id</code>, <code>email</code>, <code>fullName</code>?, <code>permissions</code>[]?, <code>userPhoto</code>?, <code>role</code>?, <code>staffId</code>?, <code>unit</code>?, <code>organization</code>?, <code>lastLoginAt</code>?</p>
+    <pre><code>{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "usr_8f3c21a9",
+    "email": "field.officer@chprbn.gov.ng",
+    "fullName": "Amina Okonkwo",
+    "permissions": ["verify_practitioner", "sync_records"],
+    "userPhoto": "https://chprbn.gov.ng/media/users/usr_8f3c21a9.jpg",
+    "role": "Senior Field Officer",
+    "staffId": "CHP-44920",
+    "unit": "Lagos North",
+    "organization": "Council for Health Professional Regulation",
+    "lastLoginAt": "2025-03-19T08:30:00Z"
+  }
+}</code></pre>
+
+    <h3>Failure</h3>
+    <p>Common: <code>400</code>, <code>401</code>, <code>403</code>, <code>422</code>, <code>429</code>, <code>500</code>. Body: <code>{ "message": "..." }</code>.</p>
+  </div>
+
+  <h2 id="profile">5.2 Get user profile</h2>
+  <div class="endpoint-card">
+    <div class="method-path">
+      <span class="method">GET</span>
+      <span class="path">dashboard/profile</span>
+    </div>
+    <div class="note">
+      <strong>Mobile status:</strong> Retrofit interface exists; repository currently uses local Room cache only. This documents the intended contract for a future refresh.
+    </div>
+    <h3>Request</h3>
+    <table>
+      <tr><th>Header</th><th>Value</th><th>Required</th></tr>
+      <tr><td><code>Authorization</code></td><td><code>Bearer &lt;access_token&gt;</code></td><td>Recommended</td></tr>
+    </table>
+    <p>No query parameters or body.</p>
+
+    <h3>Success <code>200 OK</code></h3>
+    <p>Same flat shape as login <code>user</code> (<code>ProfileResponseDto</code>).</p>
+    <pre><code>{
+  "id": "usr_8f3c21a9",
+  "email": "field.officer@chprbn.gov.ng",
+  "fullName": "Amina Okonkwo",
+  "permissions": ["verify_practitioner", "sync_records"],
+  "userPhoto": "https://chprbn.gov.ng/media/users/usr_8f3c21a9.jpg",
+  "role": "Senior Field Officer",
+  "staffId": "CHP-44920",
+  "unit": "Lagos North",
+  "organization": "Council for Health Professional Regulation",
+  "lastLoginAt": "2025-03-19T08:30:00Z"
+}</code></pre>
+    <h3>Failure</h3>
+    <p><code>401</code>, <code>403</code>, <code>404</code>, <code>500</code>; body <code>{ "message": "..." }</code>.</p>
+  </div>
+
+  <h2 id="license">5.3 Fetch license record</h2>
+  <div class="endpoint-card">
+    <div class="method-path">
+      <span class="method">GET</span>
+      <span class="path">practitioners/license</span>
+    </div>
+    <p><strong>Real remote source:</strong> <code>ScanApiService</code> / <code>ApiLicenseRecordRemoteSource</code>.</p>
+
+    <h3>Query parameters</h3>
+    <table>
+      <tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>license_number</code></td><td>string</td><td>Yes</td><td>License / registration number</td></tr>
+    </table>
+
+    <h3>Success <code>200 OK</code></h3>
+    <table>
+      <tr><th>Field (JSON)</th><th>Type</th><th>Required</th></tr>
+      <tr><td><code>registration_number</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>full_name</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>photo_url</code></td><td>string</td><td>No</td></tr>
+      <tr><td><code>profession</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>authority</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>license_status</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>expiry_date</code></td><td>string</td><td>Yes</td></tr>
+      <tr><td><code>subtitle</code></td><td>string</td><td>No</td></tr>
+    </table>
+    <pre><code>{
+  "registration_number": "MD-99201-B",
+  "full_name": "Dr. Sarah Jenkins",
+  "photo_url": "https://chprbn.gov.ng/media/practitioners/md99201b.jpg",
+  "profession": "Medical Doctor",
+  "authority": "Medical and Dental Council of Nigeria",
+  "license_status": "Active",
+  "expiry_date": "2026-10-31",
+  "subtitle": "General Practice"
+}</code></pre>
+
+    <div class="warn">
+      <strong>Mobile:</strong> <code>404</code> or any non-success → no record in UI.
+    </div>
+  </div>
+
+  <h2 id="sync">5.4 Sync verified record</h2>
+  <div class="endpoint-card">
+    <div class="method-path">
+      <span class="method">POST</span>
+      <span class="path">practitioners/verified-sync</span>
+    </div>
+    <p>One POST per local verification (sequential uploads).</p>
+
+    <h3>Request body</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>license_number</code></td><td>string</td><td>Yes</td><td>Registration number</td></tr>
+      <tr><td><code>verification_location</code></td><td>string</td><td>Yes</td><td>Verification location</td></tr>
+      <tr><td><code>practitioner_present</code></td><td>boolean</td><td>Yes</td><td>Practitioner present</td></tr>
+      <tr><td><code>remark</code></td><td>string</td><td>Yes</td><td>Remark</td></tr>
+      <tr><td><code>verified_at</code></td><td>int64</td><td>Yes</td><td>Epoch ms UTC</td></tr>
+    </table>
+    <pre><code>{
+  "license_number": "MD-99201-B",
+  "verification_location": "Lagos University Teaching Hospital — Ward 4",
+  "practitioner_present": true,
+  "remark": "ID matched; license card presented.",
+  "verified_at": 1710858600000
+}</code></pre>
+
+    <h3>Success</h3>
+    <p><code>200</code>, <code>201</code>, or <code>204</code>. Body may be empty.</p>
+
+    <h3>Failure</h3>
+    <p><code>400</code>, <code>401</code>, <code>409</code>, <code>422</code>, <code>500</code>. Example:</p>
+    <pre><code>{ "message": "license_number is required" }</code></pre>
+  </div>
+
+  <h2 id="models">Data models summary</h2>
+  <ul>
+    <li><strong>User</strong> — id, email, fullName, permissions, userPhoto, role, staffId, unit, organization, lastLoginAt; login adds accessToken.</li>
+    <li><strong>License record</strong> — snake_case JSON as in license lookup response.</li>
+    <li><strong>Verified license (app)</strong> — full row in Room; API sync sends only verification fields + license_number + verified_at.</li>
+  </ul>
+
+  <footer>
+    Version 1.0 · Generated for CHPRBN mobile (chprbn_revamp) · 2026-03-19
+  </footer>
+</body>
+</html>

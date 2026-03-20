@@ -1,0 +1,440 @@
+openapi: 3.0.3
+info:
+  title: CHPRBN Mobile API
+  description: |
+    HTTP API consumed by the CHPRBN Android mobile application (chprbn_revamp).
+    Field naming reflects mobile DTOs: login uses camelCase; license lookup response uses snake_case;
+    verified sync request uses snake_case.
+  version: 1.0.0
+  contact:
+    name: CHPRBN Engineering
+
+servers:
+  - url: https://chprbn.gov.ng/api/v1
+    description: Production
+  - url: '{baseUrl}'
+    description: Override (e.g. staging)
+    variables:
+      baseUrl:
+        default: https://chprbn.gov.ng/api/v1
+
+tags:
+  - name: Auth
+    description: Authentication
+  - name: Profile
+    description: User profile (dashboard)
+  - name: Practitioners
+    description: License lookup and verified uploads
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticates user; returns access token and embedded user.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              default:
+                value:
+                  email: field.officer@chprbn.gov.ng
+                  password: SecurePass!2025
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                default:
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+                    user:
+                      id: usr_8f3c38aa
+                      email: field.officer@chprbn.gov.ng
+                      fullName: Amina Okonkwo
+                      permissions:
+                        - verify_practitioner
+                        - sync_records
+                      userPhoto: https://chprbn.gov.ng/media/users/usr_8f3c21a9.jpg
+                      role: Senior Field Officer
+                      staffId: CHP-44920
+                      unit: Lagos North
+                      organization: Council for Health Professional Regulation
+                      lastLoginAt: '2025-03-19T08:30:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /dashboard/profile:
+    get:
+      tags: [Profile]
+      summary: Get current user profile
+      description: |
+        Intended for remote profile refresh. Mobile app may use local cache until this is wired.
+      operationId: getDashboardProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+              examples:
+                default:
+                  value:
+                    id: usr_8f3c38aa
+                    email: field.officer@chprbn.gov.ng
+                    fullName: Amina Okonkwo
+                    permissions:
+                      - verify_practitioner
+                    userPhoto: https://chprbn.gov.ng/media/users/usr_8f3c21a9.jpg
+                    role: Senior Field Officer
+                    staffId: CHP-44920
+                    unit: Lagos North
+                    organization: Council for Health Professional Regulation
+                    lastLoginAt: '2025-03-19T08:30:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /practitioners/license:
+    get:
+      tags: [Practitioners]
+      summary: Fetch license record by license number
+      description: |
+        Primary remote source for scan / manual license lookup. Non-2xx or 404 is treated as no record on mobile.
+      operationId: getLicenseRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: license_number
+          in: query
+          required: true
+          description: Practitioner license / registration number (exact match per backend rules).
+          schema:
+            type: string
+          example: MD-99201-B
+      responses:
+        '200':
+          description: License found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseRecordResponse'
+              examples:
+                active:
+                  value:
+                    registration_number: MD-99201-B
+                    full_name: Dr. Sarah Jenkins
+                    photo_url: https://chprbn.gov.ng/media/practitioners/md99201b.jpg
+                    profession: Medical Doctor
+                    authority: Medical and Dental Council of Nigeria
+                    license_status: Active
+                    expiry_date: '2026-10-31'
+                    subtitle: General Practice
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: License not found (mobile treats as empty result)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                default:
+                  value:
+                    message: License not found.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /practitioners/verified-sync:
+    post:
+      tags: [Practitioners]
+      summary: Upload a single verified verification record
+      description: |
+        Mobile sends one request per locally verified row (sequential uploads).
+        Accept 200, 201, or 204; response body may be empty.
+      operationId: syncVerifiedLicense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifiedSyncRequest'
+            examples:
+              default:
+                value:
+                  license_number: MD-99201-B
+                  verification_location: Lagos University Teaching Hospital — Ward 4
+                  practitioner_present: true
+                  remark: ID matched; license card presented.
+                  verified_at: 1710858600000
+      responses:
+        '200':
+          description: Accepted (optional JSON body)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedSyncAccepted'
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedSyncAccepted'
+        '204':
+          description: No content — success
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Conflict (e.g. duplicate policy)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token returned from POST /auth/login as `accessToken`.
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email
+        password:
+          type: string
+          format: password
+          description: Plain password over HTTPS
+
+    LoginResponse:
+      type: object
+      required: [accessToken, user]
+      properties:
+        accessToken:
+          type: string
+          description: JWT or opaque API token
+        user:
+          $ref: '#/components/schemas/UserDto'
+
+    UserDto:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+          description: User identifier
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+          nullable: true
+        permissions:
+          type: array
+          items:
+            type: string
+          default: []
+        userPhoto:
+          type: string
+          format: uri
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        staffId:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        organization:
+          type: string
+          nullable: true
+        lastLoginAt:
+          type: string
+          nullable: true
+          description: ISO-8601 or display string from server
+
+    ProfileResponse:
+      description: Same shape as UserDto (flat profile from GET /dashboard/profile)
+      allOf:
+        - $ref: '#/components/schemas/UserDto'
+
+    LicenseRecordResponse:
+      type: object
+      required:
+        - registration_number
+        - full_name
+        - profession
+        - authority
+        - license_status
+        - expiry_date
+      properties:
+        registration_number:
+          type: string
+          description: License / registration number
+        full_name:
+          type: string
+        photo_url:
+          type: string
+          format: uri
+          nullable: true
+        profession:
+          type: string
+        authority:
+          type: string
+        license_status:
+          type: string
+          description: e.g. Active, Expired
+          example: Active
+        expiry_date:
+          type: string
+          description: Expiry as stored by backend (date or ISO string)
+          example: '2026-10-31'
+        subtitle:
+          type: string
+          nullable: true
+
+    VerifiedSyncRequest:
+      type: object
+      required:
+        - license_number
+        - verification_location
+        - practitioner_present
+        - remark
+        - verified_at
+      properties:
+        license_number:
+          type: string
+        verification_location:
+          type: string
+        practitioner_present:
+          type: boolean
+        remark:
+          type: string
+        verified_at:
+          type: integer
+          format: int64
+          description: Unix epoch milliseconds (UTC)
+
+    VerifiedSyncAccepted:
+      type: object
+      description: Optional success payload; mobile accepts empty body
+      properties:
+        accepted:
+          type: boolean
+        server_id:
+          type: string
+          description: Server-side verification id
+
+    ApiError:
+      type: object
+      description: Best-effort error shape used for login and other endpoints
+      properties:
+        message:
+          type: string
+          nullable: true
+          example: Invalid email or password.
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            message: Invalid request body.
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            message: Authentication required.
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    TooManyRequests:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    InternalServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
