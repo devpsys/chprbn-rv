@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
 import ng.com.chprbn.mobile.feature.profile.domain.usecase.GetUserProfileUseCase
 import javax.inject.Inject
 
@@ -16,7 +17,8 @@ enum class SplashDestination { Dashboard, Login }
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val getUserProfileUseCase: GetUserProfileUseCase
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val authTokenStore: AuthTokenStore
 ) : ViewModel() {
 
     private val _destination = MutableStateFlow<SplashDestination?>(null)
@@ -26,7 +28,13 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             delay(2500L)
             val user = getUserProfileUseCase()
-            _destination.value = if (user != null) SplashDestination.Dashboard else SplashDestination.Login
+            if (user != null) {
+                authTokenStore.setToken(user.accessToken)
+                _destination.value = SplashDestination.Dashboard
+            } else {
+                authTokenStore.clear()
+                _destination.value = SplashDestination.Login
+            }
         }
     }
 }

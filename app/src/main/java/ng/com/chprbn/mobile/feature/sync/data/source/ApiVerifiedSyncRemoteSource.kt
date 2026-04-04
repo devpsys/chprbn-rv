@@ -11,11 +11,14 @@ class ApiVerifiedSyncRemoteSource @Inject constructor(
     override suspend fun uploadVerifiedRecord(request: VerifiedSyncRequestDto): Result<Unit> =
         runCatching {
             val response = api.syncVerifiedLicense(request)
-            if (response.isSuccessful) {
-                Unit
-            } else {
+            if (!response.isSuccessful) {
                 val body = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
                 error(body ?: "HTTP ${response.code()}")
             }
+            val envelope = response.body()
+            if (envelope != null && !envelope.status) {
+                error(envelope.message ?: "Sync rejected.")
+            }
+            Unit
         }
 }

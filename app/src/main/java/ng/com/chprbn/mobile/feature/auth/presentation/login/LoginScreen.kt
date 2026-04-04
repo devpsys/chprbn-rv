@@ -21,7 +21,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Storage
@@ -96,7 +95,7 @@ fun LoginScreen(
     onRequestAccess: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var email by rememberSaveable { mutableStateOf("offline@chprbn.gov.ng") }
+    var username by rememberSaveable { mutableStateOf("OFFLINE-DEMO") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -152,13 +151,13 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email Address") },
-                        placeholder = { Text("practitioner@chprbn.gov.ng") },
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("License number") },
+                        placeholder = { Text("e.g. CH-12345-A") },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.AlternateEmail,
+                                imageVector = Icons.Filled.VerifiedUser,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -167,7 +166,7 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
+                            keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -255,7 +254,7 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .height(56.dp),
                         isLoading = uiState.isLoading,
-                        onClick = { viewModel.signIn(email = email, password = password) }
+                        onClick = { viewModel.signIn(username = username, password = password) }
                     )
                     if (!uiState.errorMessage.isNullOrBlank()) {
                         Text(
@@ -436,11 +435,12 @@ private fun LoginScreenPreview() {
     ChprbnTheme {
         val fakeRepo = remember {
             object : AuthRepository {
-                override suspend fun login(email: String, password: String): AuthResult {
+                override suspend fun login(username: String, password: String): AuthResult {
                     return AuthResult.Success(
                         user = User(
                             id = "preview-user",
-                            email = email.ifEmpty { "preview@chprbn.gov.ng" },
+                            username = username.ifEmpty { "CH-PREVIEW" },
+                            email = "preview@chprbn.gov.ng",
                             fullName = "Preview Practitioner",
                             accessToken = "preview-token",
                             permissions = listOf("auth:login"),

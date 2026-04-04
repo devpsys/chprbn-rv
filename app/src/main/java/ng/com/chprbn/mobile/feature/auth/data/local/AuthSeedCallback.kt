@@ -1,8 +1,8 @@
 package ng.com.chprbn.mobile.feature.auth.data.local
 
+import android.util.Log
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import android.util.Log
 
 /**
  * Seeds the auth DB with a test user for offline login.
@@ -14,11 +14,11 @@ class AuthSeedCallback : RoomDatabase.Callback() {
     override fun onCreate(db: SupportSQLiteDatabase) {
         super.onCreate(db)
 
-        // Table schema includes role, staffId, unit, organization, lastLoginAt (nullable).
         val sql = """
-            INSERT OR IGNORE INTO auth_user(id, email, fullName, accessToken, permissions, userPhoto, role, staffId, unit, organization, lastLoginAt)
+            INSERT OR IGNORE INTO auth_user(id, username, email, fullName, accessToken, permissions, userPhoto, role, staffId, unit, organization, lastLoginAt)
             VALUES (
               'offline-test-user',
+              'OFFLINE-DEMO',
               'offline@chprbn.gov.ng',
               'Sylux Endyusa',
               'offline-token',
@@ -39,4 +39,3 @@ class AuthSeedCallback : RoomDatabase.Callback() {
         }
     }
 }
-

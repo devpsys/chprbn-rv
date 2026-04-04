@@ -6,8 +6,7 @@ import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 import javax.inject.Inject
 
 /**
- * Remote source that calls the real practitioners/license API.
- * Returns null on 404, non-success, or throwable.
+ * Calls GET practitioners/license on the mobile API (envelope + Bearer token).
  */
 class ApiLicenseRecordRemoteSource @Inject constructor(
     private val scanApiService: ScanApiService
@@ -20,7 +19,9 @@ class ApiLicenseRecordRemoteSource @Inject constructor(
             scanApiService.getLicenseRecord(trimmed)
         }.getOrElse { _ -> return null }
         if (!response.isSuccessful || response.code() == 404) return null
-        val body = response.body() ?: return null
-        return body.toDomain()
+        val envelope = response.body() ?: return null
+        if (!envelope.status) return null
+        val data = envelope.data ?: return null
+        return data.toDomain()
     }
 }

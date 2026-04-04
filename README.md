@@ -33,7 +33,7 @@ This app supports **practitioner license verification** workflows: officers sign
 
 | Feature | Summary |
 |--------|---------|
-| **Authentication** | Email/password login against API; session cached in Room; limited offline login when network unavailable and cache exists. |
+| **Authentication** | License number (`username`) + password against mobile API; Sanctum token + `GET user` profile; session cached in Room; limited offline login when network unavailable and cache matches license number. |
 | **Dashboard** | Entry hub for verified list, sync, profile; feature tiles backed by domain/use cases. |
 | **QR scan & manual entry** | CameraX + ML Kit barcode scanning; manual license number entry; navigation to record detail. |
 | **License record retrieval** | Remote lookup via Retrofit; result cached in `scan.db`; composite remote tries API then dev fake data if primary yields nothing. |
@@ -162,7 +162,7 @@ Or use **Run ▸ Run 'app'** with a device/emulator (**minSdk 24**).
 
 The Retrofit base URL is provided in **`AuthDataModule`** (auth feature), currently:
 
-`https://chprbn.gov.ng/api/v1/`
+`https://chprbn.gov.ng/api/v1/mobile/` (see `mobile_api_v1_documentation.html` in repo root)
 
 All feature Retrofit services share this `Retrofit` instance unless refactored.
 
@@ -188,8 +188,9 @@ To use **only** the API in production, replace the binding in `ScanModule.provid
 
 ### Auth
 
-- Login posts to `POST auth/login`; tokens and user cached in **`auth.db`**.  
-- Offline: if the device has no connectivity, login may succeed using a **cached user** for the same email (password not re-validated offline).
+- Login posts to `POST login` (same contract as `POST auth/login`); response includes `data.token`; client then calls `GET user` with `Authorization: Bearer` and maps the envelope `data` to domain. Tokens and profile are cached in **`auth.db`**.  
+- **OkHttp** adds Bearer via [AuthorizationInterceptor](app/src/main/java/ng/com/chprbn/mobile/feature/auth/data/network/AuthorizationInterceptor.kt) using [AuthTokenStore](app/src/main/java/ng/com/chprbn/mobile/feature/auth/data/network/AuthTokenStore.kt) (set on login / splash; cleared on logout).  
+- Offline: login may succeed using a **cached user** for the same **license number** (`username`) without password re-validation.
 
 ### Dashboard
 
@@ -282,12 +283,11 @@ Use short-lived feature branches and pull requests; align with your org’s Git 
 Ideas that fit the current architecture without rewriting layers:
 
 - **WorkManager** (or similar) for **background sync** batches and retry backoff.  
-- **OkHttp interceptor** for `Authorization: Bearer <token>` on all protected routes.  
 - **Token refresh** flow + secure storage (EncryptedSharedPreferences / Keystore).  
 - **Certificate pinning** and stricter TLS for production.  
 - **DB encryption** (SQLCipher) or field-level encryption for highly sensitive PII on device.  
 - **Product flavors** for dev/stage/prod base URLs and toggling `FakeLicenseRecordRemoteSource`.  
-- Wire **GET dashboard/profile** when backend is ready (interface exists; repository may still be cache-only).
+- Optional **remote profile refresh** via `DashboardApiService.getProfile()` (same envelope as `GET user`; dashboard repository is still cache-first today).
 
 ---
 

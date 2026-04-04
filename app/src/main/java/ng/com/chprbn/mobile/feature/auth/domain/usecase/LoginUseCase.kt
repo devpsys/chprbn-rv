@@ -7,8 +7,7 @@ import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
-    suspend operator fun invoke(email: String, password: String): AuthResult {
-        return authRepository.login(email = email, password = password)
+    suspend operator fun invoke(username: String, password: String): AuthResult {
+        return authRepository.login(username = username, password = password)
     }
 }
-

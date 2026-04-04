@@ -1,15 +1,15 @@
 package ng.com.chprbn.mobile.feature.dashboard.data.api
 
-import ng.com.chprbn.mobile.feature.dashboard.data.dto.ProfileResponseDto
+import ng.com.chprbn.mobile.feature.auth.data.api.AuthApiService
+import ng.com.chprbn.mobile.feature.auth.data.dto.ProfileEnvelopeDto
 import retrofit2.Response
 import retrofit2.http.GET
 
 /**
- * Dashboard remote API. Use for profile refresh and future dashboard endpoints.
- * Base URL shared with auth (e.g. https://chprbn.gov.ng/api/v1/).
+ * Dashboard mobile API. [getProfile] returns the same JSON as [AuthApiService.getCurrentUser].
  */
 interface DashboardApiService {
 
     @GET("dashboard/profile")
-    suspend fun getProfile(): Response<ProfileResponseDto>
+    suspend fun getProfile(): Response<ProfileEnvelopeDto>
 }

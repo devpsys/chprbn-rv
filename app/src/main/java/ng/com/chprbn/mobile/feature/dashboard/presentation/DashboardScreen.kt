@@ -231,10 +231,12 @@ fun WelcomeCard(user: User? = null) {
     val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "Officer"
     val role = user?.role?.takeIf { it.isNotBlank() } ?: "Senior Field Officer"
     val idAndUnit = when {
-        user?.staffId != null && user.unit != null -> "ID: ${user.staffId} • ${user.unit}"
-        user?.staffId != null -> "ID: ${user.staffId}"
+        user?.username?.isNotBlank() == true && user.unit != null ->
+            "License: ${user.username} • ${user.unit}"
+
+        user?.username?.isNotBlank() == true -> "License: ${user.username}"
         user?.unit != null -> user.unit
-        else -> "ID: — • Unit —"
+        else -> "License: — • Unit —"
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),

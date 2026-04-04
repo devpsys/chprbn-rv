@@ -27,13 +27,13 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    fun signIn(email: String, password: String) {
-        val trimmedEmail = email.trim()
-        if (trimmedEmail.isBlank() || password.isBlank()) {
+    fun signIn(username: String, password: String) {
+        val trimmedUsername = username.trim()
+        if (trimmedUsername.isBlank() || password.isBlank()) {
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = "Email and access key are required.",
+                    errorMessage = "License number and password are required.",
                     authenticatedUser = null
                 )
             }
@@ -43,7 +43,7 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, errorMessage = null, authenticatedUser = null) }
 
         viewModelScope.launch {
-            when (val result = loginUseCase(email = trimmedEmail, password = password)) {
+            when (val result = loginUseCase(username = trimmedUsername, password = password)) {
                 is AuthResult.Success -> {
                     _uiState.update {
                         it.copy(
@@ -71,4 +71,3 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(authenticatedUser = null) }
     }
 }
-

@@ -15,19 +15,21 @@ import ng.com.chprbn.mobile.feature.auth.data.api.AuthApiService
 import ng.com.chprbn.mobile.feature.auth.data.local.AuthDatabase
 import ng.com.chprbn.mobile.feature.auth.data.local.AuthSeedCallback
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
+import ng.com.chprbn.mobile.feature.auth.data.network.AuthorizationInterceptor
 import ng.com.chprbn.mobile.feature.auth.data.repository.AuthRepositoryImpl
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.AndroidConnectivityChecker
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.ConnectivityChecker
+import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AuthDataModule {
-    private const val BASE_URL = "https://chprbn.gov.ng/api/v1/"
+    /** Mobile API v1 base (see `mobile_api_v1_documentation.html`). */
+    private const val BASE_URL = "https://app.chprbn.gov.ng/api/v1/mobile/"
 
     @Provides
     @Singleton
@@ -35,11 +37,14 @@ object AuthDataModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authorizationInterceptor: AuthorizationInterceptor
+    ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             setLevel(HttpLoggingInterceptor.Level.BODY)
         }
         return OkHttpClient.Builder()
+            .addInterceptor(authorizationInterceptor)
             .addInterceptor(logging)
             .build()
     }
@@ -91,4 +96,3 @@ abstract class AuthRepositoryModule {
     @Binds
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 }
-
