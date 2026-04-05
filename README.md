@@ -33,7 +33,7 @@ This app supports **practitioner license verification** workflows: officers sign
 
 | Feature | Summary |
 |--------|---------|
-| **Authentication** | License number (`username`) + password against mobile API; Sanctum token + `GET user` profile; session cached in Room; limited offline login when network unavailable and cache matches license number. |
+| **Authentication** | Adhoc field-officer accounts: `POST adhoc/login` + `GET adhoc/profile` (Bearer); Sanctum token; session cached in Room; offline login when cache matches **username**. |
 | **Dashboard** | Entry hub for verified list, sync, profile; feature tiles backed by domain/use cases. |
 | **QR scan & manual entry** | CameraX + ML Kit barcode scanning; manual license number entry; navigation to record detail. |
 | **License record retrieval** | Remote lookup via Retrofit; result cached in `scan.db`; composite remote tries API then dev fake data if primary yields nothing. |
@@ -188,9 +188,9 @@ To use **only** the API in production, replace the binding in `ScanModule.provid
 
 ### Auth
 
-- Login posts to `POST login` (same contract as `POST auth/login`); response includes `data.token`; client then calls `GET user` with `Authorization: Bearer` and maps the envelope `data` to domain. Tokens and profile are cached in **`auth.db`**.  
+- Login posts to `POST adhoc/login` (same contract as `POST auth/adhoc/login`); response includes `data.token`; client then calls `GET adhoc/profile` with `Authorization: Bearer` and maps adhoc profile `data` to domain. Tokens and profile are cached in **`auth.db`**.  
 - **OkHttp** adds Bearer via [AuthorizationInterceptor](app/src/main/java/ng/com/chprbn/mobile/feature/auth/data/network/AuthorizationInterceptor.kt) using [AuthTokenStore](app/src/main/java/ng/com/chprbn/mobile/feature/auth/data/network/AuthTokenStore.kt) (set on login / splash; cleared on logout).  
-- Offline: login may succeed using a **cached user** for the same **license number** (`username`) without password re-validation.
+- Offline: login may succeed using a **cached user** for the same **username** without password re-validation.
 
 ### Dashboard
 

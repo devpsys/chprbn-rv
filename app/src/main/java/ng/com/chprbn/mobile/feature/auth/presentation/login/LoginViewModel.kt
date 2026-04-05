@@ -33,7 +33,7 @@ class LoginViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = "License number and password are required.",
+                    errorMessage = "Username and password are required.",
                     authenticatedUser = null
                 )
             }

@@ -238,7 +238,7 @@ private fun ProfileHeroSection(user: User? = null, onEditProfile: () -> Unit) {
 
 @Composable
 private fun AccountDetailsSection(user: User? = null) {
-    val organization = user?.organization?.takeIf { it.isNotBlank() } ?: "Health Council"
+    val organization = user?.organization?.takeIf { it.isNotBlank() } ?: "CHPRBN"
     val email = user?.email?.takeIf { it.isNotBlank() } ?: "john.s@regulator.gov"
     val lastLogin = user?.lastLoginAt?.takeIf { it.isNotBlank() } ?: "Today, 10:30 AM"
     Column(

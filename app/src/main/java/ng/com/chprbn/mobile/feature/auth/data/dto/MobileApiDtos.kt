@@ -14,7 +14,32 @@ data class LoginDataDto(
 
 // endregion
 
-// region Profile — GET /user & GET /dashboard/profile
+// region Adhoc profile — GET /adhoc/profile (Bearer from POST adhoc/login)
+
+data class AdhocProfileEnvelopeDto(
+    val status: Boolean,
+    val message: String? = null,
+    val data: AdhocProfileDataDto? = null
+)
+
+/**
+ * Mobile API v1 adhoc user profile (`data` from GET /adhoc/profile).
+ * Numeric [id] may be serialized as JSON number.
+ */
+data class AdhocProfileDataDto(
+    val id: Double? = null,
+    val name: String,
+    val email: String,
+    val phone: String? = null,
+    val username: String,
+    val status: Int? = null,
+    val role: String? = null,
+    val department: String? = null
+)
+
+// endregion
+
+// region Profile — GET /user & GET /dashboard/profile (practitioner tutor)
 
 data class ProfileEnvelopeDto(
     val status: Boolean,

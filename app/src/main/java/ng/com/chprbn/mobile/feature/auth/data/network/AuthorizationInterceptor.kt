@@ -17,7 +17,8 @@ class AuthorizationInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val path = request.url.encodedPath
-        if (path.endsWith("/login") || path.endsWith("/auth/login")) {
+        // Tutor: …/login, …/auth/login — Adhoc: …/adhoc/login, …/auth/adhoc/login (all end with /login)
+        if (path.endsWith("/login")) {
             return chain.proceed(request)
         }
         val token = authTokenStore.peekToken() ?: return chain.proceed(request)

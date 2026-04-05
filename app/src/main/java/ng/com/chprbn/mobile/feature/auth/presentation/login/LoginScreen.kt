@@ -153,8 +153,8 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("License number") },
-                        placeholder = { Text("e.g. CH-12345-A") },
+                        label = { Text("Username") },
+                        placeholder = { Text("Adhoc account username") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.VerifiedUser,

@@ -131,328 +131,669 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>Mobile API v1</h1>
-            <p>CHPRBN field / tutor mobile integration — authentication, profile, license verification &amp; verified sync</p>
-        </header>
+<div class="container">
+    <header class="header">
+        <h1>Mobile API v1</h1>
+        <p>CHPRBN field / tutor mobile integration — authentication, profile, license verification
+            &amp; verified sync</p>
+    </header>
 
-        <nav class="nav">
-            <ul>
-                <li><a href="#overview">Overview</a></li>
-                <li><a href="#conventions">Conventions</a></li>
-                <li><a href="#auth">Authentication</a></li>
-                <li><a href="#profile">User profile</a></li>
-                <li><a href="#license">License lookup</a></li>
-                <li><a href="#verified-sync">Verified sync</a></li>
-                <li><a href="#errors">Errors</a></li>
-            </ul>
-        </nav>
+    <nav class="nav">
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#conventions">Conventions</a></li>
+            <li><a href="#auth">Authentication</a></li>
+            <li><a href="#adhoc-auth">Adhoc users</a></li>
+            <li><a href="#profile">User profile</a></li>
+            <li><a href="#license">License lookup</a></li>
+            <li><a href="#verified-sync">Verified sync</a></li>
+            <li><a href="#errors">Errors</a></li>
+        </ul>
+    </nav>
 
-        <section class="section" id="overview">
-            <h2>Overview</h2>
-            <p>All endpoints below share this base path (no trailing slash):</p>
-            <div class="endpoint">https://&lt;your-host&gt;/api/v1/mobile</div>
-            <p class="muted" style="margin-top:12px;">Example production host: <span class="inline-code">chprbn.gov.ng</span> → <span class="inline-code">https://chprbn.gov.ng/api/v1/mobile/…</span></p>
-            <div class="alert alert-info">
-                <strong>Login eligibility:</strong> Active practitioners with tutor access (<span class="inline-code">is_tutor</span>) may obtain a token. Credentials use <strong>license number</strong> as username and the account password.
-            </div>
-        </section>
+    <section class="section" id="overview">
+        <h2>Overview</h2>
+        <p>All endpoints below share this base path (no trailing slash):</p>
+        <div class="endpoint">https://&lt;your-host&gt;/api/v1/mobile</div>
+        <p class="muted" style="margin-top:12px;">Example production host: <span
+                class="inline-code">chprbn.gov.ng</span> → <span class="inline-code">https://chprbn.gov.ng/api/v1/mobile/…</span>
+        </p>
+        <div class="alert alert-info">
+            <strong>Login eligibility:</strong> Active practitioners with tutor access (<span
+                class="inline-code">is_tutor</span>) may obtain a token. Credentials use <strong>license
+            number</strong> as username and the account password.
+        </div>
+    </section>
 
-        <section class="section" id="conventions">
-            <h2>Request &amp; response conventions</h2>
-            <h3>Authenticated requests</h3>
-            <p>After login, send the personal access token on every protected call:</p>
-            <div class="code-block">Authorization: Bearer &lt;token&gt;
-Content-Type: application/json
-Accept: application/json</div>
-            <h3>Successful responses (envelope)</h3>
-            <p>Most success payloads use:</p>
-            <div class="code-block">{
-  "status": true,
-  "message": "…",
-  "data": { … }
-}</div>
-            <p class="muted">The <span class="inline-code">data</span> object shape depends on the endpoint (see each section).</p>
-        </section>
+    <section class="section" id="conventions">
+        <h2>Request &amp; response conventions</h2>
+        <h3>Authenticated requests</h3>
+        <p>After login, send the personal access token on every protected call:</p>
+        <div class="code-block">Authorization: Bearer &lt;token&gt;
+            Content-Type: application/json
+            Accept: application/json
+        </div>
+        <h3>Successful responses (envelope)</h3>
+        <p>Most success payloads use:</p>
+        <div class="code-block">{
+            "status": true,
+            "message": "…",
+            "data": { … }
+            }
+        </div>
+        <p class="muted">The <span class="inline-code">data</span> object shape depends on the
+            endpoint (see each section).</p>
+    </section>
 
-        <section class="section" id="auth">
-            <h2>Authentication</h2>
-            <p>Two equivalent routes issue the same Sanctum token:</p>
-            <ul style="margin:10px 0 10px 22px;">
-                <li><span class="inline-code">POST /login</span></li>
-                <li><span class="inline-code">POST /auth/login</span></li>
-            </ul>
+    <section class="section" id="auth">
+        <h2>Authentication</h2>
+        <p>Two equivalent routes issue the same Sanctum token:</p>
+        <ul style="margin:10px 0 10px 22px;">
+            <li><span class="inline-code">POST /login</span></li>
+            <li><span class="inline-code">POST /auth/login</span></li>
+        </ul>
 
-            <h3><span class="method-badge method-post">POST</span> /login &amp; /auth/login</h3>
-            <div class="endpoint">POST /api/v1/mobile/login<br>POST /api/v1/mobile/auth/login</div>
+        <h3><span class="method-badge method-post">POST</span> /login &amp; /auth/login</h3>
+        <div class="endpoint">POST /api/v1/mobile/login<br>POST /api/v1/mobile/auth/login</div>
 
-            <h4>Request body (JSON)</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="inline-code">username</span></td><td>string</td><td>Yes</td><td>Practitioner license number (<span class="inline-code">license_no</span>)</td></tr>
-                        <tr><td><span class="inline-code">password</span></td><td>string</td><td>Yes</td><td>Account password</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <h4>Request body (JSON)</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">username</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Practitioner license number (<span class="inline-code">license_no</span>)
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">password</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Account password</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <h4>Success <span class="inline-code">200</span></h4>
-            <div class="code-block">{
-  "status": true,
-  "message": "login successful",
-  "data": {
-    "token": "1|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  }
-}</div>
+        <h4>Success <span class="inline-code">200</span></h4>
+        <div class="code-block">{
+            "status": true,
+            "message": "login successful",
+            "data": {
+            "token": "1|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            }
+            }
+        </div>
 
-            <h4>Failure</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>HTTP</th><th>When</th><th>Body</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>422</td><td>Missing <span class="inline-code">username</span> or <span class="inline-code">password</span></td><td><span class="inline-code">{"message":"The username field is required."}</span> (first validation error)</td></tr>
-                        <tr><td>401</td><td>Unknown user / wrong password</td><td><span class="inline-code">{"message":"Invalid credentials"}</span></td></tr>
-                        <tr><td>403</td><td>User is not a tutor</td><td><span class="inline-code">{"message":"Access denied"}</span></td></tr>
-                        <tr><td>500</td><td>Server error</td><td><span class="inline-code">{"message":"Server error"}</span> (or detail when <span class="inline-code">APP_DEBUG=true</span>)</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <h4>Failure</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>HTTP</th>
+                    <th>When</th>
+                    <th>Body</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>422</td>
+                    <td>Missing <span class="inline-code">username</span> or <span
+                            class="inline-code">password</span></td>
+                    <td><span
+                            class="inline-code">{"message":"The username field is required."}</span>
+                        (first validation error)
+                    </td>
+                </tr>
+                <tr>
+                    <td>401</td>
+                    <td>Unknown user / wrong password</td>
+                    <td><span class="inline-code">{"message":"Invalid credentials"}</span></td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>User is not a tutor</td>
+                    <td><span class="inline-code">{"message":"Access denied"}</span></td>
+                </tr>
+                <tr>
+                    <td>500</td>
+                    <td>Server error</td>
+                    <td><span class="inline-code">{"message":"Server error"}</span> (or detail when
+                        <span class="inline-code">APP_DEBUG=true</span>)
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-        <section class="section" id="profile">
-            <h2>User profile</h2>
-            <p>Both URLs return the same JSON (authenticated practitioner).</p>
+    <section class="section" id="adhoc-auth">
+        <h2>Adhoc API users</h2>
+        <p>Separate accounts stored in <span class="inline-code">adhoc_users</span> (field officers,
+            integrations, etc.). They use <strong>username + password</strong> (not license number).
+            Tokens are independent from practitioner tutor login.</p>
+        <div class="alert alert-info">
+            <strong>Create users</strong> in the database or via Tinker, e.g. <span
+                class="inline-code">AdhocUser::create(['name' => '…', 'username' => '…', 'password' => 'plain-secret', 'status' => 1, 'email' => '…']);</span>
+            — password is hashed automatically. <span class="inline-code">status</span> must be
+            <span class="inline-code">1</span> (active).
+        </div>
 
-            <h3><span class="method-badge method-get">GET</span> /user</h3>
-            <div class="endpoint">GET /api/v1/mobile/user</div>
+        <h3><span class="method-badge method-post">POST</span> /adhoc/login &amp; /auth/adhoc/login
+        </h3>
+        <div class="endpoint">POST /api/v1/mobile/adhoc/login<br>POST
+            /api/v1/mobile/auth/adhoc/login
+        </div>
+        <h4>Request body (JSON)</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">username</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">password</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <h4>Success <span class="inline-code">200</span></h4>
+        <div class="code-block">{
+            "status": true,
+            "message": "login successful",
+            "data": { "token": "1|…" }
+            }
+        </div>
+        <h4>Failure</h4>
+        <p><span class="inline-code">401</span> <span class="inline-code">{"message":"Invalid credentials"}</span>
+            — inactive user, unknown username, or wrong password.</p>
 
-            <h3><span class="method-badge method-get">GET</span> /dashboard/profile</h3>
-            <div class="endpoint">GET /api/v1/mobile/dashboard/profile</div>
+        <h3><span class="method-badge method-get">GET</span> /adhoc/profile</h3>
+        <div class="endpoint">GET /api/v1/mobile/adhoc/profile</div>
+        <p class="muted">Requires Bearer token from adhoc login. Practitioner tokens receive <span
+                class="inline-code">403 Forbidden</span>.</p>
+        <h4>Success <span class="inline-code">200</span> — <span class="inline-code">data</span>
+        </h4>
+        <div class="code-block">{
+            "id": 1,
+            "name": "…",
+            "email": "…",
+            "phone": "…",
+            "username": "…",
+            "status": 1,
+            "role": "…",
+            "department": "…"
+            }
+        </div>
+    </section>
 
-            <h4>Headers</h4>
-            <div class="code-block">Authorization: Bearer &lt;token&gt;</div>
+    <section class="section" id="profile">
+        <h2>User profile</h2>
+        <p>Both URLs return the same JSON (authenticated practitioner).</p>
 
-            <h4>Success <span class="inline-code">200</span> — <span class="inline-code">data</span> fields</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="inline-code">photo</span></td><td>string|null</td><td>Base64-encoded passport image (no <span class="inline-code">data:image/…</span> prefix); <span class="inline-code">null</span> if no file on disk</td></tr>
-                        <tr><td><span class="inline-code">name</span></td><td>string</td><td>Full name</td></tr>
-                        <tr><td><span class="inline-code">gender</span></td><td>string</td><td>Gender</td></tr>
-                        <tr><td><span class="inline-code">username</span></td><td>string</td><td>License number</td></tr>
-                        <tr><td><span class="inline-code">email</span></td><td>string</td><td>Email or license fallback</td></tr>
-                        <tr><td><span class="inline-code">phone</span></td><td>string|null</td><td>Phone</td></tr>
-                        <tr><td><span class="inline-code">permissions</span></td><td>string[]</td><td>Permission names from assigned roles</td></tr>
-                        <tr><td><span class="inline-code">id</span></td><td>string</td><td>Public id, format <span class="inline-code">usr_{numericId}</span></td></tr>
-                        <tr><td><span class="inline-code">role</span></td><td>string|null</td><td>Role names (comma-separated) or null</td></tr>
-                        <tr><td><span class="inline-code">unit</span></td><td>string|null</td><td>Training institution name or code</td></tr>
-                        <tr><td><span class="inline-code">lastLoginAt</span></td><td>string|null</td><td>ISO-8601 UTC with <span class="inline-code">Z</span> from current token activity</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <h3><span class="method-badge method-get">GET</span> /user</h3>
+        <div class="endpoint">GET /api/v1/mobile/user</div>
 
-            <h4>Example success body</h4>
-            <div class="code-block">{
-  "status": true,
-  "message": "successful",
-  "data": {
-    "photo": "/9j/4AAQSkZJRg…",
-    "name": "Okonkwo Amina Chioma",
-    "gender": "female",
-    "username": "CH-12345-A",
-    "email": "officer@example.org",
-    "phone": "08031234567",
-    "permissions": ["verify_practitioner", "sync_records"],
-    "id": "usr_42",
-    "role": "Field Officer",
-    "unit": "School of Health Technology",
-    "lastLoginAt": "2026-04-04T10:15:00Z"
-  }
-}</div>
+        <h3><span class="method-badge method-get">GET</span> /dashboard/profile</h3>
+        <div class="endpoint">GET /api/v1/mobile/dashboard/profile</div>
 
-            <h4>Failure</h4>
-            <p><span class="inline-code">401</span> — <span class="inline-code">{"message":"Unauthenticated."}</span> if token missing or invalid (Sanctum).</p>
-        </section>
+        <h4>Headers</h4>
+        <div class="code-block">Authorization: Bearer &lt;token&gt;</div>
 
-        <section class="section" id="license">
-            <h2>Practitioner license (verification card)</h2>
+        <h4>Success <span class="inline-code">200</span> — <span class="inline-code">data</span>
+            fields</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">photo</span></td>
+                    <td>string|null</td>
+                    <td>Base64-encoded passport image (no <span
+                            class="inline-code">data:image/…</span> prefix); <span
+                            class="inline-code">null</span> if no file on disk
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">name</span></td>
+                    <td>string</td>
+                    <td>Full name</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">gender</span></td>
+                    <td>string</td>
+                    <td>Gender</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">username</span></td>
+                    <td>string</td>
+                    <td>License number</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">email</span></td>
+                    <td>string</td>
+                    <td>Email or license fallback</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">phone</span></td>
+                    <td>string|null</td>
+                    <td>Phone</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">permissions</span></td>
+                    <td>string[]</td>
+                    <td>Permission names from assigned roles</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">id</span></td>
+                    <td>string</td>
+                    <td>Public id, format <span class="inline-code">usr_{numericId}</span></td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">role</span></td>
+                    <td>string|null</td>
+                    <td>Role names (comma-separated) or null</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">unit</span></td>
+                    <td>string|null</td>
+                    <td>Training institution name or code</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">lastLoginAt</span></td>
+                    <td>string|null</td>
+                    <td>ISO-8601 UTC with <span class="inline-code">Z</span> from current token
+                        activity
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <h3><span class="method-badge method-get">GET</span> /practitioners/license</h3>
-            <div class="endpoint">GET /api/v1/mobile/practitioners/license?license_number=&lt;registration&gt;</div>
+        <h4>Example success body</h4>
+        <div class="code-block">{
+            "status": true,
+            "message": "successful",
+            "data": {
+            "photo": "/9j/4AAQSkZJRg…",
+            "name": "Okonkwo Amina Chioma",
+            "gender": "female",
+            "username": "CH-12345-A",
+            "email": "officer@example.org",
+            "phone": "08031234567",
+            "permissions": ["verify_practitioner", "sync_records"],
+            "id": "usr_42",
+            "role": "Field Officer",
+            "unit": "School of Health Technology",
+            "lastLoginAt": "2026-04-04T10:15:00Z"
+            }
+            }
+        </div>
 
-            <h4>Headers</h4>
-            <div class="code-block">Authorization: Bearer &lt;token&gt;</div>
+        <h4>Failure</h4>
+        <p><span class="inline-code">401</span> — <span class="inline-code">{"message":"Unauthenticated."}</span>
+            if token missing or invalid (Sanctum).</p>
+    </section>
 
-            <h4>Query parameters</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="inline-code">license_number</span></td><td>string</td><td>Yes</td><td>License / registration number (must match <span class="inline-code">practitioners.license_no</span>)</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <section class="section" id="license">
+        <h2>Practitioner license (verification card)</h2>
 
-            <h4>Success <span class="inline-code">200</span> — <span class="inline-code">data</span> fields</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="inline-code">registration_number</span></td><td>string</td><td>License number</td></tr>
-                        <tr><td><span class="inline-code">full_name</span></td><td>string</td><td>Title + full name when title is set</td></tr>
-                        <tr><td><span class="inline-code">photo</span></td><td>string|null</td><td>Base64-encoded passport image bytes (no <span class="inline-code">data:image/…</span> prefix); null if unavailable</td></tr>
-                        <tr><td><span class="inline-code">profession</span></td><td>string</td><td>Cadre name or default “Community Health Practitioner”</td></tr>
-                        <tr><td><span class="inline-code">authority</span></td><td>string</td><td>Issuing board label (configurable via <span class="inline-code">config('app.license_issuing_authority')</span>)</td></tr>
-                        <tr><td><span class="inline-code">license_status</span></td><td>string</td><td>One of: <span class="inline-code">Suspended</span>, <span class="inline-code">Expired</span>, <span class="inline-code">Pending verification</span>, <span class="inline-code">Active</span></td></tr>
-                        <tr><td><span class="inline-code">expiry_date</span></td><td>string</td><td><span class="inline-code">Y-m-d</span> from latest application expiry, or empty string</td></tr>
-                        <tr><td><span class="inline-code">subtitle</span></td><td>string|null</td><td>Cadre code when present</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <h3><span class="method-badge method-get">GET</span> /practitioners/license</h3>
+        <div class="endpoint">GET /api/v1/mobile/practitioners/license?license_number=&lt;registration&gt;</div>
 
-            <h4>Example success body</h4>
-            <div class="code-block">{
-  "status": true,
-  "message": "OK",
-  "data": {
-    "registration_number": "CH-99201-B",
-    "full_name": "Dr. Sarah Jenkins",
-    "photo": "/9j/4AAQSkZJRg…",
-    "profession": "Community Health Extension Worker",
-    "authority": "Community Health Practitioners Registration Board of Nigeria",
-    "license_status": "Active",
-    "expiry_date": "2026-10-31",
-    "subtitle": "CHEW"
-  }
-}</div>
+        <h4>Headers</h4>
+        <div class="code-block">Authorization: Bearer &lt;token&gt;</div>
 
-            <h4>Failure</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>HTTP</th><th>Body</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>422</td><td><span class="inline-code">{"message":"license_number is required"}</span></td></tr>
-                        <tr><td>404</td><td><span class="inline-code">{"message":"Practitioner not found."}</span></td></tr>
-                        <tr><td>401</td><td>Sanctum unauthenticated</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <h4>Query parameters</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">license_number</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>License / registration number (must match <span class="inline-code">practitioners.license_no</span>)
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-        <section class="section" id="verified-sync">
-            <h2>Practitioner verified sync</h2>
-            <p>Records a field verification event against an existing practitioner license. The authenticated officer is stored server-side.</p>
+        <h4>Success <span class="inline-code">200</span> — <span class="inline-code">data</span>
+            fields</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Notes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">registration_number</span></td>
+                    <td>string</td>
+                    <td>License number</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">full_name</span></td>
+                    <td>string</td>
+                    <td>Title + full name when title is set</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">photo</span></td>
+                    <td>string|null</td>
+                    <td>Base64-encoded passport image bytes (no <span class="inline-code">data:image/…</span>
+                        prefix); null if unavailable
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">profession</span></td>
+                    <td>string</td>
+                    <td>Cadre name or default “Community Health Practitioner”</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">authority</span></td>
+                    <td>string</td>
+                    <td>Issuing board label (configurable via <span class="inline-code">config('app.license_issuing_authority')</span>)
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">license_status</span></td>
+                    <td>string</td>
+                    <td>One of: <span class="inline-code">Suspended</span>, <span
+                            class="inline-code">Expired</span>, <span class="inline-code">Pending verification</span>,
+                        <span class="inline-code">Active</span></td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">expiry_date</span></td>
+                    <td>string</td>
+                    <td><span class="inline-code">Y-m-d</span> from latest application expiry, or
+                        empty string
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">subtitle</span></td>
+                    <td>string|null</td>
+                    <td>Cadre code when present</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <h3><span class="method-badge method-post">POST</span> /practitioners/verified-sync</h3>
-            <div class="endpoint">POST /api/v1/mobile/practitioners/verified-sync</div>
+        <h4>Example success body</h4>
+        <div class="code-block">{
+            "status": true,
+            "message": "OK",
+            "data": {
+            "registration_number": "CH-99201-B",
+            "full_name": "Dr. Sarah Jenkins",
+            "photo": "/9j/4AAQSkZJRg…",
+            "profession": "Community Health Extension Worker",
+            "authority": "Community Health Practitioners Registration Board of Nigeria",
+            "license_status": "Active",
+            "expiry_date": "2026-10-31",
+            "subtitle": "CHEW"
+            }
+            }
+        </div>
 
-            <h4>Headers</h4>
-            <div class="code-block">Authorization: Bearer &lt;token&gt;
-Content-Type: application/json</div>
+        <h4>Failure</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>HTTP</th>
+                    <th>Body</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>422</td>
+                    <td><span class="inline-code">{"message":"license_number is required"}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td><span class="inline-code">{"message":"Practitioner not found."}</span></td>
+                </tr>
+                <tr>
+                    <td>401</td>
+                    <td>Sanctum unauthenticated</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-            <h4>Request body (JSON)</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><span class="inline-code">license_number</span></td><td>string</td><td>Yes</td><td>Registration number (max 100 chars)</td></tr>
-                        <tr><td><span class="inline-code">verification_location</span></td><td>string</td><td>Yes</td><td>Where verification took place (max 2000 chars)</td></tr>
-                        <tr><td><span class="inline-code">practitioner_present</span></td><td>boolean</td><td>Yes</td><td><span class="inline-code">true</span> / <span class="inline-code">false</span></td></tr>
-                        <tr><td><span class="inline-code">remark</span></td><td>string</td><td>Yes</td><td>Free-text remark (max 5000 chars)</td></tr>
-                        <tr><td><span class="inline-code">verified_at</span></td><td>integer</td><td>Yes</td><td>Unix time in <strong>milliseconds</strong> (UTC)</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <section class="section" id="verified-sync">
+        <h2>Practitioner verified sync</h2>
+        <p>Records a field verification event against an existing practitioner license. The
+            authenticated officer is stored server-side.</p>
 
-            <h4>Example request</h4>
-            <div class="code-block">{
-  "license_number": "CH-99201-B",
-  "verification_location": "Lagos University Teaching Hospital — Ward 4",
-  "practitioner_present": true,
-  "remark": "ID matched; license card presented.",
-  "verified_at": 1710858600000
-}</div>
+        <h3><span class="method-badge method-post">POST</span> /practitioners/verified-sync</h3>
+        <div class="endpoint">POST /api/v1/mobile/practitioners/verified-sync</div>
 
-            <h4>Success <span class="inline-code">200</span></h4>
-            <div class="code-block">{
-  "status": true,
-  "message": "Verification recorded.",
-  "data": {
-    "id": 15,
-    "license_number": "CH-99201-B",
-    "verified_at": 1710858600000
-  }
-}</div>
+        <h4>Headers</h4>
+        <div class="code-block">Authorization: Bearer &lt;token&gt;
+            Content-Type: application/json
+        </div>
 
-            <h4>Failure</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>HTTP</th><th>When</th><th>Body</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>422</td><td>Validation failed</td><td><span class="inline-code">{"message":"…"}</span> (first error)</td></tr>
-                        <tr><td>404</td><td>No practitioner for <span class="inline-code">license_number</span></td><td><span class="inline-code">{"message":"Practitioner not found for this license number."}</span></td></tr>
-                        <tr><td>403</td><td>Authenticated user is not a <span class="inline-code">Practitioner</span> model</td><td><span class="inline-code">{"message":"Forbidden"}</span></td></tr>
-                        <tr><td>401</td><td>Missing / invalid token</td><td><span class="inline-code">{"message":"Unauthenticated."}</span></td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <h4>Request body (JSON)</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><span class="inline-code">license_number</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Registration number (max 100 chars)</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">verification_location</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Where verification took place (max 2000 chars)</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">practitioner_present</span></td>
+                    <td>boolean</td>
+                    <td>Yes</td>
+                    <td><span class="inline-code">true</span> / <span
+                            class="inline-code">false</span></td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">remark</span></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Free-text remark (max 5000 chars)</td>
+                </tr>
+                <tr>
+                    <td><span class="inline-code">verified_at</span></td>
+                    <td>integer</td>
+                    <td>Yes</td>
+                    <td>Unix time in <strong>milliseconds</strong> (UTC)</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <div class="alert alert-warning">
-                <strong>Note:</strong> <span class="inline-code">verified_at</span> is stored in UTC with second precision (milliseconds are truncated when persisted to the database timestamp).
-            </div>
-        </section>
+        <h4>Example request</h4>
+        <div class="code-block">{
+            "license_number": "CH-99201-B",
+            "verification_location": "Lagos University Teaching Hospital — Ward 4",
+            "practitioner_present": true,
+            "remark": "ID matched; license card presented.",
+            "verified_at": 1710858600000
+            }
+        </div>
 
-        <section class="section" id="errors">
-            <h2>Error responses (all mobile JSON API routes)</h2>
-            <p>Failures use a single key and an appropriate HTTP status:</p>
-            <div class="code-block">{ "message": "Human-readable explanation" }</div>
-            <h4>Typical status codes</h4>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>Code</th><th>Use</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>400</td><td>Bad request (e.g. missing identifier)</td></tr>
-                        <tr><td>401</td><td>Unauthenticated / invalid credentials / invalid API key (lookup)</td></tr>
-                        <tr><td>403</td><td>Forbidden / insufficient permission</td></tr>
-                        <tr><td>404</td><td>Resource not found</td></tr>
-                        <tr><td>422</td><td>Validation error (first message only in body)</td></tr>
-                        <tr><td>429</td><td>Rate limit exceeded (lookup API key)</td></tr>
-                        <tr><td>500</td><td>Server error</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <p class="muted">Under <span class="inline-code">/api/*</span>, validation exceptions and unhandled JSON errors follow the same <span class="inline-code">message</span>-only pattern where applicable.</p>
-        </section>
+        <h4>Success <span class="inline-code">200</span></h4>
+        <div class="code-block">{
+            "status": true,
+            "message": "Verification recorded.",
+            "data": {
+            "id": 15,
+            "license_number": "CH-99201-B",
+            "verified_at": 1710858600000
+            }
+            }
+        </div>
 
-        <section class="section">
-            <h2>Related documentation</h2>
-            <p>Lookup endpoints under <span class="inline-code">/api/v1/mobile/lookup/…</span> use <strong>API key</strong> headers (<span class="inline-code">X-API-Key</span>, <span class="inline-code">API-Key</span>, <span class="inline-code">X-Secret-Key</span>, or <span class="inline-code">Secret-Key</span>), not Bearer tokens. See <span class="inline-code">api_documentation.html</span> in this folder for candidate/practitioner lookup and search.</p>
-        </section>
+        <h4>Failure</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>HTTP</th>
+                    <th>When</th>
+                    <th>Body</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>422</td>
+                    <td>Validation failed</td>
+                    <td><span class="inline-code">{"message":"…"}</span> (first error)</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>No practitioner for <span class="inline-code">license_number</span></td>
+                    <td><span class="inline-code">{"message":"Practitioner not found for this license number."}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>Authenticated user is not a <span class="inline-code">Practitioner</span>
+                        model
+                    </td>
+                    <td><span class="inline-code">{"message":"Forbidden"}</span></td>
+                </tr>
+                <tr>
+                    <td>401</td>
+                    <td>Missing / invalid token</td>
+                    <td><span class="inline-code">{"message":"Unauthenticated."}</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-        <footer>
-            Generated from application routes and controllers · Mobile prefix: <span class="inline-code">api/v1/mobile</span>
-        </footer>
-    </div>
+        <div class="alert alert-warning">
+            <strong>Note:</strong> <span class="inline-code">verified_at</span> is stored in UTC
+            with second precision (milliseconds are truncated when persisted to the database
+            timestamp).
+        </div>
+    </section>
+
+    <section class="section" id="errors">
+        <h2>Error responses (all mobile JSON API routes)</h2>
+        <p>Failures use a single key and an appropriate HTTP status:</p>
+        <div class="code-block">{ "message": "Human-readable explanation" }</div>
+        <h4>Typical status codes</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Use</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>400</td>
+                    <td>Bad request (e.g. missing identifier)</td>
+                </tr>
+                <tr>
+                    <td>401</td>
+                    <td>Unauthenticated / invalid credentials / invalid API key (lookup)</td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>Forbidden / insufficient permission</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Resource not found</td>
+                </tr>
+                <tr>
+                    <td>422</td>
+                    <td>Validation error (first message only in body)</td>
+                </tr>
+                <tr>
+                    <td>429</td>
+                    <td>Rate limit exceeded (lookup API key)</td>
+                </tr>
+                <tr>
+                    <td>500</td>
+                    <td>Server error</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="muted">Under <span class="inline-code">/api/*</span>, validation exceptions and
+            unhandled JSON errors follow the same <span class="inline-code">message</span>-only
+            pattern where applicable.</p>
+    </section>
+
+    <section class="section">
+        <h2>Related documentation</h2>
+        <p>Lookup endpoints under <span class="inline-code">/api/v1/mobile/lookup/…</span> use
+            <strong>API key</strong> headers (<span class="inline-code">X-API-Key</span>, <span
+                    class="inline-code">API-Key</span>, <span
+                    class="inline-code">X-Secret-Key</span>, or <span
+                    class="inline-code">Secret-Key</span>), not Bearer tokens. See <span
+                    class="inline-code">api_documentation.html</span> in this folder for
+            candidate/practitioner lookup and search.</p>
+    </section>
+
+    <footer>
+        Generated from application routes and controllers · Mobile prefix: <span
+            class="inline-code">api/v1/mobile</span>
+    </footer>
+</div>
 </body>
 </html>

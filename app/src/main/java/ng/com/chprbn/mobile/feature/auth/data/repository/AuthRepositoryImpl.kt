@@ -41,7 +41,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         return try {
             authTokenStore.clear()
-            val response = apiService.login(
+            val response = apiService.adhocLogin(
                 LoginRequestDto(username = trimmedUsername, password = password)
             )
 
@@ -59,7 +59,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             authTokenStore.setToken(token)
 
-            val profileResponse = apiService.getCurrentUser()
+            val profileResponse = apiService.getAdhocProfile()
             if (!profileResponse.isSuccessful) {
                 authTokenStore.clear()
                 val err = parseErrorMessage(profileResponse.errorBody()?.string())
