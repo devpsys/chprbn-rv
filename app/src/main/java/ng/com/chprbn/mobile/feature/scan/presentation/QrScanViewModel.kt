@@ -55,12 +55,19 @@ class QrScanViewModel : ViewModel() {
 
             is ScanUiEvent.RegistrationScanned -> {
                 viewModelScope.launch {
-                    val cleaned = event.registrationNumber?.trim()
-                    _uiState.value = _uiState.value.copy(
-                        scannedRegistrationNumber = cleaned,
-                        scanStatus = "Card detected!",
-                        scanProgress = 1.0f
-                    )
+                    if (event.registrationNumber == null) {
+                        _uiState.value =
+                            _uiState.value.copy(scannedRegistrationNumber = null)
+                        return@launch
+                    }
+                    val cleaned = event.registrationNumber.trim()
+                    if (cleaned.isNotBlank()) {
+                        _uiState.value = _uiState.value.copy(
+                            scannedRegistrationNumber = cleaned,
+                            scanStatus = "Card detected!",
+                            scanProgress = 1.0f
+                        )
+                    }
                 }
             }
         }

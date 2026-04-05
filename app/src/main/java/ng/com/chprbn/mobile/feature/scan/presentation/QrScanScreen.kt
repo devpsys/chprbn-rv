@@ -72,6 +72,9 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+import ng.com.chprbn.mobile.feature.scan.domain.extractRegistrationFromQrPayload
+
+private const val QR_SCAN_LOG_TAG = "QrScan"
 
 @Composable
 fun QrScanScreen(
@@ -320,14 +323,14 @@ private fun CameraScanPreview(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (!granted) {
-            Log.e("ScanScreen", "Camera permission denied for ScanScreen")
+            Log.e(QR_SCAN_LOG_TAG, "Camera permission denied")
         } else {
-            Log.d("ScanScreen", "Camera permission granted for ScanScreen")
+            Log.d(QR_SCAN_LOG_TAG, "Camera permission granted")
         }
     }
 
     LaunchedEffect(Unit) {
-        Log.d("ScanScreen", "requesting CAMERA permission")
+        Log.d(QR_SCAN_LOG_TAG, "Requesting CAMERA permission")
         permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
@@ -381,13 +384,35 @@ private fun CameraScanPreview(
                                     val qr = barcodes.firstOrNull { it.rawValue != null }
                                     val value = qr?.rawValue
                                     if (!value.isNullOrBlank() && !hasScanned.value) {
-                                        Log.d("ScanScreen", "ScanScreen - QR detected: $value")
+                                        Log.i(
+                                            QR_SCAN_LOG_TAG,
+                                            "Decoded QR text (${value.length} chars): $value"
+                                        )
+                                        qr.displayValue?.takeIf { it != value }?.let { display ->
+                                            Log.d(
+                                                QR_SCAN_LOG_TAG,
+                                                "QR displayValue differs from rawValue: $display"
+                                            )
+                                        }
+                                        val registration =
+                                            extractRegistrationFromQrPayload(value)
+                                        if (registration == null) {
+                                            Log.w(
+                                                QR_SCAN_LOG_TAG,
+                                                "QR has no registration after '#:'; ignoring payload"
+                                            )
+                                            return@addOnSuccessListener
+                                        }
+                                        Log.i(
+                                            QR_SCAN_LOG_TAG,
+                                            "Extracted registration for lookup: $registration"
+                                        )
                                         hasScanned.value = true
-                                        currentOnQrScanned(value)
+                                        currentOnQrScanned(registration)
                                     }
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.e("ScanScreen", "ScanScreen - QR scan failed")
+                                    Log.e(QR_SCAN_LOG_TAG, "QR barcode processing failed", e)
                                 }
                                 .addOnCompleteListener {
                                     imageProxy.close()
@@ -403,9 +428,9 @@ private fun CameraScanPreview(
                             analysis
                         )
                         cameraRef.value = camera
-                        Log.d("ScanScreen", "ScanScreen - CameraX initialized")
+                        Log.d(QR_SCAN_LOG_TAG, "CameraX initialized")
                     } catch (e: Exception) {
-                        Log.e("ScanScreen", "ScanScreen - Failed to start camera")
+                        Log.e(QR_SCAN_LOG_TAG, "Failed to start camera", e)
                     }
                 },
                 ContextCompat.getMainExecutor(ctx)
