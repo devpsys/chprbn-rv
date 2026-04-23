@@ -250,15 +250,6 @@ private fun RecordDetailContent(record: LicenseRecord) {
                 )
             }
         }
-        //  TODO: Move this to other details card.
-//        Text(
-//            text = record.subtitle?.takeIf { it.isNotBlank() } ?: "Medical Professional ID",
-//            style = MaterialTheme.typography.labelSmall,
-//            fontWeight = FontWeight.SemiBold,
-//            color = PrimaryGreen.copy(alpha = 0.6f),
-//            textAlign = TextAlign.Center,
-//            modifier = Modifier.padding(top = 4.dp)
-//        )
     }
     Row(
         modifier = Modifier
@@ -288,6 +279,21 @@ private fun RecordDetailContent(record: LicenseRecord) {
             DetailRow(
                 label = "LICENSE NUMBER",
                 value = record.registrationNumber.ifEmpty { "—" },
+                showDivider = true
+            )
+            DetailRow(
+                label = "CERTIFICATE NO",
+                value = record.certificateNo.ifEmpty { "—" },
+                showDivider = true
+            )
+            DetailRow(
+                label = "EMAIL",
+                value = record.email.ifEmpty { "—" },
+                showDivider = true
+            )
+            DetailRow(
+                label = "PHONE",
+                value = record.phone.ifEmpty { "—" },
                 showDivider = true
             )
             DetailRow(
@@ -1047,7 +1053,9 @@ private val previewRecord = LicenseRecord(
     fullName = "Dr. Jane Doe",
     photoUrl = null,
     profession = "General Practitioner",
-    authority = "Medical Council",
+    certificateNo = "CHPRBN-CERT-2020-001",
+    email = "jane.doe@example.org",
+    phone = "+234 800 000 0000",
     licenseStatus = "Active",
     expiryDate = "Dec 2026",
     subtitle = "Medical Professional ID",

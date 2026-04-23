@@ -23,7 +23,10 @@ data class LicenseRecordDataDto(
     @SerializedName("photo_url")
     val photoUrl: String? = null,
     val profession: String,
-    val authority: String,
+    @SerializedName("certificate_no")
+    val certificate_no: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
     val license_status: String,
     val expiry_date: String,
     val subtitle: String? = null,
