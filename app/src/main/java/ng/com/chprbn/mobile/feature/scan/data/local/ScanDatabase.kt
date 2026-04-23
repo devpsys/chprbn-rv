@@ -9,7 +9,7 @@ import ng.com.chprbn.mobile.feature.verified.data.local.VerifiedLicenseDao
 
 @Database(
     entities = [LicenseRecordEntity::class, VerifiedLicenseEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class ScanDatabase : RoomDatabase() {
@@ -22,6 +22,36 @@ abstract class ScanDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE verified_licenses ADD COLUMN lastSyncAttempt INTEGER")
                 db.execSQL("ALTER TABLE verified_licenses ADD COLUMN syncError TEXT")
+            }
+        }
+
+        /** Adds issue date, gender, graduation date, and institution name to license + verified rows. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE license_records ADD COLUMN issueDate TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE license_records ADD COLUMN gender TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE license_records ADD COLUMN graduationDate TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE license_records ADD COLUMN institutionAttendedName TEXT"
+                )
+                db.execSQL(
+                    "ALTER TABLE verified_licenses ADD COLUMN issueDate TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE verified_licenses ADD COLUMN gender TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE verified_licenses ADD COLUMN graduationDate TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE verified_licenses ADD COLUMN institutionAttendedName TEXT"
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.scan.data.source
 
 import kotlinx.coroutines.delay
+import ng.com.chprbn.mobile.feature.scan.domain.model.InstitutionAttended
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 import javax.inject.Inject
 
@@ -35,7 +36,11 @@ class FakeLicenseRecordRemoteSource @Inject constructor() : LicenseRecordRemoteS
                 authority = "Medical Council",
                 licenseStatus = "Active",
                 expiryDate = "Dec 2026",
-                subtitle = "Medical Professional ID"
+                subtitle = "Medical Professional ID",
+                issueDate = "Jan 2020",
+                gender = "Female",
+                graduationDate = "2019",
+                institutionAttended = InstitutionAttended(name = "University of Lagos")
             ),
             LicenseRecord(
                 registrationNumber = "MED-99284-TX",
@@ -45,7 +50,11 @@ class FakeLicenseRecordRemoteSource @Inject constructor() : LicenseRecordRemoteS
                 authority = "Medical and Dental Council",
                 licenseStatus = "Active",
                 expiryDate = "Mar 2027",
-                subtitle = "Registered Practitioner"
+                subtitle = "Registered Practitioner",
+                issueDate = "Mar 2021",
+                gender = "Female",
+                graduationDate = "2020",
+                institutionAttended = InstitutionAttended(name = "College of Medicine, UNN")
             ),
             LicenseRecord(
                 registrationNumber = "NUR-44102",
@@ -55,7 +64,11 @@ class FakeLicenseRecordRemoteSource @Inject constructor() : LicenseRecordRemoteS
                 authority = "Nursing and Midwifery Council",
                 licenseStatus = "Expired",
                 expiryDate = "Jan 2024",
-                subtitle = "Nursing Professional ID"
+                subtitle = "Nursing Professional ID",
+                issueDate = "",
+                gender = "Female",
+                graduationDate = "2015",
+                institutionAttended = InstitutionAttended(name = "School of Nursing, Calabar")
             ),
             LicenseRecord(
                 registrationNumber = "PHARM-7781",
@@ -65,7 +78,11 @@ class FakeLicenseRecordRemoteSource @Inject constructor() : LicenseRecordRemoteS
                 authority = "Pharmacists Council",
                 licenseStatus = "Expired",
                 expiryDate = "Sep 2023",
-                subtitle = "Pharmacy Practitioner"
+                subtitle = "Pharmacy Practitioner",
+                issueDate = "Jun 2012",
+                gender = "Male",
+                graduationDate = "2011",
+                institutionAttended = InstitutionAttended(name = "University of Jos")
             ),
             LicenseRecord(
                 registrationNumber = "DO-88229-P",
@@ -75,7 +92,11 @@ class FakeLicenseRecordRemoteSource @Inject constructor() : LicenseRecordRemoteS
                 authority = "Medical and Dental Council",
                 licenseStatus = "Active",
                 expiryDate = "Jun 2025",
-                subtitle = "Dental Professional ID"
+                subtitle = "Dental Professional ID",
+                issueDate = "Aug 2018",
+                gender = "Male",
+                graduationDate = "2017",
+                institutionAttended = InstitutionAttended(name = "Lagos University Teaching Hospital")
             )
         )
     }

@@ -20,6 +20,10 @@ data class VerifiedLicenseEntity(
     val licenseStatus: String,
     val expiryDate: String,
     val subtitle: String?,
+    val issueDate: String = "",
+    val gender: String = "",
+    val graduationDate: String = "",
+    val institutionAttendedName: String? = null,
 
     // Verification form fields
     val verificationLocation: String,

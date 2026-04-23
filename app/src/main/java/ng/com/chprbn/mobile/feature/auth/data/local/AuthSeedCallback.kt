@@ -5,9 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Seeds the auth DB with a test user for offline login.
- *
- * Note: for production, move this to a debug-only build flavor or remove entirely.
+ * Seeds the auth DB with a demo row (empty token) so the first launch still shows login.
+ * A real session is created only after a successful online login (token stored in Room).
  */
 class AuthSeedCallback : RoomDatabase.Callback() {
 
@@ -21,7 +20,7 @@ class AuthSeedCallback : RoomDatabase.Callback() {
               'OFFLINE-DEMO',
               'offline@chprbn.gov.ng',
               'Sylux Endyusa',
-              'offline-token',
+              '',
               '["auth:login"]',
               NULL,
               'Field Officer',

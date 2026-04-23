@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
+import ng.com.chprbn.mobile.feature.auth.data.network.SessionTokenPolicy
 import ng.com.chprbn.mobile.feature.profile.domain.usecase.GetUserProfileUseCase
 import javax.inject.Inject
 
@@ -28,8 +29,8 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             delay(2500L)
             val user = getUserProfileUseCase()
-            if (user != null) {
-                authTokenStore.setToken(user.accessToken)
+            if (user != null && SessionTokenPolicy.isValidForAuthenticatedApi(user.accessToken)) {
+                authTokenStore.setToken(user.accessToken.trim())
                 _destination.value = SplashDestination.Dashboard
             } else {
                 authTokenStore.clear()

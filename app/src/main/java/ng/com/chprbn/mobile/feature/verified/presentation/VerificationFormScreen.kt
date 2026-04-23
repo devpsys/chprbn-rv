@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+import ng.com.chprbn.mobile.feature.scan.domain.model.InstitutionAttended
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 
 /**
@@ -81,29 +82,6 @@ fun VerificationFormScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
-            ReadonlyField(
-                label = "Practitioner Name",
-                value = record?.fullName?.ifBlank { "—" } ?: "—"
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            ReadonlyField(
-                label = "License Number",
-                value = record?.registrationNumber?.ifBlank { "—" } ?: "—"
-            )
-            if (record?.profession != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                if (record.profession.isNotBlank()) {
-                    ReadonlyField(label = "Profession", value = record.profession)
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                if (record.licenseStatus.isNotBlank()) {
-                    ReadonlyField(label = "License Status", value = record.licenseStatus)
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                if (record.expiryDate.isNotBlank()) {
-                    ReadonlyField(label = "Expiry Date", value = record.expiryDate)
-                }
-            }
             Spacer(modifier = Modifier.height(24.dp))
             Box(
                 modifier = Modifier
@@ -432,7 +410,11 @@ private fun VerificationFormScreenPreview() {
         authority = "Medical and Dental Council",
         licenseStatus = "Active",
         expiryDate = "Mar 2027",
-        subtitle = "Registered Practitioner"
+        subtitle = "Registered Practitioner",
+        issueDate = "2021-03-15",
+        gender = "Female",
+        graduationDate = "2020-11-20",
+        institutionAttended = InstitutionAttended(name = "College of Medicine, UNN")
     )
     ChprbnTheme {
         VerificationFormScreen(

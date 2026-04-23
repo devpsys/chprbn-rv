@@ -12,5 +12,9 @@ data class LicenseRecord(
     val authority: String,
     val licenseStatus: String,
     val expiryDate: String,
-    val subtitle: String?
+    val subtitle: String?,
+    val issueDate: String = "",
+    val gender: String = "",
+    val graduationDate: String = "",
+    val institutionAttended: InstitutionAttended? = null
 )

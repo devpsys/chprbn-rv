@@ -1,7 +1,7 @@
 package ng.com.chprbn.mobile.feature.sync.data.dto
 
 /**
- * Mobile API v1 envelope for POST practitioners/verified-sync success.
+ * Mobile API v1 envelope for POST `adhoc/verified-sync` success (field-officer sync).
  */
 data class VerifiedSyncEnvelopeDto(
     val status: Boolean,

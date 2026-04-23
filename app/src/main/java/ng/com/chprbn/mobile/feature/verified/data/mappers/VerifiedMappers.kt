@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.verified.data.mappers
 
+import ng.com.chprbn.mobile.feature.scan.domain.model.InstitutionAttended
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verified.data.local.VerifiedLicenseEntity
 import ng.com.chprbn.mobile.feature.verified.domain.model.SyncStatus
@@ -27,6 +28,11 @@ fun VerifiedLicenseEntity.toDomain(): VerifiedLicense = VerifiedLicense(
     licenseStatus = licenseStatus,
     expiryDate = expiryDate,
     subtitle = subtitle,
+    issueDate = issueDate,
+    gender = gender,
+    graduationDate = graduationDate,
+    institutionAttended = institutionAttendedName?.takeIf { it.isNotBlank() }
+        ?.let { InstitutionAttended(name = it) },
     verifiedAt = verifiedAt,
     verificationLocation = verificationLocation,
     practitionerPresent = practitionerPresent,
@@ -45,6 +51,10 @@ fun VerifiedLicense.toEntity(): VerifiedLicenseEntity = VerifiedLicenseEntity(
     licenseStatus = licenseStatus,
     expiryDate = expiryDate,
     subtitle = subtitle,
+    issueDate = issueDate,
+    gender = gender,
+    graduationDate = graduationDate,
+    institutionAttendedName = institutionAttended?.name,
     verificationLocation = verificationLocation,
     practitionerPresent = practitionerPresent,
     remark = remark,
@@ -73,6 +83,10 @@ fun LicenseRecord.toVerifiedLicenseEntity(
     licenseStatus = licenseStatus,
     expiryDate = expiryDate,
     subtitle = subtitle,
+    issueDate = issueDate,
+    gender = gender,
+    graduationDate = graduationDate,
+    institutionAttendedName = institutionAttended?.name,
     verificationLocation = verificationLocation,
     practitionerPresent = practitionerPresent,
     remark = remark,

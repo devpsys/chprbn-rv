@@ -16,6 +16,7 @@ import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
+import ng.com.chprbn.mobile.feature.auth.data.network.SessionTokenPolicy
 import ng.com.chprbn.mobile.feature.auth.domain.model.AuthResult
 import ng.com.chprbn.mobile.feature.auth.domain.model.User
 import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
@@ -33,8 +34,10 @@ class AuthRepositoryImpl @Inject constructor(
         val cachedUser = getCachedUser(trimmedUsername)
 
         if (!connectivityChecker.isConnected()) {
-            return cachedUser?.let {
-                authTokenStore.setToken(it.accessToken)
+            return cachedUser?.takeIf {
+                SessionTokenPolicy.isValidForAuthenticatedApi(it.accessToken)
+            }?.let {
+                authTokenStore.setToken(it.accessToken.trim())
                 AuthResult.Success(it)
             } ?: AuthResult.Error("No cached session available for offline login.")
         }
@@ -57,7 +60,7 @@ class AuthRepositoryImpl @Inject constructor(
                 return AuthResult.Error(envelope?.message ?: "Invalid login response.")
             }
 
-            authTokenStore.setToken(token)
+            authTokenStore.setToken(token.trim())
 
             val profileResponse = apiService.getAdhocProfile()
             if (!profileResponse.isSuccessful) {
@@ -83,8 +86,10 @@ class AuthRepositoryImpl @Inject constructor(
         } catch (t: Throwable) {
             authTokenStore.clear()
             if (t is IOException || !connectivityChecker.isConnected()) {
-                return cachedUser?.let {
-                    authTokenStore.setToken(it.accessToken)
+                return cachedUser?.takeIf {
+                    SessionTokenPolicy.isValidForAuthenticatedApi(it.accessToken)
+                }?.let {
+                    authTokenStore.setToken(it.accessToken.trim())
                     AuthResult.Success(it)
                 }
                     ?: AuthResult.Error("Network unavailable. Please try again or use manual verification.")

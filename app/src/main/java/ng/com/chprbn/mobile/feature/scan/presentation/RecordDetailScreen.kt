@@ -1,5 +1,7 @@
 package ng.com.chprbn.mobile.feature.scan.presentation
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,28 +40,38 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
+import ng.com.chprbn.mobile.feature.scan.domain.model.InstitutionAttended
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
+import java.util.Locale
+import kotlin.text.ifEmpty
 
 /**
  * Record detail screen: loads license record by registration number (local-first, then API), displays or error.
@@ -159,7 +171,7 @@ fun RecordDetailScreen(
                         Text(
                             text = "Digital License ID: $digitalLicenseId",
                             style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryGreen.copy(alpha = 0.5f),
+                            color = PrimaryGreen.copy(alpha = 0.75f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
@@ -174,8 +186,6 @@ fun RecordDetailScreen(
 
 @Composable
 private fun RecordDetailContent(record: LicenseRecord) {
-    val photoUrl = record.photoUrl?.takeIf { it.isNotBlank() }
-        ?: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGwNrw6oZQaZ3azGcP4PrP56q5MV3bz6F2bl-IuygmFXDriKJgdpSy_ndOO9YBkKsOQRk5TrJCLaOwOJNwGnnK5PqCLWyvbNrkAhkwQJD1mE2BcM0rn2nG23k3fmuanXead12LR4L8GCyJieC4dL2mbIFUzchSlO0WQIbmqu6v6paUkf3jYicZtQBrEIOXDf7WFpm6jPbtSsfYHwaEHzuwCfqDNp81YmnQS40CoNyYqqVIxgzym_iSQA5hGYhPX6ekEVIMS63rA6t9"
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -192,12 +202,7 @@ private fun RecordDetailContent(record: LicenseRecord) {
                 .clip(CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = photoUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            PractitionerPhotoBase64(photoPayload = record.photoUrl)
         }
     }
     Column(
@@ -213,14 +218,47 @@ private fun RecordDetailContent(record: LicenseRecord) {
             color = PrimaryGreen,
             textAlign = TextAlign.Center
         )
-        Text(
-            text = record.subtitle?.takeIf { it.isNotBlank() } ?: "Medical Professional ID",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = PrimaryGreen.copy(alpha = 0.6f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = if (record.licenseStatus == "Active") SuccessGreen.copy(alpha = 0.2f) else ErrorRed.copy(
+                alpha = 0.2f
+            ),
+            border = BorderStroke(
+                1.dp,
+                if (record.licenseStatus == "Active") SuccessGreen.copy(alpha = 0.4f) else ErrorRed.copy(
+                    alpha = 0.4f
+                )
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = if (record.licenseStatus == "Active") Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (record.licenseStatus == "Active") SuccessGreen else ErrorRed
+                )
+                Text(
+                    text = record.licenseStatus.ifEmpty { "Active" } + " License",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (record.licenseStatus == "Active") SuccessGreen else ErrorRed
+                )
+            }
+        }
+        //  TODO: Move this to other details card.
+//        Text(
+//            text = record.subtitle?.takeIf { it.isNotBlank() } ?: "Medical Professional ID",
+//            style = MaterialTheme.typography.labelSmall,
+//            fontWeight = FontWeight.SemiBold,
+//            color = PrimaryGreen.copy(alpha = 0.6f),
+//            textAlign = TextAlign.Center,
+//            modifier = Modifier.padding(top = 4.dp)
+//        )
     }
     Row(
         modifier = Modifier
@@ -229,9 +267,9 @@ private fun RecordDetailContent(record: LicenseRecord) {
             .height(90.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        LicenseStatusCard(
+        IssueDateCard(
             modifier = Modifier.weight(1f),
-            status = record.licenseStatus.ifEmpty { "Active" }
+            issueDate = record.issueDate.ifBlank { "—" }
         )
         ExpiryDateCard(
             modifier = Modifier.weight(1f),
@@ -253,17 +291,95 @@ private fun RecordDetailContent(record: LicenseRecord) {
                 showDivider = true
             )
             DetailRow(
-                label = "PROFESSION",
+                label = "GENDER",
+                value = record.gender.ifEmpty { "—" }.uppercase(Locale.UK),
+                showDivider = true
+            )
+            DetailRow(
+                label = "CADRE",
                 value = record.profession.ifEmpty { "—" },
                 showDivider = true
             )
             DetailRow(
-                label = "AUTHORITY",
-                value = record.authority.ifEmpty { "—" },
+                label = "INSTITUTION ATTENDED",
+                value = record.institutionAttended?.name?.takeIf { it.isNotBlank() } ?: "—",
+                showDivider = true
+            )
+            DetailRow(
+                label = "GRADUATION DATE",
+                value = record.graduationDate.ifEmpty { "—" },
                 showDivider = false
             )
         }
     }
+}
+
+/**
+ * Renders the license portrait by decoding **Base64** bytes only (raw string or `data:image/...;base64,...`).
+ * HTTP(S) URLs are not fetched here — a placeholder icon is shown instead.
+ */
+@Composable
+private fun PractitionerPhotoBase64(photoPayload: String?) {
+    var imageBitmap by remember(photoPayload) { mutableStateOf<ImageBitmap?>(null) }
+    var decoding by remember(photoPayload) { mutableStateOf(false) }
+
+    LaunchedEffect(photoPayload) {
+        imageBitmap = null
+        val payload = extractLicensePhotoBase64Payload(photoPayload)
+        if (payload == null) {
+            decoding = false
+            return@LaunchedEffect
+        }
+        decoding = true
+        val bmp = withContext(Dispatchers.Default) {
+            runCatching {
+                val bytes = Base64.decode(payload, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }.getOrNull()
+        }
+        decoding = false
+        imageBitmap = bmp?.asImageBitmap()
+    }
+
+    when {
+        decoding -> CircularProgressIndicator(
+            modifier = Modifier.size(40.dp),
+            color = PrimaryGreen,
+            strokeWidth = 3.dp
+        )
+
+        imageBitmap != null -> Image(
+            bitmap = imageBitmap!!,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        else -> Icon(
+            imageVector = Icons.Filled.VerifiedUser,
+            contentDescription = null,
+            tint = PrimaryGreen.copy(alpha = 0.5f),
+            modifier = Modifier.size(48.dp)
+        )
+    }
+}
+
+private fun extractLicensePhotoBase64Payload(photo: String?): String? {
+    if (photo.isNullOrBlank()) return null
+    val t = photo.trim().replace(Regex("\\s"), "")
+    if (t.isEmpty()) return null
+    if (t.startsWith("http://", ignoreCase = true) ||
+        t.startsWith("https://", ignoreCase = true)
+    ) {
+        return null
+    }
+    if (t.startsWith("data:image", ignoreCase = true)) {
+        val marker = "base64,"
+        val idx = t.indexOf(marker, ignoreCase = true)
+        if (idx == -1) return null
+        return t.substring(idx + marker.length).trim()
+    }
+    return t
 }
 
 @Composable
@@ -793,9 +909,9 @@ private fun RecordDetailHeader(onBack: () -> Unit, onMenu: () -> Unit) {
 }
 
 @Composable
-private fun LicenseStatusCard(
+private fun IssueDateCard(
     modifier: Modifier = Modifier,
-    status: String = "Active"
+    issueDate: String = "Dec 2024"
 ) {
     Surface(
         modifier = modifier.fillMaxHeight(),
@@ -811,40 +927,28 @@ private fun LicenseStatusCard(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "LICENSE STATUS",
+                text = "ISSUE DATE",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryGreen.copy(alpha = 0.5f),
+                color = PrimaryGreen.copy(alpha = 0.75f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = if (status == "Active") SuccessGreen.copy(alpha = 0.2f) else ErrorRed.copy(
-                    alpha = 0.2f
-                ),
-                border = BorderStroke(
-                    1.dp,
-                    if (status == "Active") SuccessGreen.copy(alpha = 0.4f) else ErrorRed.copy(alpha = 0.4f)
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = if (status == "Active") Icons.Filled.CheckCircle else Icons.Filled.Cancel,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (status == "Active") SuccessGreen else ErrorRed
-                    )
-                    Text(
-                        text = status.ifEmpty { "Active" },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (status == "Active") SuccessGreen else ErrorRed
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Filled.Event,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = PrimaryGreen.copy(alpha = 0.75f)
+                )
+                Text(
+                    text = issueDate.ifEmpty { "—" },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -872,7 +976,7 @@ private fun ExpiryDateCard(
                 text = "EXPIRY DATE",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryGreen.copy(alpha = 0.5f),
+                color = PrimaryGreen.copy(alpha = 0.75f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Row(
@@ -883,7 +987,7 @@ private fun ExpiryDateCard(
                     imageVector = Icons.Filled.Event,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = PrimaryGreen.copy(alpha = 0.6f)
+                    tint = PrimaryGreen.copy(alpha = 0.75f)
                 )
                 Text(
                     text = expiryDate.ifEmpty { "—" },
@@ -915,8 +1019,9 @@ private fun DetailRow(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = PrimaryGreen.copy(alpha = 0.6f)
+                color = PrimaryGreen.copy(alpha = 0.75f)
             )
+            Spacer(modifier = Modifier.size(16.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.labelMedium,
@@ -945,7 +1050,11 @@ private val previewRecord = LicenseRecord(
     authority = "Medical Council",
     licenseStatus = "Active",
     expiryDate = "Dec 2026",
-    subtitle = "Medical Professional ID"
+    subtitle = "Medical Professional ID",
+    issueDate = "Jan 2020",
+    gender = "Female",
+    graduationDate = "2019-06-30",
+    institutionAttended = InstitutionAttended(name = "University of Lagos")
 )
 
 @Preview(showBackground = true)

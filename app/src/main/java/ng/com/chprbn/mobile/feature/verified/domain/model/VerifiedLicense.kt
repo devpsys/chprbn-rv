@@ -1,5 +1,7 @@
 package ng.com.chprbn.mobile.feature.verified.domain.model
 
+import ng.com.chprbn.mobile.feature.scan.domain.model.InstitutionAttended
+
 /**
  * Domain model for a verified practitioner license record.
  *
@@ -17,6 +19,10 @@ data class VerifiedLicense(
     val licenseStatus: String,
     val expiryDate: String,
     val subtitle: String?,
+    val issueDate: String = "",
+    val gender: String = "",
+    val graduationDate: String = "",
+    val institutionAttended: InstitutionAttended? = null,
     val verifiedAt: Long,
     val verificationLocation: String,
     val practitionerPresent: Boolean,
