@@ -95,10 +95,6 @@ fun LoginScreen(
     onRequestAccess: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var username by rememberSaveable { mutableStateOf("OFFLINE-DEMO") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.authenticatedUser) {
@@ -107,6 +103,29 @@ fun LoginScreen(
             viewModel.consumeAuthSuccess()
         }
     }
+    
+    LoginContent(
+        modifier = modifier,
+        uiState = uiState,
+        onSignInClick = { username, password -> viewModel.signIn(username, password) },
+        onRecovery = onRecovery,
+        onRequestAccess = onRequestAccess
+    )
+}
+
+@Composable
+fun LoginContent(
+    modifier: Modifier = Modifier,
+    uiState: LoginUiState,
+    onSignInClick: (String, String) -> Unit,
+    onRecovery: () -> Unit = {},
+    onRequestAccess: () -> Unit = {},
+) {
+    var username by rememberSaveable { mutableStateOf("OFFLINE-DEMO") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    
     val isDark = isSystemInDarkTheme()
     val meshBackground = if (isDark) DarkMeshBackground else LightMeshBackground
 
@@ -254,7 +273,7 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .height(56.dp),
                         isLoading = uiState.isLoading,
-                        onClick = { viewModel.signIn(username = username, password = password) }
+                        onClick = { onSignInClick(username, password) }
                     )
                     if (!uiState.errorMessage.isNullOrBlank()) {
                         Text(
@@ -415,27 +434,11 @@ private fun IllustrationIcon(icon: ImageVector) {
 @Composable
 private fun LoginScreenPreview() {
     ChprbnTheme {
-        val fakeRepo = remember {
-            object : AuthRepository {
-                override suspend fun login(username: String, password: String): AuthResult {
-                    return AuthResult.Success(
-                        user = User(
-                            id = "preview-user",
-                            username = username.ifEmpty { "CH-PREVIEW" },
-                            email = "preview@chprbn.gov.ng",
-                            fullName = "Preview Practitioner",
-                            accessToken = "preview-token",
-                            permissions = listOf("auth:login"),
-                            userPhoto = null
-                        )
-                    )
-                }
-            }
-        }
-        val fakeUseCase =
-            remember { LoginUseCase(fakeRepo) }
-        val fakeViewModel = remember { LoginViewModel(fakeUseCase) }
-
-        LoginScreen(viewModel = fakeViewModel)
+        LoginContent(
+            uiState = LoginUiState(),
+            onSignInClick = { _, _ -> },
+            onRecovery = {},
+            onRequestAccess = {}
+        )
     }
 }

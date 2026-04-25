@@ -85,6 +85,37 @@ fun SyncScreen(
     onProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    SyncContent(
+        modifier = modifier,
+        uiState = uiState,
+        onBack = onBack,
+        onRefresh = { viewModel.refresh() },
+        onSyncAll = { viewModel.syncAll() },
+        onRetryFailed = { viewModel.retryFailed() },
+        onViewAllHistory = onViewAllHistory,
+        onHome = onHome,
+        onVerified = onVerified,
+        onScanQr = onScanQr,
+        onProfile = onProfile,
+        lastSyncLabel = viewModel.formatRelativeLastSync(uiState.lastSuccessfulSyncMillis)
+    )
+}
+
+@Composable
+fun SyncContent(
+    modifier: Modifier = Modifier,
+    uiState: SyncUiState,
+    onBack: () -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onSyncAll: () -> Unit = {},
+    onRetryFailed: () -> Unit = {},
+    onViewAllHistory: () -> Unit = {},
+    onHome: () -> Unit = {},
+    onVerified: () -> Unit = {},
+    onScanQr: () -> Unit = {},
+    onProfile: () -> Unit = {},
+    lastSyncLabel: String = "Never synced"
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -94,7 +125,7 @@ fun SyncScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            SyncHeader(onBack = onBack, onRefresh = { viewModel.refresh() })
+            SyncHeader(onBack = onBack, onRefresh = onRefresh)
 
             Column(
                 modifier = Modifier
@@ -104,7 +135,7 @@ fun SyncScreen(
             ) {
                 if (uiState.error != null) {
                     Text(
-                        text = uiState.error!!,
+                        text = uiState.error,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFC62828),
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -120,7 +151,7 @@ fun SyncScreen(
                 }
                 SyncProgressSection(
                     progress = uiState.syncProgress,
-                    lastSyncLabel = viewModel.formatRelativeLastSync(uiState.lastSuccessfulSyncMillis)
+                    lastSyncLabel = lastSyncLabel
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 SyncStatsGrid(
@@ -132,13 +163,13 @@ fun SyncScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 SyncActionsSection(
                     actionsEnabled = !uiState.isSyncing,
-                    onSyncAll = { viewModel.syncAll() },
-                    onRetryFailed = { viewModel.retryFailed() }
+                    onSyncAll = onSyncAll,
+                    onRetryFailed = onRetryFailed
                 )
                 if (uiState.lastBatchSummary != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = uiState.lastBatchSummary!!,
+                        text = uiState.lastBatchSummary,
                         style = MaterialTheme.typography.bodySmall,
                         color = PrimaryGreen.copy(alpha = 0.8f)
                     )
@@ -668,7 +699,7 @@ private fun rememberConnectivityStatus(): Boolean {
 @Composable
 private fun SyncScreenPreview() {
     ChprbnTheme {
-        SyncScreen()
+        SyncContent(uiState = SyncUiState())
     }
 }
 

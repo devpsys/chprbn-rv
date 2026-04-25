@@ -71,8 +71,7 @@ fun DashboardScreen(
     onHome: () -> Unit = {},
     onSearch: () -> Unit = {},
     onSettings: () -> Unit = {},
-    viewModel: DashboardViewModel = hiltViewModel(),
-    featuresOverride: List<DashboardFeature>? = null
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -86,10 +85,21 @@ fun DashboardScreen(
                 onNotifications = { },
                 onMenu = { }
             )
-            if (featuresOverride != null) {
-                DashboardContent(
+            when (val state = uiState) {
+                is DashboardUiState.Loading -> DashboardContent(
                     user = null,
-                    featureList = featuresOverride,
+                    featureList = emptyList(),
+                    onFeatureClick = { },
+                    onScanQr = onScanQr,
+                    onVerifiedList = onVerifiedList,
+                    onSync = onSync,
+                    onProfile = onProfile,
+                    isLoading = true
+                )
+
+                is DashboardUiState.Success -> DashboardContent(
+                    user = state.user,
+                    featureList = state.features,
                     onFeatureClick = { feature ->
                         when (feature.id) {
                             FeatureType.ScanQr -> onScanQr()
@@ -104,50 +114,19 @@ fun DashboardScreen(
                     onProfile = onProfile,
                     isLoading = false
                 )
-            } else {
-                when (val state = uiState) {
-                    is DashboardUiState.Loading -> DashboardContent(
-                        user = null,
-                        featureList = emptyList(),
-                        onFeatureClick = { },
-                        onScanQr = onScanQr,
-                        onVerifiedList = onVerifiedList,
-                        onSync = onSync,
-                        onProfile = onProfile,
-                        isLoading = true
-                    )
 
-                    is DashboardUiState.Success -> DashboardContent(
-                        user = state.user,
-                        featureList = state.features,
-                        onFeatureClick = { feature ->
-                            when (feature.id) {
-                                FeatureType.ScanQr -> onScanQr()
-                                FeatureType.VerifiedList -> onVerifiedList()
-                                FeatureType.Sync -> onSync()
-                                FeatureType.Profile -> onProfile()
-                            }
-                        },
-                        onScanQr = onScanQr,
-                        onVerifiedList = onVerifiedList,
-                        onSync = onSync,
-                        onProfile = onProfile,
-                        isLoading = false
-                    )
-
-                    is DashboardUiState.Error -> DashboardContent(
-                        user = null,
-                        featureList = emptyList(),
-                        onFeatureClick = { },
-                        onScanQr = onScanQr,
-                        onVerifiedList = onVerifiedList,
-                        onSync = onSync,
-                        onProfile = onProfile,
-                        isLoading = false,
-                        errorMessage = state.message,
-                        onRetry = { viewModel.retry() }
-                    )
-                }
+                is DashboardUiState.Error -> DashboardContent(
+                    user = null,
+                    featureList = emptyList(),
+                    onFeatureClick = { },
+                    onScanQr = onScanQr,
+                    onVerifiedList = onVerifiedList,
+                    onSync = onSync,
+                    onProfile = onProfile,
+                    isLoading = false,
+                    errorMessage = state.message,
+                    onRetry = { viewModel.retry() }
+                )
             }
         }
         BottomNavBar(
@@ -606,6 +585,15 @@ fun SystemStatusCard() {
 @Composable
 fun DashboardScreenPreview() {
     ChprbnTheme {
-        DashboardScreen(featuresOverride = previewDashboardFeatures)
+        DashboardContent(
+            user = null,
+            featureList = previewDashboardFeatures,
+            onFeatureClick = {},
+            onScanQr = {},
+            onVerifiedList = {},
+            onSync = {},
+            onProfile = {},
+            isLoading = false
+        )
     }
 }

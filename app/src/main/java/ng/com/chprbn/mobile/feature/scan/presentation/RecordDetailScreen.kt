@@ -87,15 +87,42 @@ fun RecordDetailScreen(
     onProceedToVerification: (LicenseRecord) -> Unit = {},
     onReportIrregularity: (LicenseRecord) -> Unit = {},
     onManualEntry: () -> Unit = {},
-    viewModel: RecordDetailViewModel = hiltViewModel(),
-    recordOverride: LicenseRecord? = null
+    viewModel: RecordDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(registrationNumber) {
-        if (recordOverride == null) viewModel.loadRecord(registrationNumber)
+        viewModel.loadRecord(registrationNumber)
     }
 
-    val record = recordOverride ?: (state as? RecordDetailUiState.Success)?.record
+    val record = (state as? RecordDetailUiState.Success)?.record
+    
+    RecordDetailContent(
+        modifier = modifier,
+        state = state,
+        registrationNumber = registrationNumber,
+        record = record,
+        onBack = onBack,
+        onMenu = onMenu,
+        onProceedToVerification = onProceedToVerification,
+        onReportIrregularity = onReportIrregularity,
+        onManualEntry = onManualEntry,
+        onRetry = { viewModel.retry(registrationNumber) }
+    )
+}
+
+@Composable
+fun RecordDetailContent(
+    modifier: Modifier = Modifier,
+    state: RecordDetailUiState,
+    registrationNumber: String,
+    record: LicenseRecord?,
+    onBack: () -> Unit = {},
+    onMenu: () -> Unit = {},
+    onProceedToVerification: (LicenseRecord) -> Unit = {},
+    onReportIrregularity: (LicenseRecord) -> Unit = {},
+    onManualEntry: () -> Unit = {},
+    onRetry: () -> Unit = {}
+) {
     val digitalLicenseId =
         record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
 
@@ -114,17 +141,17 @@ fun RecordDetailScreen(
                     .padding(bottom = 140.dp)
             ) {
                 when {
-                    record != null -> RecordDetailContent(record = record)
+                    record != null -> RecordDetailInfo(record = record)
                     state is RecordDetailUiState.Loading -> RecordDetailLoadingContent()
                     state is RecordDetailUiState.NotFound -> RecordDetailNoRecordContent(
                         registrationNumber = registrationNumber,
-                        onRetry = { viewModel.retry(registrationNumber) },
+                        onRetry = onRetry,
                         onManualEntry = onManualEntry
                     )
 
                     state is RecordDetailUiState.Error -> RecordDetailErrorContent(
-                        message = (state as RecordDetailUiState.Error).message,
-                        onRetry = { viewModel.retry(registrationNumber) }
+                        message = state.message,
+                        onRetry = onRetry
                     )
                 }
             }
@@ -208,7 +235,7 @@ fun RecordDetailScreen(
 }
 
 @Composable
-private fun RecordDetailContent(record: LicenseRecord) {
+private fun RecordDetailInfo(record: LicenseRecord) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1053,14 +1080,10 @@ private val previewRecord = LicenseRecord(
 @Composable
 private fun RecordDetailScreenPreview() {
     ChprbnTheme {
-        RecordDetailScreen(
+        RecordDetailContent(
             registrationNumber = "MED-12345",
-            onBack = {},
-            onMenu = {},
-            onProceedToVerification = {},
-            onReportIrregularity = {},
-            onManualEntry = {},
-            recordOverride = previewRecord
+            state = RecordDetailUiState.Success(previewRecord),
+            record = previewRecord
         )
     }
 }

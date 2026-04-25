@@ -77,6 +77,37 @@ fun ProfileScreen(
     LaunchedEffect(state) {
         if (state is ProfileUiState.LoggedOut) onLogout()
     }
+    ProfileContent(
+        modifier = modifier,
+        state = state,
+        onBack = onBack,
+        onMenu = onMenu,
+        onEditProfile = onEditProfile,
+        onChangePassword = onChangePassword,
+        onLogoutClick = { viewModel.logout() },
+        onHome = onHome,
+        onVerified = onVerified,
+        onScanQr = onScanQr,
+        onSync = onSync,
+        onProfile = onProfile
+    )
+}
+
+@Composable
+fun ProfileContent(
+    modifier: Modifier = Modifier,
+    state: ProfileUiState,
+    onBack: () -> Unit = {},
+    onMenu: () -> Unit = {},
+    onEditProfile: () -> Unit = {},
+    onChangePassword: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
+    onHome: () -> Unit = {},
+    onVerified: () -> Unit = {},
+    onScanQr: () -> Unit = {},
+    onSync: () -> Unit = {},
+    onProfile: () -> Unit = {}
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -102,12 +133,11 @@ fun ProfileScreen(
                         AccountDetailsSection(user = null)
                     }
 
-                    is ProfileUiState.LoggedOut -> { /* onLogout will navigate */
-                    }
+                    is ProfileUiState.LoggedOut -> { /* handled upstream */ }
                 }
                 SecurityAndSessionSection(
                     onChangePassword = onChangePassword,
-                    onLogout = { viewModel.logout() }
+                    onLogout = onLogoutClick
                 )
             }
         }
@@ -437,6 +467,6 @@ private fun Modifier.offset(
 @Composable
 private fun ProfileScreenPreview() {
     ChprbnTheme {
-        ProfileScreen()
+        ProfileContent(state = ProfileUiState.Loading)
     }
 }

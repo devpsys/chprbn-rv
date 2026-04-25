@@ -54,6 +54,13 @@ fun SplashScreen(
             null -> { /* still loading */ }
         }
     }
+    SplashContent(modifier = modifier)
+}
+
+@Composable
+fun SplashContent(
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -170,6 +177,6 @@ fun SplashScreen(
 @Composable
 private fun SplashScreenPreview() {
     ChprbnTheme {
-        SplashScreen()
+        SplashContent()
     }
 }

@@ -90,6 +90,37 @@ fun VerifiedListScreen(
         }
     }
 
+    VerifiedListContent(
+        modifier = modifier,
+        uiState = uiState,
+        onBack = onBack,
+        onMenu = onMenu,
+        onPractitionerClicked = onPractitionerClicked,
+        onQueryChange = viewModel::onQueryChange,
+        onFilterSelected = viewModel::onFilterSelected,
+        onHome = onHome,
+        onScanQr = onScanQr,
+        onSync = onSync,
+        onProfile = onProfile
+    )
+}
+
+@Composable
+fun VerifiedListContent(
+    modifier: Modifier = Modifier,
+    uiState: VerifiedListUiState,
+    onBack: () -> Unit = {},
+    onMenu: () -> Unit = {},
+    onPractitionerClicked: (VerifiedPractitioner) -> Unit = {},
+    onQueryChange: (String) -> Unit = {},
+    onFilterSelected: (VerifiedFilter) -> Unit = {},
+    onHome: () -> Unit = {},
+    onScanQr: () -> Unit = {},
+    onSync: () -> Unit = {},
+    onProfile: () -> Unit = {}
+) {
+    val items = uiState.filteredPractitioners
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -101,11 +132,11 @@ fun VerifiedListScreen(
             VerifiedHeader(onBack = onBack, onMenu = onMenu)
             SearchBar(
                 query = uiState.query,
-                onQueryChange = { q -> viewModel.onQueryChange(q) }
+                onQueryChange = onQueryChange
             )
             FilterTabs(
                 selected = uiState.selectedFilter,
-                onFilterSelected = { filter -> viewModel.onFilterSelected(filter) }
+                onFilterSelected = onFilterSelected
             )
 
             when {
@@ -696,7 +727,7 @@ val samplePractitioners = listOf(
 @Composable
 private fun VerifiedListScreenPreview() {
     ChprbnTheme {
-        VerifiedListScreen()
+        VerifiedListContent(uiState = VerifiedListUiState(practitioners = samplePractitioners))
     }
 }
 

@@ -61,7 +61,34 @@ fun SyncHistoryScreen(
     viewModel: SyncHistoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    SyncHistoryContent(
+        modifier = modifier,
+        uiState = uiState,
+        onBack = onBack,
+        onItemClick = onItemClick,
+        onQueryChange = viewModel::onQueryChange,
+        onFilterSelected = viewModel::onFilterSelected,
+        onHome = onHome,
+        onVerified = onVerified,
+        onScanQr = onScanQr,
+        onProfile = onProfile
+    )
+}
 
+@Composable
+fun SyncHistoryContent(
+    modifier: Modifier = Modifier,
+    uiState: SyncHistoryUiState,
+    onBack: () -> Unit = {},
+    onItemClick: (SyncHistoryItem) -> Unit = {},
+    onQueryChange: (String) -> Unit = {},
+    onFilterSelected: (SyncHistoryFilter) -> Unit = {},
+    onHome: () -> Unit = {},
+    onVerified: () -> Unit = {},
+    onScanQr: () -> Unit = {},
+    onProfile: () -> Unit = {}
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -73,9 +100,9 @@ fun SyncHistoryScreen(
             SyncHistoryHeader(onBack = onBack)
             SyncHistorySearchAndFilter(
                 query = uiState.query,
-                onQueryChange = viewModel::onQueryChange,
+                onQueryChange = onQueryChange,
                 filter = uiState.filter,
-                onFilterSelected = viewModel::onFilterSelected
+                onFilterSelected = onFilterSelected
             )
 
             LazyColumn(
@@ -333,7 +360,7 @@ private data class Quadruple<A, B, C, D>(
 @Composable
 private fun SyncHistoryScreenPreview() {
     ChprbnTheme {
-        SyncHistoryScreen()
+        SyncHistoryContent(uiState = SyncHistoryUiState())
     }
 }
 

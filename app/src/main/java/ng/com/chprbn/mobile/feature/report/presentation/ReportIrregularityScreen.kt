@@ -72,12 +72,49 @@ fun ReportIrregularityScreen(
     viewModel: ReportIrregularityViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.submitState) {
+        if (uiState.submitState is ReportIrregularitySubmitState.Success) {
+            viewModel.consumeSubmitState()
+            onSubmitted()
+        }
+    }
+
+    ReportIrregularityContent(
+        modifier = modifier,
+        uiState = uiState,
+        onBack = onBack,
+        onNameOnCardChange = viewModel::onNameOnCardChange,
+        onLicenseNumberChange = viewModel::onLicenseNumberChange,
+        onCadreChange = viewModel::onCadreChange,
+        onGenderChange = viewModel::onGenderChange,
+        onRemarkSelected = viewModel::onRemarkSelected,
+        onSnapshotUriChange = viewModel::onSnapshotUriChange,
+        onClearSnapshot = viewModel::clearSnapshot,
+        onSubmit = viewModel::submit
+    )
+}
+
+@Composable
+fun ReportIrregularityContent(
+    modifier: Modifier = Modifier,
+    uiState: ReportIrregularityUiState,
+    onBack: () -> Unit = {},
+    onNameOnCardChange: (String) -> Unit = {},
+    onLicenseNumberChange: (String) -> Unit = {},
+    onCadreChange: (String) -> Unit = {},
+    onGenderChange: (String) -> Unit = {},
+    onRemarkSelected: (IrregularityRemark) -> Unit = {},
+    onSnapshotUriChange: (String) -> Unit = {},
+    onClearSnapshot: () -> Unit = {},
+    onSubmit: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     val pickImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        viewModel.onSnapshotUriChange(uri?.toString())
+        onSnapshotUriChange(uri?.toString() ?: "")
     }
 
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
@@ -85,7 +122,7 @@ fun ReportIrregularityScreen(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            pendingCaptureUri?.let { viewModel.onSnapshotUriChange(it.toString()) }
+            pendingCaptureUri?.let { onSnapshotUriChange(it.toString()) }
         }
         pendingCaptureUri = null
     }
@@ -109,13 +146,6 @@ fun ReportIrregularityScreen(
             takePicture.launch(uri)
         } else {
             requestCameraPermission.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    LaunchedEffect(uiState.submitState) {
-        if (uiState.submitState is ReportIrregularitySubmitState.Success) {
-            viewModel.consumeSubmitState()
-            onSubmitted()
         }
     }
 
@@ -151,7 +181,7 @@ fun ReportIrregularityScreen(
             FormOutlinedField(
                 label = "Name on card",
                 value = uiState.nameOnCard,
-                onValueChange = viewModel::onNameOnCardChange,
+                onValueChange = onNameOnCardChange,
                 error = uiState.fieldErrors.nameOnCard
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -159,7 +189,7 @@ fun ReportIrregularityScreen(
             FormOutlinedField(
                 label = "License number",
                 value = uiState.licenseNumber,
-                onValueChange = viewModel::onLicenseNumberChange,
+                onValueChange = onLicenseNumberChange,
                 error = uiState.fieldErrors.licenseNumber
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -167,7 +197,7 @@ fun ReportIrregularityScreen(
             FormOutlinedField(
                 label = "Cadre",
                 value = uiState.cadre,
-                onValueChange = viewModel::onCadreChange,
+                onValueChange = onCadreChange,
                 error = uiState.fieldErrors.cadre
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -175,14 +205,14 @@ fun ReportIrregularityScreen(
             FormOutlinedField(
                 label = "Gender",
                 value = uiState.gender,
-                onValueChange = viewModel::onGenderChange,
+                onValueChange = onGenderChange,
                 error = uiState.fieldErrors.gender
             )
             Spacer(modifier = Modifier.height(20.dp))
 
             RemarkDropdown(
                 selected = uiState.selectedRemark,
-                onSelect = viewModel::onRemarkSelected,
+                onSelect = onRemarkSelected,
                 error = uiState.fieldErrors.remark
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -241,7 +271,7 @@ fun ReportIrregularityScreen(
                             contentScale = ContentScale.Fit
                         )
                         IconButton(
-                            onClick = { viewModel.clearSnapshot() },
+                            onClick = { onClearSnapshot() },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(4.dp)
@@ -322,7 +352,7 @@ fun ReportIrregularityScreen(
                         .fillMaxWidth()
                         .clickable(
                             enabled = !submitting,
-                            onClick = { viewModel.submit() }
+                            onClick = { onSubmit() }
                         ),
                     shape = RoundedCornerShape(12.dp),
                     color = if (submitting) PrimaryGreen.copy(alpha = 0.5f) else PrimaryGreen

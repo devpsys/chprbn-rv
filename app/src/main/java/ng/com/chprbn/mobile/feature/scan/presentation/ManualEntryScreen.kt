@@ -53,6 +53,23 @@ fun ManualEntryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    ManualEntryContent(
+        modifier = modifier,
+        uiState = uiState,
+        onBack = onBack,
+        onLicenseNumberChange = viewModel::onLicenseNumberChange,
+        onVerifyLicense = onVerifyLicense
+    )
+}
+
+@Composable
+fun ManualEntryContent(
+    modifier: Modifier = Modifier,
+    uiState: ManualEntryUiState,
+    onBack: () -> Unit = {},
+    onLicenseNumberChange: (String) -> Unit = {},
+    onVerifyLicense: (String) -> Unit = {}
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -92,7 +109,7 @@ fun ManualEntryScreen(
                 )
                 OutlinedTextField(
                     value = uiState.licenseNumber,
-                    onValueChange = viewModel::onLicenseNumberChange,
+                    onValueChange = onLicenseNumberChange,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -219,7 +236,7 @@ private fun ManualEntryHeader(onBack: () -> Unit) {
 @Composable
 private fun ManualEntryScreenPreview() {
     ChprbnTheme {
-        ManualEntryScreen()
+        ManualEntryContent(uiState = ManualEntryUiState())
     }
 }
 

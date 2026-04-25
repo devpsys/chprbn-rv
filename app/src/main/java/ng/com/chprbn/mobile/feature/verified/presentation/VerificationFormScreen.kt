@@ -73,6 +73,28 @@ fun VerificationFormScreen(
         }
     }
 
+    VerificationFormContent(
+        modifier = modifier,
+        uiState = uiState,
+        lastVerifiedText = lastVerifiedText,
+        onBack = onBack,
+        onSaveVerification = viewModel::saveVerification,
+        onReportIrregularity = onReportIrregularity,
+        onOfficerRemarkSelected = viewModel::onOfficerRemarkSelected
+    )
+}
+
+@Composable
+fun VerificationFormContent(
+    modifier: Modifier = Modifier,
+    uiState: VerificationFormUiState,
+    lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
+    onBack: () -> Unit = {},
+    onSaveVerification: () -> Unit = {},
+    onReportIrregularity: () -> Unit = {},
+    onOfficerRemarkSelected: (String) -> Unit = {}
+) {
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -98,7 +120,7 @@ fun VerificationFormScreen(
             OfficerRemarkDropdown(
                 selectedRemark = uiState.selectedOfficerRemark,
                 options = VerificationFormViewModel.officerRemarkOptions,
-                onSelect = viewModel::onOfficerRemarkSelected
+                onSelect = onOfficerRemarkSelected
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -135,9 +157,7 @@ fun VerificationFormScreen(
         }
 
         VerificationFormFooter(
-            onSaveVerification = {
-                viewModel.saveVerification()
-            },
+            onSaveVerification = onSaveVerification,
             lastVerifiedText = lastVerifiedText
         )
     }
@@ -326,11 +346,8 @@ private fun VerificationFormScreenPreview() {
         institutionAttended = InstitutionAttended(name = "College of Medicine, UNN")
     )
     ChprbnTheme {
-        VerificationFormScreen(
-            licenseRecord = previewRecord,
-            onBack = {},
-            onSaveVerification = {},
-            onReportIrregularity = {}
+        VerificationFormContent(
+            uiState = VerificationFormUiState(licenseRecord = previewRecord)
         )
     }
 }

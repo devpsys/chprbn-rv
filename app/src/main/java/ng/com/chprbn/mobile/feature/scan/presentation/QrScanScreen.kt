@@ -83,17 +83,31 @@ fun QrScanScreen(
     onQrScanned: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val cameraViewportHeight = screenHeight * 0.75f // 75% of screen height
-
-    // Navigate to student details when a registration is scanned
     LaunchedEffect(uiState.scannedRegistrationNumber) {
         uiState.scannedRegistrationNumber?.let { registrationNumber ->
             onQrScanned(registrationNumber)
             viewModel.handleEvent(ScanUiEvent.RegistrationScanned(null))
         }
     }
+
+    QrScanContent(
+        uiState = uiState,
+        onQrScanned = { value -> viewModel.handleEvent(ScanUiEvent.RegistrationScanned(value)) },
+        onToggleTorch = { viewModel.handleEvent(ScanUiEvent.ToggleTorch) },
+        onManualEntry = onManualEntry
+    )
+}
+
+@Composable
+fun QrScanContent(
+    uiState: ScanUiState,
+    onQrScanned: (String) -> Unit,
+    onToggleTorch: () -> Unit,
+    onManualEntry: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val cameraViewportHeight = screenHeight * 0.75f // 75% of screen height
 
     Box(
         modifier = Modifier
@@ -114,9 +128,7 @@ fun QrScanScreen(
             ) {
                 CameraScanPreview(
                     isTorchOn = uiState.isTorchOn,
-                    onQrScanned = { value ->
-                        viewModel.handleEvent(ScanUiEvent.RegistrationScanned(value))
-                    }
+                    onQrScanned = onQrScanned
                 )
 
                 // Scanning Overlay (unchanged)
@@ -282,9 +294,7 @@ fun QrScanScreen(
                                 shape = CircleShape
                             )
                             .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                            .clickable {
-                                viewModel.handleEvent(ScanUiEvent.ToggleTorch)
-                            },
+                            .clickable(onClick = onToggleTorch),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -538,3 +548,15 @@ fun QrScanFooter(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun QrScanScreenPreview() {
+    ng.com.chprbn.mobile.core.designsystem.ChprbnTheme {
+        QrScanContent(
+            uiState = ScanUiState(),
+            onQrScanned = {},
+            onToggleTorch = {},
+            onManualEntry = {}
+        )
+    }
+}
