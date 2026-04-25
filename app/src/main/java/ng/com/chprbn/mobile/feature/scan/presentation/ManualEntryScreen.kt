@@ -70,11 +70,11 @@ fun ManualEntryContent(
     onLicenseNumberChange: (String) -> Unit = {},
     onVerifyLicense: (String) -> Unit = {}
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             ManualEntryHeader(onBack = onBack)
 
@@ -191,6 +191,7 @@ fun ManualEntryContent(
                     )
                 }
             }
+        }
         }
     }
 }

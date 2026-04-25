@@ -149,11 +149,11 @@ fun ReportIrregularityContent(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(modifier = Modifier.fillMaxSize()) {
         ReportIrregularityHeader(onBack = onBack)
 
         Column(
@@ -369,6 +369,7 @@ fun ReportIrregularityContent(
                     )
                 }
             }
+        }
         }
     }
 }

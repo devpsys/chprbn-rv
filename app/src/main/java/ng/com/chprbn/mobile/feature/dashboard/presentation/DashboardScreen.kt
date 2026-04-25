@@ -75,12 +75,12 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Column(Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
             DashboardTopBar(
                 onNotifications = { },
                 onMenu = { }
@@ -138,6 +138,7 @@ fun DashboardScreen(
             onSync = onSync,
             onProfile = onProfile
         )
+        }
     }
 }
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,10 +62,9 @@ fun SplashScreen(
 fun SplashContent(
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(PrimaryGreen)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = PrimaryGreen
     ) {
         Column(
             modifier = Modifier

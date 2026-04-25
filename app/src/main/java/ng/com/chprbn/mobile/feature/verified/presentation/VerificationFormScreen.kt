@@ -95,11 +95,11 @@ fun VerificationFormContent(
     onOfficerRemarkSelected: (String) -> Unit = {}
 ) {
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(modifier = Modifier.fillMaxSize()) {
         VerificationFormHeader(onBack = onBack)
 
         Column(
@@ -160,6 +160,7 @@ fun VerificationFormContent(
             onSaveVerification = onSaveVerification,
             lastVerifiedText = lastVerifiedText
         )
+        }
     }
 }
 

@@ -108,11 +108,11 @@ fun ProfileContent(
     onSync: () -> Unit = {},
     onProfile: () -> Unit = {}
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             ProfileHeader(onBack = onBack, onMenu = onMenu)
             Column(
@@ -150,6 +150,7 @@ fun ProfileContent(
             onSync = onSync,
             onProfile = onProfile
         )
+        }
     }
 }
 

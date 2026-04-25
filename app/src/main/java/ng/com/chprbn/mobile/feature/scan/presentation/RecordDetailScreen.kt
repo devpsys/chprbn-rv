@@ -126,11 +126,11 @@ fun RecordDetailContent(
     val digitalLicenseId =
         record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             RecordDetailHeader(onBack = onBack, onMenu = onMenu)
 
@@ -230,6 +230,7 @@ fun RecordDetailContent(
                     }
                 }
             }
+        }
         }
     }
 }

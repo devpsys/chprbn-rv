@@ -109,12 +109,11 @@ fun QrScanContent(
     val screenHeight = configuration.screenHeightDp.dp
     val cameraViewportHeight = screenHeight * 0.75f // 75% of screen height
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
+    Surface(
+        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -312,6 +311,7 @@ fun QrScanContent(
                 statusText = "Waiting for QR code...",
                 onManualEntry = onManualEntry
             )
+        }
         }
     }
 }

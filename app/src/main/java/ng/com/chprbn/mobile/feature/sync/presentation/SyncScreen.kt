@@ -116,11 +116,11 @@ fun SyncContent(
     onProfile: () -> Unit = {},
     lastSyncLabel: String = "Never synced"
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -191,6 +191,7 @@ fun SyncContent(
             onSync = { /* already on sync */ },
             onProfile = onProfile
         )
+        }
     }
 }
 
