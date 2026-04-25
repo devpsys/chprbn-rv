@@ -12,8 +12,6 @@ import ng.com.chprbn.mobile.feature.verified.domain.model.VerifiedLicense
 interface VerifiedRepository {
     suspend fun saveVerifiedLicense(
         licenseRecord: LicenseRecord,
-        verificationLocation: String,
-        practitionerPresent: Boolean,
         remark: String,
         verifiedAt: Long,
     ): SaveVerifiedLicenseResult

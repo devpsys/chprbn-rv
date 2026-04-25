@@ -18,8 +18,6 @@ class VerifiedRepositoryImpl @Inject constructor(
 
     override suspend fun saveVerifiedLicense(
         licenseRecord: LicenseRecord,
-        verificationLocation: String,
-        practitionerPresent: Boolean,
         remark: String,
         verifiedAt: Long
     ): SaveVerifiedLicenseResult = withContext(Dispatchers.IO) {
@@ -27,13 +25,10 @@ class VerifiedRepositoryImpl @Inject constructor(
 //        if (!licenseRecord.licenseStatus.equals("Active", ignoreCase = true)) {
 //            return SaveVerifiedLicenseResult.Error("Only practitioners with an active license can be verified.")
 //        }
-        if (!practitionerPresent) {
-            return@withContext SaveVerifiedLicenseResult.Error("Practitioner must be marked as verified.")
-        }
 
         val entity = licenseRecord.toVerifiedLicenseEntity(
-            verificationLocation = verificationLocation,
-            practitionerPresent = practitionerPresent,
+            verificationLocation = "",
+            practitionerPresent = true,
             remark = remark,
             verifiedAt = verifiedAt,
             syncStatus = SyncStatus.Pending

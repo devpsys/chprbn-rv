@@ -19,6 +19,12 @@ object Routes {
     fun verificationFormRoute(licenseRecordJson: String): String =
         "verification_form?licenseRecordJson=$licenseRecordJson"
 
+    /** Prefill JSON (name, license, cadre, gender only); use [reportIrregularityRoute] with [Uri.encode]. */
+    const val ReportIrregularity = "report_irregularity?prefillJson={prefillJson}"
+
+    fun reportIrregularityRoute(prefillJson: String): String =
+        "report_irregularity?prefillJson=$prefillJson"
+
     const val SyncHistory = "sync_history"
 
     /** Route pattern for record detail; use [recordDetailRoute] to build with argument. */

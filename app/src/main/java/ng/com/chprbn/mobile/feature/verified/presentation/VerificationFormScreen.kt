@@ -1,6 +1,5 @@
 package ng.com.chprbn.mobile.feature.verified.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,20 +17,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +51,7 @@ import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 
 /**
  * Verification form screen (presentation layer).
- * Receives full [licenseRecord] as single source of truth; "Mark as Verified" is enabled only when [LicenseRecord.licenseStatus] is Active.
+ * Officer remark is chosen from a fixed list; [licenseRecord] is the source of truth when provided.
  */
 @Composable
 fun VerificationFormScreen(
@@ -57,6 +60,7 @@ fun VerificationFormScreen(
     lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
     onBack: () -> Unit = {},
     onSaveVerification: () -> Unit = {},
+    onReportIrregularity: () -> Unit = {},
     viewModel: VerificationFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -91,82 +95,33 @@ fun VerificationFormScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Verification Location",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            OutlinedTextField(
-                value = uiState.verificationLocation,
-                onValueChange = viewModel::onVerificationLocationChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                placeholder = {
-                    Text(
-                        "Enter facility name",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                    focusedIndicatorColor = PrimaryGreen,
-                    unfocusedIndicatorColor = PrimaryGreen.copy(alpha = 0.2f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    cursorColor = PrimaryGreen
-                ),
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = null,
-                        tint = PrimaryGreen.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
+            OfficerRemarkDropdown(
+                selectedRemark = uiState.selectedOfficerRemark,
+                options = VerificationFormViewModel.officerRemarkOptions,
+                onSelect = viewModel::onOfficerRemarkSelected
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Officer Remarks",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            OutlinedTextField(
-                value = uiState.officerRemarks,
-                onValueChange = viewModel::onOfficerRemarksChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                placeholder = {
-                    Text(
-                        "Provide additional details about the verification process...",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                },
-                maxLines = 4,
-                shape = RoundedCornerShape(12.dp),
-                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                    focusedIndicatorColor = PrimaryGreen,
-                    unfocusedIndicatorColor = PrimaryGreen.copy(alpha = 0.2f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    cursorColor = PrimaryGreen
+            OutlinedButton(
+                onClick = onReportIrregularity,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ReportProblem,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.error
                 )
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            PractitionerPresentCard(
-                checked = uiState.practitionerPresent,
-                onCheckedChange = viewModel::onPractitionerPresentChange,
-            )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(
+                    text = "Report irregularity",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
 
             val saveError = uiState.saveState as? SaveVerificationState.Error
             if (saveError != null) {
@@ -185,6 +140,74 @@ fun VerificationFormScreen(
             },
             lastVerifiedText = lastVerifiedText
         )
+    }
+}
+
+@Composable
+private fun OfficerRemarkDropdown(
+    selectedRemark: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Officer remark",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selectedRemark,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = true },
+                placeholder = {
+                    Text(
+                        "Select an option",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = PrimaryGreen.copy(alpha = 0.8f)
+                    )
+                },
+                colors = androidx.compose.material3.TextFieldDefaults.colors(
+                    focusedIndicatorColor = PrimaryGreen,
+                    unfocusedIndicatorColor = PrimaryGreen.copy(alpha = 0.35f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledIndicatorColor = PrimaryGreen.copy(alpha = 0.35f),
+                    cursorColor = PrimaryGreen
+                )
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onSelect(option)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -221,122 +244,6 @@ private fun VerificationFormHeader(onBack: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-    }
-}
-
-@Composable
-private fun ReadonlyField(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = PrimaryGreen.copy(alpha = 0.05f),
-            border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = null,
-                    tint = PrimaryGreen.copy(alpha = 0.4f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PractitionerPresentCard(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(PrimaryGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.VerifiedUser,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = PrimaryGreen
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = "Mark Verified",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Confirm license is verified",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Switch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.surface,
-                        checkedTrackColor = PrimaryGreen,
-                        uncheckedThumbColor = MaterialTheme.colorScheme.surface,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-            }
         }
     }
 }
@@ -422,7 +329,8 @@ private fun VerificationFormScreenPreview() {
         VerificationFormScreen(
             licenseRecord = previewRecord,
             onBack = {},
-            onSaveVerification = {}
+            onSaveVerification = {},
+            onReportIrregularity = {}
         )
     }
 }

@@ -13,22 +13,13 @@ class SaveVerifiedLicenseUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         licenseRecord: LicenseRecord,
-        verificationLocation: String,
-        practitionerPresent: Boolean,
         remark: String,
         verifiedAt: Long = System.currentTimeMillis()
     ): SaveVerifiedLicenseResult {
-        val locationTrimmed = verificationLocation.trim()
         val remarkTrimmed = remark.trim()
 
-        if (locationTrimmed.isEmpty()) {
-            return SaveVerifiedLicenseResult.Error("Verification location is required.")
-        }
         if (remarkTrimmed.isEmpty()) {
-            return SaveVerifiedLicenseResult.Error("Officer remarks are required.")
-        }
-        if (!practitionerPresent) {
-            return SaveVerifiedLicenseResult.Error("Practitioner must be marked as verified.")
+            return SaveVerifiedLicenseResult.Error("Please select an officer remark.")
         }
 //        if (!licenseRecord.licenseStatus.equals("Active", ignoreCase = true)) {
 //            return SaveVerifiedLicenseResult.Error("Only practitioners with an active license can be verified.")
@@ -36,8 +27,6 @@ class SaveVerifiedLicenseUseCase @Inject constructor(
 
         return repository.saveVerifiedLicense(
             licenseRecord = licenseRecord,
-            verificationLocation = locationTrimmed,
-            practitionerPresent = practitionerPresent,
             remark = remarkTrimmed,
             verifiedAt = verifiedAt
         )

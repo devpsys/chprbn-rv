@@ -18,6 +18,8 @@ import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.RecordDetailScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
 import ng.com.chprbn.mobile.feature.sync.presentation.SyncHistoryScreen
+import ng.com.chprbn.mobile.feature.report.domain.model.IrregularityReportPrefill
+import ng.com.chprbn.mobile.feature.report.presentation.ReportIrregularityScreen
 import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
 import ng.com.chprbn.mobile.feature.verified.presentation.VerificationFormScreen
 
@@ -253,7 +255,32 @@ fun AppNavHost() {
                     if (!poppedBoth) {
                         navController.popBackStack()
                     }
+                },
+                onReportIrregularity = {
+                    val rec = licenseRecord
+                    val prefill = IrregularityReportPrefill(
+                        nameOnCard = rec?.fullName.orEmpty(),
+                        licenseNumber = rec?.registrationNumber.orEmpty(),
+                        cadre = rec?.profession.orEmpty(),
+                        gender = rec?.gender.orEmpty()
+                    )
+                    val encoded = Uri.encode(Gson().toJson(prefill))
+                    navController.navigate(Routes.reportIrregularityRoute(encoded))
                 }
+            )
+        }
+        composable(
+            route = Routes.ReportIrregularity,
+            arguments = listOf(
+                navArgument("prefillJson") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) {
+            ReportIrregularityScreen(
+                onBack = { navController.popBackStack() },
+                onSubmitted = { navController.popBackStack() }
             )
         }
         composable(Routes.ManualLicenseEntry) {
@@ -298,6 +325,16 @@ fun AppNavHost() {
                     val json = Gson().toJson(record)
                     val encoded = Uri.encode(json)
                     navController.navigate(Routes.verificationFormRoute(encoded))
+                },
+                onReportIrregularity = { record ->
+                    val prefill = IrregularityReportPrefill(
+                        nameOnCard = record.fullName,
+                        licenseNumber = record.registrationNumber,
+                        cadre = record.profession,
+                        gender = record.gender
+                    )
+                    val encoded = Uri.encode(Gson().toJson(prefill))
+                    navController.navigate(Routes.reportIrregularityRoute(encoded))
                 },
                 onManualEntry = {
                     if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {

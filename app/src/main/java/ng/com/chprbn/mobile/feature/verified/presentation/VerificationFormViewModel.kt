@@ -25,15 +25,9 @@ sealed interface SaveVerificationState {
 
 data class VerificationFormUiState(
     val licenseRecord: LicenseRecord? = null,
-    val verificationLocation: String = "",
-    val practitionerPresent: Boolean = false,
-    val officerRemarks: String = "",
+    val selectedOfficerRemark: String = "",
     val saveState: SaveVerificationState = SaveVerificationState.Idle
-) {
-    /** True when license status is "Active", so the "Mark as Verified" switch can be enabled. */
-    val isVerifiedSwitchEnabled: Boolean =
-        licenseRecord?.licenseStatus.equals("Active", ignoreCase = true) == true
-}
+)
 
 @HiltViewModel
 class VerificationFormViewModel @Inject constructor(
@@ -48,21 +42,12 @@ class VerificationFormViewModel @Inject constructor(
         val record = runCatching {
             if (json.isBlank()) null else gson.fromJson(json, LicenseRecord::class.java)
         }.getOrNull()
-        val withRecord = VerificationFormUiState(licenseRecord = record)
-        withRecord.copy(practitionerPresent = withRecord.isVerifiedSwitchEnabled)
+        VerificationFormUiState(licenseRecord = record)
     })
     val uiState: StateFlow<VerificationFormUiState> = _uiState.asStateFlow()
 
-    fun onVerificationLocationChange(value: String) {
-        _uiState.update { it.copy(verificationLocation = value) }
-    }
-
-    fun onPractitionerPresentChange(value: Boolean) {
-        _uiState.update { it.copy(practitionerPresent = value) }
-    }
-
-    fun onOfficerRemarksChange(value: String) {
-        _uiState.update { it.copy(officerRemarks = value) }
+    fun onOfficerRemarkSelected(value: String) {
+        _uiState.update { it.copy(selectedOfficerRemark = value) }
     }
 
     fun saveVerification() {
@@ -73,28 +58,13 @@ class VerificationFormViewModel @Inject constructor(
             return
         }
 
-//        if (!record.licenseStatus.equals("Active", ignoreCase = true)) {
-//            _uiState.update {
-//                it.copy(
-//                    saveState = SaveVerificationState.Error(
-//                        "Only practitioners with an active license can be verified."
-//                    )
-//                )
-//            }
-//            return
-//        }
-
-        val verificationLocation = uiState.value.verificationLocation
-        val practitionerPresent = uiState.value.practitionerPresent
-        val officerRemarks = uiState.value.officerRemarks
+        val officerRemark = uiState.value.selectedOfficerRemark
 
         _uiState.update { it.copy(saveState = SaveVerificationState.Saving) }
         viewModelScope.launch {
             val result = saveVerifiedLicenseUseCase(
                 licenseRecord = record,
-                verificationLocation = verificationLocation,
-                practitionerPresent = practitionerPresent,
-                remark = officerRemarks
+                remark = officerRemark
             )
             _uiState.update {
                 when (result) {
@@ -110,5 +80,14 @@ class VerificationFormViewModel @Inject constructor(
 
     fun consumeSaveState() {
         _uiState.update { it.copy(saveState = SaveVerificationState.Idle) }
+    }
+
+    companion object {
+        val officerRemarkOptions = listOf(
+            "Documents verified; identity matches register",
+            "Practitioner present; credentials checked",
+            "Routine verification completed",
+            "License confirmed valid for practice"
+        )
     }
 }

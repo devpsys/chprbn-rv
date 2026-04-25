@@ -34,10 +34,12 @@ import androidx.compose.material.icons.filled.SyncProblem
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.PersonSearch
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Image
@@ -83,6 +85,7 @@ fun RecordDetailScreen(
     onBack: () -> Unit = {},
     onMenu: () -> Unit = {},
     onProceedToVerification: (LicenseRecord) -> Unit = {},
+    onReportIrregularity: (LicenseRecord) -> Unit = {},
     onManualEntry: () -> Unit = {},
     viewModel: RecordDetailViewModel = hiltViewModel(),
     recordOverride: LicenseRecord? = null
@@ -167,6 +170,26 @@ fun RecordDetailScreen(
                                     color = Color.White
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedButton(
+                            onClick = { onReportIrregularity(record) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ReportProblem,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                text = "Report irregularity",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                         Text(
                             text = "Digital License ID: $digitalLicenseId",
@@ -1073,7 +1096,9 @@ private fun RecordDetailScreenPreview() {
             registrationNumber = "MED-12345",
             onBack = {},
             onMenu = {},
-            onProceedToVerification = { },
+            onProceedToVerification = {},
+            onReportIrregularity = {},
+            onManualEntry = {},
             recordOverride = previewRecord
         )
     }
