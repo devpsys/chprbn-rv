@@ -292,25 +292,7 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-//                Box(
-//                    modifier = Modifier
-//                        .size(width = 48.dp, height = 4.dp)
-//                        .clip(RoundedCornerShape(2.dp))
-//                        .background(MaterialTheme.colorScheme.outlineVariant)
-//                )
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    horizontalArrangement = Arrangement.Center
-//                ) {
-//                    Text(
-//                        text = "New practitioner? ",
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//                    TextButton(onClick = onRequestAccess) {
-//                        Text("Request Access", color = PrimaryGreen)
-//                    }
-//                }
+
             }
         }
     }

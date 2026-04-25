@@ -16,8 +16,7 @@ import okhttp3.Response
  */
 @Singleton
 class AuthorizationInterceptor @Inject constructor(
-    private val authTokenStore: AuthTokenStore,
-    private val userDao: UserDao
+    private val authTokenStore: AuthTokenStore
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -36,18 +35,11 @@ class AuthorizationInterceptor @Inject constructor(
     }
 
     private fun resolveBearerToken(): String? {
-        val mem = authTokenStore.peekToken()
+        val mem = authTokenStore.peekToken()?.trim()
         if (mem != null && !SessionTokenPolicy.isValidForAuthenticatedApi(mem)) {
             authTokenStore.clear()
+            return null
         }
-        authTokenStore.peekToken()?.trim()?.takeIf { SessionTokenPolicy.isValidForAuthenticatedApi(it) }
-            ?.let { return it }
-
-        val fromDb = runBlocking(Dispatchers.IO) {
-            userDao.getUser()?.accessToken?.trim()
-        }
-        if (!SessionTokenPolicy.isValidForAuthenticatedApi(fromDb)) return null
-        authTokenStore.setToken(fromDb)
-        return fromDb
+        return mem
     }
 }

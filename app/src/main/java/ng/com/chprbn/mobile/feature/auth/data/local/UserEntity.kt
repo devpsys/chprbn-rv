@@ -14,7 +14,6 @@ data class UserEntity(
     val username: String,
     val email: String,
     val fullName: String?,
-    val accessToken: String,
     @TypeConverters(JsonStringListTypeConverter::class)
     val permissions: List<String>,
     val userPhoto: String?,

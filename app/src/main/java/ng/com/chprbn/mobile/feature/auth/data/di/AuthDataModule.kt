@@ -10,6 +10,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ng.com.chprbn.mobile.BuildConfig
 import javax.inject.Singleton
 import ng.com.chprbn.mobile.feature.auth.data.api.AuthApiService
 import ng.com.chprbn.mobile.feature.auth.data.local.AuthDatabase
@@ -40,13 +41,17 @@ object AuthDataModule {
     fun provideOkHttpClient(
         authorizationInterceptor: AuthorizationInterceptor
     ): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
-            setLevel(HttpLoggingInterceptor.Level.BODY)
-        }
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .addInterceptor(authorizationInterceptor)
-            .addInterceptor(logging)
-            .build()
+
+        if (BuildConfig.DEBUG) {
+            val logging = HttpLoggingInterceptor().apply {
+                setLevel(HttpLoggingInterceptor.Level.BODY)
+            }
+            builder.addInterceptor(logging)
+        }
+
+        return builder.build()
     }
 
     @Provides

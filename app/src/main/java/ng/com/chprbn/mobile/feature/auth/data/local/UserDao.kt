@@ -8,12 +8,12 @@ import androidx.room.Query
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertUser(user: UserEntity): Long
+    fun upsertUser(user: UserEntity)
 
     @Query("SELECT * FROM auth_user LIMIT 1")
     fun getUser(): UserEntity?
 
     @Query("DELETE FROM auth_user")
-    fun clearUser(): Int
+    fun clearUser()
 }
 

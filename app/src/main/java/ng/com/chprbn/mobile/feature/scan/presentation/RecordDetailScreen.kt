@@ -536,46 +536,7 @@ private fun RecordDetailErrorContent(
                     )
                 }
             }
-//            Surface(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(52.dp),
-//                shape = RoundedCornerShape(12.dp),
-//                color = MaterialTheme.colorScheme.surface,
-//                border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.2f))
-//            ) {
-//                Row(
-//                    modifier = Modifier.fillMaxSize(),
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    horizontalArrangement = Arrangement.Center
-//                ) {
-//                    Text(
-//                        text = "Work offline",
-//                        style = MaterialTheme.typography.titleSmall,
-//                        fontWeight = FontWeight.Bold,
-//                        color = PrimaryGreen
-//                    )
-//                }
-//            }
         }
-
-//        Row(
-//            modifier = Modifier.padding(top = 8.dp),
-//            verticalAlignment = Alignment.CenterVertically,
-//            horizontalArrangement = Arrangement.spacedBy(8.dp)
-//        ) {
-//            Box(
-//                modifier = Modifier
-//                    .size(8.dp)
-//                    .clip(CircleShape)
-//                    .background(MaterialTheme.colorScheme.error),
-//            )
-//            Text(
-//                text = "Offline mode available",
-//                style = MaterialTheme.typography.bodySmall,
-//                color = MaterialTheme.colorScheme.onSurfaceVariant
-//            )
-//        }
     }
 }
 

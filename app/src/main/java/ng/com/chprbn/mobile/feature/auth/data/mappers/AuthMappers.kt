@@ -46,7 +46,6 @@ fun User.toEntity(): UserEntity = UserEntity(
     username = username,
     email = email,
     fullName = fullName,
-    accessToken = accessToken,
     permissions = permissions,
     userPhoto = userPhoto,
     role = role,
@@ -56,7 +55,7 @@ fun User.toEntity(): UserEntity = UserEntity(
     lastLoginAt = lastLoginAt
 )
 
-fun UserEntity.toDomain(): User = User(
+fun UserEntity.toDomain(accessToken: String): User = User(
     id = id,
     username = username,
     email = email,

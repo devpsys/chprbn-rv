@@ -38,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -56,6 +57,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.hilt.navigation.compose)
 
+    // Security
+    implementation(libs.androidx.security.crypto)
+
     // Coil
     implementation(libs.coil.compose)
 
@@ -63,6 +67,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.compose.foundation)
     ksp(libs.hilt.compiler)
+
 
     // CameraX + ML Kit for QR scanning
     implementation(libs.androidx.camera.core)

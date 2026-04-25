@@ -366,17 +366,7 @@ fun DashboardTopBar(
                             .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
                     )
                 }
-//                IconButton(
-//                    onClick = onMenu,
-//                    modifier = Modifier.size(40.dp)
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Filled.Menu,
-//                        contentDescription = "Menu",
-//                        modifier = Modifier.size(24.dp),
-//                        tint = PrimaryGreen
-//                    )
-//                }
+
             }
         }
         // Bottom border only (full width)

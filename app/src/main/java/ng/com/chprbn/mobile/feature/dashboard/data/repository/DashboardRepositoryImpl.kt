@@ -2,8 +2,10 @@ package ng.com.chprbn.mobile.feature.dashboard.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toDomain
+import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.DashboardFeature
 import ng.com.chprbn.mobile.feature.dashboard.domain.model.FeatureType
 import ng.com.chprbn.mobile.feature.dashboard.domain.repository.DashboardRepository
@@ -14,15 +16,19 @@ import javax.inject.Inject
  * Single source of truth: local cache (UserDao from auth). Features are static; remote sync can be added later.
  */
 class DashboardRepositoryImpl @Inject constructor(
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val authTokenStore: AuthTokenStore
 ) : DashboardRepository {
 
     override suspend fun getUserProfile() = withContext(Dispatchers.IO) {
-        userDao.getUser()?.toDomain()
+        userDao.getUser()
+    }?.let { entity ->
+        authTokenStore.peekToken()?.let { token ->
+            entity.toDomain(token)
+        }
     }
 
-    override suspend fun getFeatures(): List<DashboardFeature> = withContext(Dispatchers.IO) {
-        listOf(
+    override suspend fun getFeatures(): List<DashboardFeature> = listOf(
 //            DashboardFeature(
 //                id = FeatureType.ScanQr,
 //                title = "Scan License QR",
@@ -48,5 +54,4 @@ class DashboardRepositoryImpl @Inject constructor(
                 isPrimary = false
             )
         )
-    }
 }

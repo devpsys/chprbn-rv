@@ -8,6 +8,7 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
 import ng.com.chprbn.mobile.feature.auth.data.api.AuthApiService
 import ng.com.chprbn.mobile.feature.auth.data.dto.ApiErrorDto
 import ng.com.chprbn.mobile.feature.auth.data.dto.LoginRequestDto
@@ -37,7 +38,6 @@ class AuthRepositoryImpl @Inject constructor(
             return cachedUser?.takeIf {
                 SessionTokenPolicy.isValidForAuthenticatedApi(it.accessToken)
             }?.let {
-                authTokenStore.setToken(it.accessToken.trim())
                 AuthResult.Success(it)
             } ?: AuthResult.Error("No cached session available for offline login.")
         }
@@ -89,7 +89,6 @@ class AuthRepositoryImpl @Inject constructor(
                 return cachedUser?.takeIf {
                     SessionTokenPolicy.isValidForAuthenticatedApi(it.accessToken)
                 }?.let {
-                    authTokenStore.setToken(it.accessToken.trim())
                     AuthResult.Success(it)
                 }
                     ?: AuthResult.Error("Network unavailable. Please try again or use manual verification.")
@@ -99,10 +98,10 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private suspend fun getCachedUser(username: String): User? {
-        val cached = withContext(Dispatchers.IO) { userDao.getUser() }
-        return cached
-            ?.takeIf { it.username.equals(username, ignoreCase = true) }
-            ?.toDomain()
+        val cached = withContext(Dispatchers.IO) { userDao.getUser() } ?: return null
+        if (!cached.username.equals(username, ignoreCase = true)) return null
+        val token = authTokenStore.peekToken() ?: return null
+        return cached.toDomain(token)
     }
 
     private fun parseErrorMessage(raw: String?): String? {
