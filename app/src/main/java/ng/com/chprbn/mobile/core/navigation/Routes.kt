@@ -5,7 +5,7 @@ import android.net.Uri
 object Routes {
     const val Splash = "splash"
     const val Login = "login"
-    const val Dashboard = "dashboard"
+    const val Verification = "Verification"
     const val Profile = "profile"
     const val Scan = "scan"
     const val ManualLicenseEntry = "manual_license_entry"

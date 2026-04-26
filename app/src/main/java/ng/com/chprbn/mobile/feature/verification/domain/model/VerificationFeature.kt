@@ -1,10 +1,10 @@
-package ng.com.chprbn.mobile.feature.dashboard.domain.model
+package ng.com.chprbn.mobile.feature.verification.domain.model
 
 /**
- * Domain entity: a single feature item in the dashboard grid.
+ * Domain entity: a single feature item in the Verification grid.
  * UI-agnostic; presentation layer maps [FeatureType] to icons and actions.
  */
-data class DashboardFeature(
+data class VerificationFeature(
     val id: FeatureType,
     val title: String,
     val subtitle: String,

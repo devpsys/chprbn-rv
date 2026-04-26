@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
-import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerificationScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.ManualEntryScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
@@ -42,8 +42,8 @@ fun AppNavHost() {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 },
-                onNavigateToDashboard = {
-                    navController.navigate(Routes.Dashboard) {
+                onNavigateToVerification = {
+                    navController.navigate(Routes.Verification) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 }
@@ -52,7 +52,7 @@ fun AppNavHost() {
         composable(Routes.Login) {
             LoginScreen(
                 onSignIn = {
-                    navController.navigate(Routes.Dashboard) {
+                    navController.navigate(Routes.Verification) {
                         popUpTo(Routes.Login) { inclusive = true }
                     }
                 },
@@ -60,8 +60,8 @@ fun AppNavHost() {
                 onRequestAccess = { /* TODO: request access */ }
             )
         }
-        composable(Routes.Dashboard) {
-            DashboardScreen(
+        composable(Routes.Verification) {
+            VerificationScreen(
                 onScanQr = {
                     if (navController.currentDestination?.route != Routes.Scan) {
                         navController.navigate(Routes.Scan)
@@ -103,9 +103,9 @@ fun AppNavHost() {
                     }
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -136,9 +136,9 @@ fun AppNavHost() {
                     }
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -164,9 +164,9 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onItemClick = { /* TODO: navigate to record detail */ },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -206,9 +206,9 @@ fun AppNavHost() {
 //                    )
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },

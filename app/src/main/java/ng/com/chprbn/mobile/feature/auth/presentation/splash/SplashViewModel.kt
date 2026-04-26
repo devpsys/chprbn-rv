@@ -13,8 +13,8 @@ import ng.com.chprbn.mobile.feature.auth.data.network.SessionTokenPolicy
 import ng.com.chprbn.mobile.feature.profile.domain.usecase.GetUserProfileUseCase
 import javax.inject.Inject
 
-/** Destination after splash: navigate to dashboard if session exists, else login. */
-enum class SplashDestination { Dashboard, Login }
+/** Destination after splash: navigate to Verification if session exists, else login. */
+enum class SplashDestination { Verification, Login }
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
@@ -31,7 +31,7 @@ class SplashViewModel @Inject constructor(
             val user = getUserProfileUseCase()
             if (user != null && SessionTokenPolicy.isValidForAuthenticatedApi(user.accessToken)) {
                 authTokenStore.setToken(user.accessToken.trim())
-                _destination.value = SplashDestination.Dashboard
+                _destination.value = SplashDestination.Verification
             } else {
                 authTokenStore.clear()
                 _destination.value = SplashDestination.Login

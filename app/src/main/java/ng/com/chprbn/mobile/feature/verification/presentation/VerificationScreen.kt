@@ -1,4 +1,4 @@
-package ng.com.chprbn.mobile.feature.dashboard.presentation
+package ng.com.chprbn.mobile.feature.verification.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -58,11 +58,11 @@ import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavTab
 import ng.com.chprbn.mobile.feature.auth.domain.model.User
-import ng.com.chprbn.mobile.feature.dashboard.domain.model.DashboardFeature
-import ng.com.chprbn.mobile.feature.dashboard.domain.model.FeatureType
+import ng.com.chprbn.mobile.feature.verification.domain.model.VerificationFeature
+import ng.com.chprbn.mobile.feature.verification.domain.model.FeatureType
 
 @Composable
-fun DashboardScreen(
+fun VerificationScreen(
     modifier: Modifier = Modifier,
     onScanQr: () -> Unit = {},
     onVerifiedList: () -> Unit = {},
@@ -71,7 +71,7 @@ fun DashboardScreen(
     onHome: () -> Unit = {},
     onSearch: () -> Unit = {},
     onSettings: () -> Unit = {},
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: VerificationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -81,12 +81,12 @@ fun DashboardScreen(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
-            DashboardTopBar(
+            VerificationTopBar(
                 onNotifications = { },
                 onMenu = { }
             )
             when (val state = uiState) {
-                is DashboardUiState.Loading -> DashboardContent(
+                is VerificationUiState.Loading -> VerificationContent(
                     user = null,
                     featureList = emptyList(),
                     onFeatureClick = { },
@@ -97,7 +97,7 @@ fun DashboardScreen(
                     isLoading = true
                 )
 
-                is DashboardUiState.Success -> DashboardContent(
+                is VerificationUiState.Success -> VerificationContent(
                     user = state.user,
                     featureList = state.features,
                     onFeatureClick = { feature ->
@@ -115,7 +115,7 @@ fun DashboardScreen(
                     isLoading = false
                 )
 
-                is DashboardUiState.Error -> DashboardContent(
+                is VerificationUiState.Error -> VerificationContent(
                     user = null,
                     featureList = emptyList(),
                     onFeatureClick = { },
@@ -143,10 +143,10 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardContent(
+private fun VerificationContent(
     user: User?,
-    featureList: List<DashboardFeature>,
-    onFeatureClick: (DashboardFeature) -> Unit,
+    featureList: List<VerificationFeature>,
+    onFeatureClick: (VerificationFeature) -> Unit,
     onScanQr: () -> Unit,
     onVerifiedList: () -> Unit,
     onSync: () -> Unit,
@@ -278,7 +278,7 @@ fun WelcomeCard(user: User? = null) {
 }
 
 @Composable
-fun DashboardTopBar(
+fun VerificationTopBar(
     onNotifications: () -> Unit,
     onMenu: () -> Unit
 ) {
@@ -361,8 +361,8 @@ fun DashboardTopBar(
 
 @Composable
 fun FeatureGridSection(
-    features: List<DashboardFeature>,
-    onFeatureClick: (DashboardFeature) -> Unit
+    features: List<VerificationFeature>,
+    onFeatureClick: (VerificationFeature) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -584,11 +584,11 @@ fun SystemStatusCard() {
 
 @Preview(showBackground = true, widthDp = 400)
 @Composable
-fun DashboardScreenPreview() {
+fun VerificationScreenPreview() {
     ChprbnTheme {
-        DashboardContent(
+        VerificationContent(
             user = null,
-            featureList = previewDashboardFeatures,
+            featureList = previewVerificationFeatures,
             onFeatureClick = {},
             onScanQr = {},
             onVerifiedList = {},
