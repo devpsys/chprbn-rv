@@ -9,19 +9,20 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
-import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
+import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.verification.presentation.VerificationScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
-import ng.com.chprbn.mobile.feature.scan.presentation.ManualEntryScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.ManualEntryScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
-import ng.com.chprbn.mobile.feature.scan.presentation.RecordDetailScreen
-import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
-import ng.com.chprbn.mobile.feature.sync.presentation.SyncHistoryScreen
-import ng.com.chprbn.mobile.feature.report.domain.model.IrregularityReportPrefill
-import ng.com.chprbn.mobile.feature.report.presentation.ReportIrregularityScreen
-import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
-import ng.com.chprbn.mobile.feature.verified.presentation.VerificationFormScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.RecordDetailScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.SyncScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.SyncHistoryScreen
+import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityReportPrefill
+import ng.com.chprbn.mobile.feature.verification.presentation.ReportIrregularityScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerifiedListScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormScreen
+import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
 
 /**
  * Single-activity navigation host.
@@ -301,6 +302,7 @@ fun AppNavHost() {
                         navController.navigate(Routes.ManualLicenseEntry)
                     }
                 },
+                qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
                     navController.navigate(Routes.recordDetailRoute(registrationNumber))
                 }
