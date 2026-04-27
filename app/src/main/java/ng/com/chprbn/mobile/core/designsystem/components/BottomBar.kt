@@ -40,7 +40,7 @@ enum class BottomNavTab { Home, Verified, Sync, Profile }
 /**
  * Global bottom navigation bar used across screens.
  *
- * The specific icons/labels used here match the enforcement dashboard design,
+ * The specific icons/labels used here match the enforcement Verification design,
  * but the composable itself can be reused wherever this layout is desired.
  */
 @Composable

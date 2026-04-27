@@ -72,7 +72,6 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
-import ng.com.chprbn.mobile.feature.scan.domain.extractRegistrationFromQrPayload
 
 private const val QR_SCAN_LOG_TAG = "QrScan"
 
@@ -80,6 +79,7 @@ private const val QR_SCAN_LOG_TAG = "QrScan"
 fun QrScanScreen(
     viewModel: QrScanViewModel = hiltViewModel(),
     onManualEntry: () -> Unit = {},
+    qrValidator: (String) -> String? = { it },
     onQrScanned: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -92,6 +92,7 @@ fun QrScanScreen(
 
     QrScanContent(
         uiState = uiState,
+        qrValidator = qrValidator,
         onQrScanned = { value -> viewModel.handleEvent(ScanUiEvent.RegistrationScanned(value)) },
         onToggleTorch = { viewModel.handleEvent(ScanUiEvent.ToggleTorch) },
         onManualEntry = onManualEntry
@@ -101,6 +102,7 @@ fun QrScanScreen(
 @Composable
 fun QrScanContent(
     uiState: ScanUiState,
+    qrValidator: (String) -> String?,
     onQrScanned: (String) -> Unit,
     onToggleTorch: () -> Unit,
     onManualEntry: () -> Unit
@@ -127,6 +129,7 @@ fun QrScanContent(
             ) {
                 CameraScanPreview(
                     isTorchOn = uiState.isTorchOn,
+                    qrValidator = qrValidator,
                     onQrScanned = onQrScanned
                 )
 
@@ -320,6 +323,7 @@ fun QrScanContent(
 @SuppressLint("UnsafeOptInUsageError")
 private fun CameraScanPreview(
     isTorchOn: Boolean,
+    qrValidator: (String) -> String?,
     onQrScanned: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -327,6 +331,7 @@ private fun CameraScanPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val hasScanned = remember { mutableStateOf(false) }
     val currentOnQrScanned by rememberUpdatedState(onQrScanned)
+    val currentQrValidator by rememberUpdatedState(qrValidator)
     val cameraRef = remember { mutableStateOf<Camera?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -398,24 +403,17 @@ private fun CameraScanPreview(
                                             QR_SCAN_LOG_TAG,
                                             "Decoded QR text (${value.length} chars): $value"
                                         )
-                                        qr.displayValue?.takeIf { it != value }?.let { display ->
-                                            Log.d(
-                                                QR_SCAN_LOG_TAG,
-                                                "QR displayValue differs from rawValue: $display"
-                                            )
-                                        }
-                                        val registration =
-                                            extractRegistrationFromQrPayload(value)
+                                        val registration = currentQrValidator(value)
                                         if (registration == null) {
                                             Log.w(
                                                 QR_SCAN_LOG_TAG,
-                                                "QR has no registration after '#:'; ignoring payload"
+                                                "QR failed validation; ignoring payload"
                                             )
                                             return@addOnSuccessListener
                                         }
                                         Log.i(
                                             QR_SCAN_LOG_TAG,
-                                            "Extracted registration for lookup: $registration"
+                                            "Extracted valid payload: $registration"
                                         )
                                         hasScanned.value = true
                                         currentOnQrScanned(registration)
@@ -554,6 +552,7 @@ fun QrScanScreenPreview() {
     ng.com.chprbn.mobile.core.designsystem.ChprbnTheme {
         QrScanContent(
             uiState = ScanUiState(),
+            qrValidator = { it },
             onQrScanned = {},
             onToggleTorch = {},
             onManualEntry = {}
