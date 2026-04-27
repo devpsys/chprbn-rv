@@ -23,6 +23,7 @@ import ng.com.chprbn.mobile.feature.verification.presentation.ReportIrregularity
 import ng.com.chprbn.mobile.feature.verification.presentation.VerifiedListScreen
 import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormScreen
 import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
+import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScreen
 
 /**
  * Single-activity navigation host.
@@ -43,8 +44,8 @@ fun AppNavHost() {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 },
-                onNavigateToVerification = {
-                    navController.navigate(Routes.Verification) {
+                onNavigateToDashboard = {
+                    navController.navigate(Routes.Dashboard) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 }
@@ -53,12 +54,44 @@ fun AppNavHost() {
         composable(Routes.Login) {
             LoginScreen(
                 onSignIn = {
-                    navController.navigate(Routes.Verification) {
+                    navController.navigate(Routes.Dashboard) {
                         popUpTo(Routes.Login) { inclusive = true }
                     }
                 },
                 onRecovery = { /* TODO: recovery flow */ },
                 onRequestAccess = { /* TODO: request access */ }
+            )
+        }
+        composable(Routes.Dashboard) {
+            UnifiedDashboardScreen(
+                onNavigateToVerification = {
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification)
+                    }
+                },
+                onNavigateToVerifiedList = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
+                onNavigateToSync = {
+                    if (navController.currentDestination?.route != Routes.Sync) {
+                        navController.navigate(Routes.Sync)
+                    }
+                },
+                onNavigateToProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                },
+                onNavigateToExamAttendance = { /* TODO: Exam Attendance feature */ },
+                onNavigateToPracticalAssessment = { /* TODO: Practical Assessment feature */ },
+                onNavigateToAccreditation = { /* TODO: Accreditation feature */ },
+                onViewRecentLogs = {
+                    if (navController.currentDestination?.route != Routes.SyncHistory) {
+                        navController.navigate(Routes.SyncHistory)
+                    }
+                }
             )
         }
         composable(Routes.Verification) {
