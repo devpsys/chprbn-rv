@@ -44,13 +44,13 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 fun SplashScreen(
     modifier: Modifier = Modifier,
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToVerification: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {},
     viewModel: SplashViewModel = hiltViewModel()
 ) {
     val destination by viewModel.destination.collectAsStateWithLifecycle(null)
     LaunchedEffect(destination) {
         when (destination) {
-            SplashDestination.Verification -> onNavigateToVerification()
+            SplashDestination.Verification -> onNavigateToDashboard()
             SplashDestination.Login -> onNavigateToLogin()
             null -> { /* still loading */ }
         }
