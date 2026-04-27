@@ -9,19 +9,21 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
-import ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord
+import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
-import ng.com.chprbn.mobile.feature.dashboard.presentation.DashboardScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerificationScreen
 import ng.com.chprbn.mobile.feature.profile.presentation.ProfileScreen
-import ng.com.chprbn.mobile.feature.scan.presentation.ManualEntryScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.ManualEntryScreen
 import ng.com.chprbn.mobile.feature.scan.presentation.QrScanScreen
-import ng.com.chprbn.mobile.feature.scan.presentation.RecordDetailScreen
-import ng.com.chprbn.mobile.feature.sync.presentation.SyncScreen
-import ng.com.chprbn.mobile.feature.sync.presentation.SyncHistoryScreen
-import ng.com.chprbn.mobile.feature.report.domain.model.IrregularityReportPrefill
-import ng.com.chprbn.mobile.feature.report.presentation.ReportIrregularityScreen
-import ng.com.chprbn.mobile.feature.verified.presentation.VerifiedListScreen
-import ng.com.chprbn.mobile.feature.verified.presentation.VerificationFormScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.RecordDetailScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.SyncScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.SyncHistoryScreen
+import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityReportPrefill
+import ng.com.chprbn.mobile.feature.verification.presentation.ReportIrregularityScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerifiedListScreen
+import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormScreen
+import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
+import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScreen
 
 /**
  * Single-activity navigation host.
@@ -61,7 +63,39 @@ fun AppNavHost() {
             )
         }
         composable(Routes.Dashboard) {
-            DashboardScreen(
+            UnifiedDashboardScreen(
+                onNavigateToVerification = {
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification)
+                    }
+                },
+                onNavigateToVerifiedList = {
+                    if (navController.currentDestination?.route != Routes.Verified) {
+                        navController.navigate(Routes.Verified)
+                    }
+                },
+                onNavigateToSync = {
+                    if (navController.currentDestination?.route != Routes.Sync) {
+                        navController.navigate(Routes.Sync)
+                    }
+                },
+                onNavigateToProfile = {
+                    if (navController.currentDestination?.route != Routes.Profile) {
+                        navController.navigate(Routes.Profile)
+                    }
+                },
+                onNavigateToExamAttendance = { /* TODO: Exam Attendance feature */ },
+                onNavigateToPracticalAssessment = { /* TODO: Practical Assessment feature */ },
+                onNavigateToAccreditation = { /* TODO: Accreditation feature */ },
+                onViewRecentLogs = {
+                    if (navController.currentDestination?.route != Routes.SyncHistory) {
+                        navController.navigate(Routes.SyncHistory)
+                    }
+                }
+            )
+        }
+        composable(Routes.Verification) {
+            VerificationScreen(
                 onScanQr = {
                     if (navController.currentDestination?.route != Routes.Scan) {
                         navController.navigate(Routes.Scan)
@@ -103,9 +137,9 @@ fun AppNavHost() {
                     }
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -136,9 +170,9 @@ fun AppNavHost() {
                     }
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -164,9 +198,9 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onItemClick = { /* TODO: navigate to record detail */ },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -206,9 +240,9 @@ fun AppNavHost() {
 //                    )
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Dashboard) {
-                        navController.navigate(Routes.Dashboard) {
-                            popUpTo(Routes.Dashboard) { inclusive = false }
+                    if (navController.currentDestination?.route != Routes.Verification) {
+                        navController.navigate(Routes.Verification) {
+                            popUpTo(Routes.Verification) { inclusive = false }
                         }
                     }
                 },
@@ -301,6 +335,7 @@ fun AppNavHost() {
                         navController.navigate(Routes.ManualLicenseEntry)
                     }
                 },
+                qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
                     navController.navigate(Routes.recordDetailRoute(registrationNumber))
                 }

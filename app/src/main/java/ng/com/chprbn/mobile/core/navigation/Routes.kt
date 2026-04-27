@@ -6,13 +6,14 @@ object Routes {
     const val Splash = "splash"
     const val Login = "login"
     const val Dashboard = "dashboard"
+    const val Verification = "verification"
     const val Profile = "profile"
     const val Scan = "scan"
     const val ManualLicenseEntry = "manual_license_entry"
     const val Sync = "sync"
     const val Verified = "verified"
 
-    /** Optional: licenseRecordJson (Uri-encoded JSON). Use [verificationFormRoute] to build with [ng.com.chprbn.mobile.feature.scan.domain.model.LicenseRecord]. */
+    /** Optional: licenseRecordJson (Uri-encoded JSON). Use [verificationFormRoute] to build with [ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord]. */
     const val VerificationForm = "verification_form?licenseRecordJson={licenseRecordJson}"
 
     /** Builds route with full record as single source of truth. Encode [licenseRecordJson] with [Uri.encode] before calling. */

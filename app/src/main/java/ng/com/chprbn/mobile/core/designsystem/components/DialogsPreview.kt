@@ -10,7 +10,7 @@ private fun InfoDialogPreview() {
     ChprbnTheme {
         InfoDialog(
             title = "System Update",
-            message = "We've enhanced the verification process for multi-state practitioners. You can now track licensing status across multiple jurisdictions from a single dashboard view.",
+            message = "We've enhanced the verification process for multi-state practitioners. You can now track licensing status across multiple jurisdictions from a single Verification view.",
             primaryButtonText = "Got it",
             onPrimary = {},
             onDismiss = {}
@@ -54,7 +54,7 @@ private fun ConfirmationDialogPreview() {
     ChprbnTheme {
         ConfirmationDialog(
             title = "Sign Out",
-            message = "Are you sure you want to sign out? You will need to re-authenticate to access your practitioner verification dashboard.",
+            message = "Are you sure you want to sign out? You will need to re-authenticate to access your practitioner verification Verification.",
             primaryButtonText = "Sign Out",
             secondaryButtonText = "Cancel",
             onConfirm = {},
