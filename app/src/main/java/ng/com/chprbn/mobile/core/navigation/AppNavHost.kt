@@ -24,6 +24,7 @@ import ng.com.chprbn.mobile.feature.verification.presentation.VerifiedListScreen
 import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormScreen
 import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
 import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.ExamDashboardScreen
 
 /**
  * Single-activity navigation host.
@@ -84,7 +85,11 @@ fun AppNavHost() {
                         navController.navigate(Routes.Profile)
                     }
                 },
-                onNavigateToExamAttendance = { /* TODO: Exam Attendance feature */ },
+                onNavigateToExamAttendance = {
+                    if (navController.currentDestination?.route != Routes.ExamDashboard) {
+                        navController.navigate(Routes.ExamDashboard)
+                    }
+                },
                 onNavigateToPracticalAssessment = { /* TODO: Practical Assessment feature */ },
                 onNavigateToAccreditation = { /* TODO: Accreditation feature */ },
                 onViewRecentLogs = {
@@ -92,6 +97,18 @@ fun AppNavHost() {
                         navController.navigate(Routes.SyncHistory)
                     }
                 }
+            )
+        }
+        composable(Routes.ExamDashboard) {
+            ExamDashboardScreen(
+                onNotifications = { /* TODO: exam notifications */ },
+                onLogAttendance = { /* TODO: attendance */ },
+                onAttendanceMore = { /* TODO */ },
+                onGradePractical = { /* TODO: practical */ },
+                onPracticalInfo = { /* TODO */ },
+                onDownloadDossier = { /* TODO: export dossier */ },
+                onExamDashboardTab = {},
+                onAllocationsTab = { /* TODO */ }
             )
         }
         composable(Routes.Verification) {
