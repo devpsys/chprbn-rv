@@ -65,7 +65,7 @@ fun ExamDashboardScreen(
     onPracticalInfo: () -> Unit = {},
     onDownloadDossier: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
-    onAllocationsTab: () -> Unit = {}
+    onStatisticsTab: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ExamDashboardScreenContent(
@@ -77,7 +77,7 @@ fun ExamDashboardScreen(
         onPracticalInfo = onPracticalInfo,
         onDownloadDossier = onDownloadDossier,
         onExamDashboardTab = onExamDashboardTab,
-        onStatsTab = onAllocationsTab
+        onStatisticsTab = onStatisticsTab
     )
 }
 
@@ -91,7 +91,7 @@ private fun ExamDashboardScreenContent(
     onPracticalInfo: () -> Unit = {},
     onDownloadDossier: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
-    onStatsTab: () -> Unit = {}
+    onStatisticsTab: () -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
     Surface(
@@ -104,8 +104,9 @@ private fun ExamDashboardScreenContent(
             bottomBar = {
                 ExamBottomNavBar(
                     modifier = Modifier.fillMaxWidth(),
+                    selectedTab = ExamBottomNavSelection.Dashboard,
                     onDashboard = onExamDashboardTab,
-                    onStats = onStatsTab,
+                    onStatistics = onStatisticsTab
                 )
             },
             floatingActionButton = {

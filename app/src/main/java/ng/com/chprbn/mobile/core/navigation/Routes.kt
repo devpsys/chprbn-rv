@@ -7,6 +7,7 @@ object Routes {
     const val Login = "login"
     const val Dashboard = "dashboard"
     const val ExamDashboard = "exam_dashboard"
+    const val ExamStatistics = "exam_statistics"
     const val Verification = "verification"
     const val Profile = "profile"
     const val Scan = "scan"

@@ -25,6 +25,7 @@ import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormSc
 import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
 import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamDashboardScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 
 /**
  * Single-activity navigation host.
@@ -108,7 +109,23 @@ fun AppNavHost() {
                 onPracticalInfo = { /* TODO */ },
                 onDownloadDossier = { /* TODO: export dossier */ },
                 onExamDashboardTab = {},
-                onAllocationsTab = { /* TODO */ }
+                onStatisticsTab = {
+                    if (navController.currentDestination?.route != Routes.ExamStatistics) {
+                        navController.navigate(Routes.ExamStatistics)
+                    }
+                }
+            )
+        }
+        composable(Routes.ExamStatistics) {
+            ExamStatisticsScreen(
+                onBack = { navController.popBackStack() },
+                onRefresh = { /* TODO: refresh statistics */ },
+                onSyncNow = { /* TODO: sync */ },
+                onClearCached = { /* TODO: clear cache */ },
+                onExamDashboardTab = {
+                    navController.popBackStack(Routes.ExamDashboard, inclusive = false)
+                },
+                onStatisticsTab = { /* already on statistics */ }
             )
         }
         composable(Routes.Verification) {

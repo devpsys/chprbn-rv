@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,12 +25,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-
 @Composable
 fun ExamBottomNavBar(
     modifier: Modifier = Modifier,
+    selectedTab: ExamBottomNavSelection,
     onDashboard: () -> Unit,
-    onStats: () -> Unit,
+    onStatistics: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     Surface(
@@ -50,23 +50,17 @@ fun ExamBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             ExamNavItem(
-                icon = Icons.Filled.Home,
+                icon = Icons.Outlined.Speed,
                 label = "Dashboard",
-                selected = true,
+                selected = selectedTab == ExamBottomNavSelection.Dashboard,
                 onClick = onDashboard
             )
             ExamNavItem(
-                icon = Icons.Filled.CalendarMonth,
+                icon = Icons.Outlined.BarChart,
                 label = "Statistics",
-                selected = false,
-                onClick = onStats
+                selected = selectedTab == ExamBottomNavSelection.Statistics,
+                onClick = onStatistics
             )
-//            ExamNavItem(
-//                icon = Icons.Filled.Analytics,
-//                label = "Settings",
-//                selected = false,
-//                onClick = onReports
-//            )
         }
     }
 }
