@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09
+**Last updated:** 2026-05-09 (PR A landed: backup hardening + network-security-config)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -13,8 +13,8 @@ This document tracks what has been done, what is pending, and what was deliberat
 | Phase | Item | Severity | Status |
 |---|---|---|---|
 | 1 | R8 minification + ProGuard rules | **Critical** | ⬜ Not started |
-| 1 | Network security config + cert pinning | **High** | ⬜ Not started |
-| 1 | Backup hardening (`data_extraction_rules.xml`) | High | ⬜ Not started |
+| 1 | Network security config + cert pinning | **High** | 🟡 Config landed (cleartext disabled, base-config + domain-config wired). SPKI pin-set still pending — needs leaf + backup fingerprints from ops. |
+| 1 | Backup hardening (`data_extraction_rules.xml`) | High | 🟢 Done — `auth.db`, `scan.db`, `auth_prefs.xml` excluded from cloud-backup + device-transfer; `backup_rules.xml` mirrors for pre-Android-12. |
 | 1 | `signingConfigs` for release | Medium | ⬜ Not started |
 | 1 | Comprehensive tests | **Critical** | 🟢 Substantial progress (102 tests across 22 files; see §3) |
 | 2 | Verification DB encryption (SQLCipher / column-level) | High | ⬜ Not started |
@@ -157,6 +157,10 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/src/test/.../feature/exam/presentation/ExamCandidatesViewModelTest.kt` | New file (3 tests) |
 | `app/src/test/.../feature/exam/presentation/CandidateScanResultViewModelTest.kt` | New file (6 tests) |
 | `app/src/test/.../feature/profile/domain/usecase/LogoutUseCaseTest.kt` | New file (1 test) |
+| `app/src/main/res/xml/data_extraction_rules.xml` | Replaced stub with explicit excludes for `auth.db`, `scan.db`, `auth_prefs.xml` in both `cloud-backup` and `device-transfer` |
+| `app/src/main/res/xml/backup_rules.xml` | Replaced stub with same excludes (legacy pre-Android-12 path) |
+| `app/src/main/res/xml/network_security_config.xml` | **New** — base-config + domain-config for `app.chprbn.gov.ng`; cleartext disabled; system trust anchors; `<pin-set>` left commented with a TODO until ops supplies SPKI fingerprints |
+| `app/src/main/AndroidManifest.xml` | Added `android:networkSecurityConfig="@xml/network_security_config"` on `<application>` |
 
 ---
 
@@ -164,8 +168,8 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 
 Pick one based on appetite — the test foundation is broad enough now that any of these can land safely:
 
-1. **Phase 1 release-hardening sprint** (1–2 PRs).
-   - PR A: backup hardening (`data_extraction_rules.xml` + `backup_rules.xml`) + `network_security_config.xml` (cleartext disabled, base domain pinned later). Pure XML, near-zero risk.
+1. **Phase 1 release-hardening sprint** — PR A done; PR B/C remain.
+   - ~~PR A: backup hardening + `network_security_config.xml` (cleartext disabled).~~ ✅ Landed. SPKI pin-set still TODO — once ops supplies leaf + backup fingerprints, uncomment the `<pin-set>` block in `network_security_config.xml` and optionally mirror it as an OkHttp `CertificatePinner` for defense-in-depth.
    - PR B: enable R8 (`isMinifyEnabled = true`, `isShrinkResources = true`) + author `proguard-rules.pro` for Gson DTOs, Room entities, Hilt-generated code, Retrofit interfaces. Build a release APK and exercise login → scan → manual entry → sync → verify. Plan for one or two iterations because Gson reflection often blows up at runtime.
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user.
 2. **Verification-DB encryption** (Phase 2). SQLCipher (`net.zetetic:android-database-sqlcipher` + Room `SupportFactory`) with the key derived/stored via `MasterKey` + `EncryptedSharedPreferences`. The test foundation around `LicenseRepositoryImpl` and `VerifiedRepositoryImpl` will catch breakage.
@@ -190,4 +194,4 @@ If picking up cold, start by **re-reading `CODE_REVIEW.md` §13 (severity matrix
 ./gradlew :app:koverHtmlReport
 ```
 
-Last verified: 2026-05-09 — 102 tests, all green; `:app:assembleDebug` succeeds.
+Last verified: 2026-05-09 — 102 tests, all green; `:app:assembleDebug` succeeds against the new manifest + `network_security_config.xml`.

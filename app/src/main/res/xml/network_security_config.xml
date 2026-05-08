@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration.
+    See https://developer.android.com/training/articles/security-config
+
+    Policy:
+      * App-wide default: cleartext traffic disallowed; system trust anchors only.
+      * Production API (app.chprbn.gov.ng and any subdomain): cleartext disallowed.
+        SPKI pinning is intentionally deferred — when the operations team supplies
+        the leaf + backup pin SHA-256 fingerprints, fill in the <pin-set> block
+        below and uncomment it. Do NOT ship a single-pin config; we need at least
+        one rotation pin to avoid bricking installs on certificate roll.
+
+    Debug overrides for staging / localhost should live in
+    src/debug/res/xml/network_security_config.xml when those environments come
+    online. Today there is only the production base URL so no debug override is
+    needed.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">app.chprbn.gov.ng</domain>
+        <!--
+        <pin-set expiration="2027-01-01">
+            <pin digest="SHA-256">REPLACE_WITH_LEAF_SPKI_PIN</pin>
+            <pin digest="SHA-256">REPLACE_WITH_BACKUP_SPKI_PIN</pin>
+        </pin-set>
+        -->
+    </domain-config>
+</network-security-config>
