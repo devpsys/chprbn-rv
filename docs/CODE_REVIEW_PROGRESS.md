@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (PR A + PR B landed; SQLCipher landed: P1 verification-DB encryption)
+**Last updated:** 2026-05-09 (PR A + PR B + SQLCipher landed; 16 KB page-size compliance fix landed)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -123,6 +123,7 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 5. **No integration tests via `MockWebServer`.** Repository tests mock the `*ApiService` Retrofit interface, so JSON-wire bugs slip past. Worth a dedicated sprint.
 6. **No Room migration tests.** `VerificationDatabase` has `MIGRATION_2_3`, `_3_4`, `_4_5` but no `MigrationTestHelper` coverage. Combined with `fallbackToDestructiveMigration()`, a broken migration could silently wipe verification records on upgrade.
 7. **Verification ViewModels' `withContext(Dispatchers.IO)` is hardcoded** in repository implementations. Tests work but it makes time-control awkward and prevents using a fully-virtual scheduler. Future cleanup: inject a `CoroutineDispatcher` (with `@IODispatcher` qualifier) per repo.
+8. **APK size after SQLCipher** (~32 MB unsigned). The native `.so` payload across 4 ABIs is the dominant cost. If delivery size matters, switch to AAB packaging (Play splits per-device) or add `splits { abi { … } }` to ship per-ABI APKs.
 
 ---
 
@@ -180,6 +181,11 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/src/main/res/xml/backup_rules.xml` | Same additions for the legacy pre-Android-12 path |
 | `app/src/test/.../core/persistence/encryption/DatabaseKeyProviderTest.kt` | **New** (6 tests) |
 | `app/src/test/.../core/persistence/encryption/DatabaseMigrationGuardTest.kt` | **New** (5 tests) |
+| `gradle/libs.versions.toml` (16 KB compliance) | Bumped `cameraX 1.3.4 → 1.5.3`, `mlkitBarcode 17.2.0 → 17.3.0`, `sqlcipher 4.5.4 → 4.15.0`, swapped artifact `net.zetetic:android-database-sqlcipher` → `net.zetetic:sqlcipher-android` |
+| `app/src/main/.../ChprbnApplication.kt` | `SQLiteDatabase.loadLibs(this)` → `System.loadLibrary("sqlcipher")` (new artifact's loader) |
+| `app/src/main/.../core/persistence/encryption/EncryptionModule.kt` | Import `net.sqlcipher.database.SupportFactory` → `net.zetetic.database.sqlcipher.SupportOpenHelperFactory` (class renamed in new artifact, same constructor signature) |
+| `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` | Same `SupportFactory` → `SupportOpenHelperFactory` rename |
+| `app/src/main/.../feature/verification/data/di/LicenseDataModule.kt` | Same |
 
 ---
 
@@ -191,7 +197,7 @@ Pick one based on appetite — the test foundation is broad enough now that any 
    - ~~PR A: backup hardening + `network_security_config.xml` (cleartext disabled).~~ ✅ Landed. SPKI pin-set still TODO — once ops supplies leaf + backup fingerprints, uncomment the `<pin-set>` block in `network_security_config.xml` and optionally mirror it as an OkHttp `CertificatePinner` for defense-in-depth.
    - ~~PR B: enable R8 + author `proguard-rules.pro`.~~ ✅ Landed at the build level. **Runtime smoke test still required**: install the unsigned release APK on a device and exercise login → fetch profile → scan QR → manual license lookup → save verified record → sync → submit irregularity report. Watch logcat for `JsonSyntaxException`, `IllegalStateException` from Gson reflection, missing-class errors from Hilt, or Room `RuntimeException: cannot find adapter` — those are the typical R8 fallout patterns and will require a follow-up PR to extend the keep rules. Until smoke-tested, treat S1/S2/S3 as 🟡 not 🟢.
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
-2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.5.4 wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). Open follow-up: APK grew ~13.5 MB for SQLCipher's per-ABI native libraries; consider per-ABI APK splits or AAB packaging if delivery size matters.
+2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.15.0 (`net.zetetic:sqlcipher-android`) wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportOpenHelperFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). The new SQLCipher artifact, along with bumped CameraX (1.5.3) and ML Kit barcode-scanning (17.3.0), also resolves the Google Play **16 KB page-size requirement** (effective 2025-11-01 for Android 15+ targets) — see §9.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.
 5. **`MockWebServer` + Room migration tests** (Sprints 7 + 8). Higher infrastructure cost, catches regressions the unit tests can't.
@@ -213,4 +219,40 @@ If picking up cold, start by **re-reading `CODE_REVIEW.md` §13 (severity matrix
 ./gradlew :app:koverHtmlReport
 ```
 
-Last verified: 2026-05-09 — 113 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed with SQLCipher wired in. Release APK at `app/build/outputs/apk/release/app-release-unsigned.apk` is now 35.9 MB (was 22.4 MB before SQLCipher; +13.5 MB for per-ABI `.so`s) with `mapping.txt` at `app/build/outputs/mapping/release/`. Runtime smoke test of the release APK is still outstanding — see §7 PR B / SQLCipher note.
+Last verified: 2026-05-09 — 113 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed with SQLCipher + bumped CameraX/ML Kit/SQLCipher-android wired in. Release APK at `app/build/outputs/apk/release/app-release-unsigned.apk` is 32.3 MB (a small drop from 35.9 MB after the version bumps cleaned up some duplicated native code) with `mapping.txt` at `app/build/outputs/mapping/release/`. **All five arm64-v8a `.so` files now show ELF LOAD `Align 0x4000` (16 KB) and `zipalign -c -P 16 -v 4` reports "Verification successful"** — see §9. Runtime smoke test of the release APK is still outstanding — see §7 PR B / SQLCipher note.
+
+---
+
+## 9. Google Play 16 KB Page-Size Compliance
+
+Google Play requires apps targeting Android 15+ that are submitted on or after **2025-11-01** to support 16 KB page sizes. This means every native `.so` shipped in the APK must have its ELF LOAD program-header alignment ≥ 16384 (`0x4000`). For libraries we don't build ourselves, this depends entirely on which versions ship 16 KB-aligned binaries.
+
+The release APK from the SQLCipher PR initially failed the check because three transitive native libraries were 4 KB-aligned:
+
+| Library | Comes from | Fix |
+|---|---|---|
+| `libsqlcipher.so` | `net.zetetic:android-database-sqlcipher:4.5.4` | Migrate to `net.zetetic:sqlcipher-android:4.15.0`. The artifact is renamed (the legacy one is no longer maintained), import paths move from `net.sqlcipher.database.*` to `net.zetetic.database.sqlcipher.*`, and **`SupportFactory` is renamed to `SupportOpenHelperFactory`** (constructor signature is unchanged: `(byte[], SQLiteDatabaseHook?, boolean)`). Loader call changes from `SQLiteDatabase.loadLibs(context)` to `System.loadLibrary("sqlcipher")`. |
+| `libimage_processing_util_jni.so` | `androidx.camera:*:1.3.4` | Bump CameraX to `1.5.3` (latest stable as of Jan 2026). API-compatible. |
+| `libbarhopper_v3.so` | `com.google.mlkit:barcode-scanning:17.2.0` | Bump to `17.3.0`. Drop-in. |
+
+**Verification:** all five arm64-v8a `.so` files in the post-fix APK pass `llvm-readelf -l … \| grep LOAD \| awk '{print $NF}'` showing `0x4000`, and Google's `zipalign -c -P 16 -v 4 app-release-unsigned.apk` returns `Verification successful`. The other ABIs (`armeabi-v7a`, `x86`, `x86_64`) are not subject to the 16 KB requirement (no 16 KB-page kernels exist for those targets), so they were not audited.
+
+**Re-verification command** (repeat after any dependency bump that introduces a new `.so`):
+
+```powershell
+# Locate llvm-readelf in the most recent installed NDK:
+$NDK = (Get-ChildItem "$env:LOCALAPPDATA\Android\Sdk\ndk" | Sort-Object Name -Descending | Select-Object -First 1).FullName
+$READELF = "$NDK\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-readelf.exe"
+
+# Extract the APK and check every arm64-v8a .so:
+$APK = "app\build\outputs\apk\release\app-release-unsigned.apk"
+Expand-Archive $APK -DestinationPath build\apk-check -Force
+Get-ChildItem build\apk-check\lib\arm64-v8a -Filter *.so | ForEach-Object {
+    $align = & $READELF -l $_.FullName | Select-String "LOAD" | Select-Object -First 1
+    "$($_.Name): $align"
+}
+
+# Or use Google's canonical CLI (build-tools/$VERSION/zipalign.exe):
+$ZIPALIGN = (Get-ChildItem "$env:LOCALAPPDATA\Android\Sdk\build-tools" | Sort-Object Name -Descending | Select-Object -First 1).FullName + "\zipalign.exe"
+& $ZIPALIGN -c -P 16 -v 4 $APK | Select-Object -Last 3
+```

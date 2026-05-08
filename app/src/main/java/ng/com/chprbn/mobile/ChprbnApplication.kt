@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
-import net.sqlcipher.database.SQLiteDatabase
 import ng.com.chprbn.mobile.core.persistence.encryption.DatabaseMigrationGuard
 
 @HiltAndroidApp
@@ -11,9 +10,11 @@ class ChprbnApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // SQLCipher 4.x requires loadLibs() before any encrypted database is opened;
-        // it pulls the native .so out of the APK and resolves JNI symbols.
-        SQLiteDatabase.loadLibs(this)
+        // sqlcipher-android 4.x resolves JNI symbols by linker dependency, but an
+        // explicit System.loadLibrary("sqlcipher") here forces the pull-out of the
+        // native .so before any DAO is opened so failures surface at app start
+        // rather than buried under a Room coroutine.
+        System.loadLibrary("sqlcipher")
 
         // One-shot wipe of any pre-SQLCipher unencrypted auth.db / scan.db files.
         // Must run before Hilt provides the Room databases (which happens lazily on

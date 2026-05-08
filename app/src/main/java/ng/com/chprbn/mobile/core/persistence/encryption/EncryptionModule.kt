@@ -9,7 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
 @Module
@@ -36,12 +36,12 @@ object EncryptionModule {
 
     @Provides
     @Singleton
-    fun provideSupportFactory(
+    fun provideSupportOpenHelperFactory(
         keyProvider: DatabaseKeyProvider
-    ): SupportFactory {
+    ): SupportOpenHelperFactory {
         // clearPassphrase = false: SQLCipher otherwise zeroes the passphrase byte
         // array after first use, which corrupts subsequent reopens within the same
         // process (a known SQLCipher footgun).
-        return SupportFactory(keyProvider.getOrCreatePassphrase(), null, false)
+        return SupportOpenHelperFactory(keyProvider.getOrCreatePassphrase(), null, false)
     }
 }

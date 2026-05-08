@@ -8,7 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import ng.com.chprbn.mobile.feature.verification.data.api.LicenseApiService
 import ng.com.chprbn.mobile.feature.verification.data.local.LicenseRecordDao
 import ng.com.chprbn.mobile.feature.verification.data.local.VerificationDatabase
@@ -33,7 +33,7 @@ abstract class LicenseDataModule {
         @Singleton
         fun provideVerificationDatabase(
             @ApplicationContext context: Context,
-            supportFactory: SupportFactory
+            supportFactory: SupportOpenHelperFactory
         ): VerificationDatabase =
             Room.databaseBuilder(context, VerificationDatabase::class.java, "scan.db")
                 .openHelperFactory(supportFactory)
