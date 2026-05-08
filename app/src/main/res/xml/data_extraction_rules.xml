@@ -4,22 +4,33 @@
     See https://developer.android.com/about/versions/12/backup-restore#xml-changes
 
     Excluded artifacts:
-      * auth.db          — bearer-token-bound profile cache.
-      * scan.db          — practitioner PII (license + verified-license records).
-      * auth_prefs.xml   — EncryptedSharedPreferences. The MasterKey lives in the
-                           hardware-backed keystore and does NOT travel with backups,
-                           so the bytes would be unrecoverable on another device, but
-                           we exclude them anyway to avoid shipping ciphertext blobs.
+      * auth.db                    — bearer-token-bound profile cache.
+      * scan.db                    — practitioner PII (license + verified-license records).
+      * auth_prefs.xml             — EncryptedSharedPreferences holding the bearer token.
+      * db_keys.xml                — EncryptedSharedPreferences holding the SQLCipher
+                                     passphrase for auth.db / scan.db.
+      * db_migration_guard.xml     — One-shot SQLCipher upgrade marker. Excluded so a
+                                     restored backup cannot skip the migration on the
+                                     destination device.
+
+      The MasterKey that protects the EncryptedSharedPreferences entries lives in the
+      device's hardware-backed keystore and does NOT travel with backups, so even if
+      these files leaked the ciphertext would be unrecoverable on a different device.
+      We exclude them anyway to avoid shipping ciphertext blobs at all.
 -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="database" path="auth.db" />
         <exclude domain="database" path="scan.db" />
         <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="sharedpref" path="db_keys.xml" />
+        <exclude domain="sharedpref" path="db_migration_guard.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="database" path="auth.db" />
         <exclude domain="database" path="scan.db" />
         <exclude domain="sharedpref" path="auth_prefs.xml" />
+        <exclude domain="sharedpref" path="db_keys.xml" />
+        <exclude domain="sharedpref" path="db_migration_guard.xml" />
     </device-transfer>
 </data-extraction-rules>

@@ -21,6 +21,7 @@ import ng.com.chprbn.mobile.feature.auth.data.repository.AuthRepositoryImpl
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.AndroidConnectivityChecker
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.ConnectivityChecker
 import ng.com.chprbn.mobile.feature.auth.domain.repository.AuthRepository
+import net.sqlcipher.database.SupportFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -74,12 +75,16 @@ object AuthDataModule {
 
     @Provides
     @Singleton
-    fun provideAuthDatabase(@ApplicationContext context: Context): AuthDatabase =
+    fun provideAuthDatabase(
+        @ApplicationContext context: Context,
+        supportFactory: SupportFactory
+    ): AuthDatabase =
         Room.databaseBuilder(
             context,
             AuthDatabase::class.java,
             "auth.db"
-        ).fallbackToDestructiveMigration()
+        ).openHelperFactory(supportFactory)
+            .fallbackToDestructiveMigration()
             .addCallback(AuthSeedCallback())
             .build()
 

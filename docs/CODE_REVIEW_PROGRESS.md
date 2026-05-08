@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (PR A landed; PR B landed: R8 + ProGuard rules)
+**Last updated:** 2026-05-09 (PR A + PR B landed; SQLCipher landed: P1 verification-DB encryption)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -16,8 +16,8 @@ This document tracks what has been done, what is pending, and what was deliberat
 | 1 | Network security config + cert pinning | **High** | 🟡 Config landed (cleartext disabled, base-config + domain-config wired). SPKI pin-set still pending — needs leaf + backup fingerprints from ops. |
 | 1 | Backup hardening (`data_extraction_rules.xml`) | High | 🟢 Done — `auth.db`, `scan.db`, `auth_prefs.xml` excluded from cloud-backup + device-transfer; `backup_rules.xml` mirrors for pre-Android-12. |
 | 1 | `signingConfigs` for release | Medium | ⬜ Not started |
-| 1 | Comprehensive tests | **Critical** | 🟢 Substantial progress (102 tests across 22 files; see §3) |
-| 2 | Verification DB encryption (SQLCipher / column-level) | High | ⬜ Not started |
+| 1 | Comprehensive tests | **Critical** | 🟢 Substantial progress (113 tests across 24 files; see §3) |
+| 2 | Verification DB encryption (SQLCipher / column-level) | High | 🟡 SQLCipher wired (`auth.db` + `scan.db` open with `SupportFactory(passphrase)`); 256-bit key generated/persisted via EncryptedSharedPreferences. Static build green. Same runtime smoke-test caveat as R8 — needs device verification. |
 | 2 | `buildConfigField BASE_URL` per build type | Medium | ⬜ Not started |
 | 2 | Detekt + ktlint + CI gate | Medium | ⬜ Not started — CI deferred per user (§2) |
 | 2 | Strings to `strings.xml` + accessibility pass | Medium | ⬜ Not started |
@@ -25,7 +25,7 @@ This document tracks what has been done, what is pending, and what was deliberat
 | 3 | Gson → kotlinx.serialization | Low | ⬜ Not started |
 | 3 | Type-safe Compose navigation | Low | ⬜ Not started |
 | 3 | Backfill `data` + `domain` layers for `dashboard`, `exam`, `scan` | Medium | ⬜ Not started |
-| 3 | Multi-module split | Low | ⬜ Not started |
+| 3 | Multi-module split | Low | ✅ **Resolved by decision** — single-module retained per user (§2). |
 | 3 | Dependabot / Renovate | Low | ⬜ Not started |
 
 Legend: 🟢 done · 🟡 partial · ⬜ pending · ⬛ blocked · ✅ resolved by decision
@@ -41,12 +41,13 @@ These came from the explicit Q&A at the start of implementation. They constrain 
 3. **No CI yet.** Detekt / ktlint / coverage gates have nowhere to run. They are deferred until CI (GitHub Actions or similar) is wired up. Quality gates are local-only for now.
 4. **Assertion library: JUnit assertions.** No migration to AssertJ / Truth / Kotest. New tests match the existing `LoginViewModelTest` style.
 5. **Coverage tooling: Kover (attempted).** Plugin is wired in `gradle/libs.versions.toml` and applied in `app/build.gradle.kts`, but Kover 0.9.1 cannot resolve Android variants on AGP 9.2.1. The custom-variant block is commented out with a reactivation note — see §5 (Open Follow-Ups).
+6. **No multi-module split.** Audit recommendation in `CODE_REVIEW.md` §3 weakness #2 and §14 Phase 3 step 14 is permanently de-scoped. Single-module project is the chosen structure for this codebase. Do not surface multi-module as a next move; if build performance or cross-feature coupling becomes a concern, address it without a `:core:*` / `:feature:*` split.
 
 ---
 
 ## 3. Test Coverage Built So Far
 
-**Total: 102 tests across 22 files. All green at last run.**
+**Total: 113 tests across 24 files. All green at last run.**
 
 The test foundation now covers every ViewModel, use case, and repository in the auth, profile, and (most of the) verification + exam features that has non-trivial logic.
 
@@ -73,6 +74,8 @@ The test foundation now covers every ViewModel, use case, and repository in the 
 | exam | `ExamPaperViewModelTest` | 3 | placeholder identity, hero URL constant, progress fraction in [0..1] |
 | exam | `ExamCandidatesViewModelTest` | 3 | placeholder identity, filter labels, candidate avatar + ID prefix |
 | exam | `CandidateScanResultViewModelTest` | 6 | nav arg decode, URL decoding, whitespace trim, missing/blank fallback, identity-verified headline + 98% match |
+| persistence | `DatabaseKeyProviderTest` | 6 | first-call key generation + 32-byte length + lowercase-hex persistence + commit; second-call returns persisted key without re-write; hex round-trip identity; independent providers produce different keys; corrupt-length and non-hex inputs rejected |
+| persistence | `DatabaseMigrationGuardTest` | 5 | first run deletes `auth.db` + `scan.db` and sets the `sqlcipher_migration_v1_done` marker; subsequent runs no-op; marker still set when `deleteDatabase` returns false (file didn't exist); custom legacy-DB list honored; constants pinned so a refactor can't accidentally retrigger the wipe on existing installs |
 | placeholder | `ExampleUnitTest` | 1 | IDE-generated placeholder; harmless, not removed |
 
 ### Test infrastructure built
@@ -86,6 +89,7 @@ The test foundation now covers every ViewModel, use case, and repository in the 
 Documented as candidate next sprints:
 
 - **Sprint 6 — remaining verification ViewModels.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`, plus dashboards (`DashboardViewModel`, `ExamDashboardViewModel`, `ExamStatisticsViewModel`).
+- **Room migration tests (now harder).** With SQLCipher in the path, `MigrationTestHelper` needs an encrypted helper override (or a debug-only unencrypted variant of the Room builder). Plan to address as part of Sprint 8.
 - **Sprint 7 — `MockWebServer` integration tests** for the Retrofit/JSON wire. Currently repository tests mock the `*ApiService` interface, so JSON-shape regressions slip through.
 - **Sprint 8 — Room `MigrationTestHelper`** for `VerificationDatabase` migrations 2→3, 3→4, 4→5. Ungated migrations are a real risk because `fallbackToDestructiveMigration()` is enabled.
 - **Sprint 9 — Compose UI tests** in `androidTest`. Login happy path, manual entry, scan result.
@@ -163,6 +167,19 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/src/main/AndroidManifest.xml` | Added `android:networkSecurityConfig="@xml/network_security_config"` on `<application>` |
 | `app/build.gradle.kts` | Release build type: `isMinifyEnabled = true` + `isShrinkResources = true` |
 | `app/proguard-rules.pro` | Authored R8 keep rules: app DTOs, Room entities/DAOs, Gson-serialized domain models, `@SerializedName` field preservation, anonymous `TypeToken<…>` subclasses, retrofit `@HTTP` method preservation, source-file/line-number retention. Replaces the empty boilerplate stub. |
+| `gradle/libs.versions.toml` | Added `sqlcipher = "4.5.4"` (`net.zetetic:android-database-sqlcipher`) and `sqlite = "2.4.0"` (`androidx.sqlite:sqlite-ktx`) version refs + library entries |
+| `app/build.gradle.kts` | `implementation(libs.sqlcipher)` + `implementation(libs.androidx.sqlite.ktx)` |
+| `app/src/main/.../core/persistence/encryption/DatabaseKeyProvider.kt` | **New** — generates a 256-bit random passphrase via `SecureRandom` on first launch; persists hex-encoded into an injected `SharedPreferences` (provided as EncryptedSharedPreferences in production); `@Synchronized` so concurrent first-call DB opens cannot race; uses `commit()` not `apply()` so the key is durable before a SQLCipher DB ever uses it |
+| `app/src/main/.../core/persistence/encryption/DatabaseKeyPrefs.kt` | **New** — Hilt qualifier annotation for the EncryptedSharedPreferences instance that holds the DB passphrase |
+| `app/src/main/.../core/persistence/encryption/DatabaseMigrationGuard.kt` | **New** — one-shot deletion of pre-SQLCipher unencrypted `auth.db` + `scan.db`; gated by `sqlcipher_migration_v1_done` boolean in a separate `db_migration_guard` SharedPreferences file; `deleteDatabase()` removes the `-journal`/`-wal`/`-shm` sidecars too |
+| `app/src/main/.../core/persistence/encryption/EncryptionModule.kt` | **New** — Hilt module that provides the `@DatabaseKeyPrefs` EncryptedSharedPreferences (file `db_keys`, MasterKey AES256-GCM) and the singleton `SupportFactory` constructed with `clearPassphrase = false` (otherwise SQLCipher zeroes the byte array after first use, corrupting in-process reopens) |
+| `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` | `provideAuthDatabase` now injects `SupportFactory` and calls `.openHelperFactory(supportFactory)` on the Room builder |
+| `app/src/main/.../feature/verification/data/di/LicenseDataModule.kt` | Same `.openHelperFactory(supportFactory)` wiring for `VerificationDatabase` |
+| `app/src/main/.../ChprbnApplication.kt` | `onCreate()`: `SQLiteDatabase.loadLibs(this)` (SQLCipher 4.x JNI init) → `DatabaseMigrationGuard(...).migrateIfNeeded()` runs before any DAO is touched |
+| `app/src/main/res/xml/data_extraction_rules.xml` | Added excludes for `db_keys.xml` and `db_migration_guard.xml` (consistent with the existing `auth_prefs.xml` exclusion rationale) |
+| `app/src/main/res/xml/backup_rules.xml` | Same additions for the legacy pre-Android-12 path |
+| `app/src/test/.../core/persistence/encryption/DatabaseKeyProviderTest.kt` | **New** (6 tests) |
+| `app/src/test/.../core/persistence/encryption/DatabaseMigrationGuardTest.kt` | **New** (5 tests) |
 
 ---
 
@@ -174,7 +191,7 @@ Pick one based on appetite — the test foundation is broad enough now that any 
    - ~~PR A: backup hardening + `network_security_config.xml` (cleartext disabled).~~ ✅ Landed. SPKI pin-set still TODO — once ops supplies leaf + backup fingerprints, uncomment the `<pin-set>` block in `network_security_config.xml` and optionally mirror it as an OkHttp `CertificatePinner` for defense-in-depth.
    - ~~PR B: enable R8 + author `proguard-rules.pro`.~~ ✅ Landed at the build level. **Runtime smoke test still required**: install the unsigned release APK on a device and exercise login → fetch profile → scan QR → manual license lookup → save verified record → sync → submit irregularity report. Watch logcat for `JsonSyntaxException`, `IllegalStateException` from Gson reflection, missing-class errors from Hilt, or Room `RuntimeException: cannot find adapter` — those are the typical R8 fallout patterns and will require a follow-up PR to extend the keep rules. Until smoke-tested, treat S1/S2/S3 as 🟡 not 🟢.
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
-2. **Verification-DB encryption** (Phase 2). SQLCipher (`net.zetetic:android-database-sqlcipher` + Room `SupportFactory`) with the key derived/stored via `MasterKey` + `EncryptedSharedPreferences`. The test foundation around `LicenseRepositoryImpl` and `VerifiedRepositoryImpl` will catch breakage.
+2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.5.4 wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). Open follow-up: APK grew ~13.5 MB for SQLCipher's per-ABI native libraries; consider per-ABI APK splits or AAB packaging if delivery size matters.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.
 5. **`MockWebServer` + Room migration tests** (Sprints 7 + 8). Higher infrastructure cost, catches regressions the unit tests can't.
@@ -196,4 +213,4 @@ If picking up cold, start by **re-reading `CODE_REVIEW.md` §13 (severity matrix
 ./gradlew :app:koverHtmlReport
 ```
 
-Last verified: 2026-05-09 — 102 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed. Release APK lives at `app/build/outputs/apk/release/app-release-unsigned.apk` (22.4 MB) with `mapping.txt` at `app/build/outputs/mapping/release/`. Runtime smoke test of the release APK is still outstanding — see §7 PR B note.
+Last verified: 2026-05-09 — 113 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed with SQLCipher wired in. Release APK at `app/build/outputs/apk/release/app-release-unsigned.apk` is now 35.9 MB (was 22.4 MB before SQLCipher; +13.5 MB for per-ABI `.so`s) with `mapping.txt` at `app/build/outputs/mapping/release/`. Runtime smoke test of the release APK is still outstanding — see §7 PR B / SQLCipher note.

@@ -67,6 +67,8 @@ dependencies {
 
     // Security
     implementation(libs.androidx.security.crypto)
+    implementation(libs.sqlcipher)
+    implementation(libs.androidx.sqlite.ktx)
 
     // Coil
     implementation(libs.coil.compose)
