@@ -1,7 +1,7 @@
 package ng.com.chprbn.mobile.feature.verification.domain.usecase
 
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
-import ng.com.chprbn.mobile.feature.verification.domain.repository.ScanRepository
+import ng.com.chprbn.mobile.feature.verification.domain.repository.LicenseRepository
 import javax.inject.Inject
 
 /**
@@ -9,7 +9,7 @@ import javax.inject.Inject
  * Returns updated record if API success, null otherwise. Caller can update UI with the result.
  */
 class RefreshLicenseRecordUseCase @Inject constructor(
-    private val repository: ScanRepository
+    private val repository: LicenseRepository
 ) {
     suspend operator fun invoke(registrationNumber: String): LicenseRecord? {
         val trimmed = registrationNumber.trim()

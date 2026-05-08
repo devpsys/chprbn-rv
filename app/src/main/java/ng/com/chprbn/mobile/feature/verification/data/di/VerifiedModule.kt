@@ -5,7 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ng.com.chprbn.mobile.feature.verification.data.local.ScanDatabase
+import ng.com.chprbn.mobile.feature.verification.data.local.VerificationDatabase
 import ng.com.chprbn.mobile.feature.verification.data.local.VerifiedLicenseDao
 import ng.com.chprbn.mobile.feature.verification.data.repository.VerifiedRepositoryImpl
 import ng.com.chprbn.mobile.feature.verification.domain.repository.VerifiedRepository
@@ -21,7 +21,7 @@ abstract class VerifiedModule {
     companion object {
         @Provides
         @Singleton
-        fun provideVerifiedLicenseDao(db: ScanDatabase): VerifiedLicenseDao =
+        fun provideVerifiedLicenseDao(db: VerificationDatabase): VerifiedLicenseDao =
             db.verifiedLicenseDao()
     }
 }

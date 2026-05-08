@@ -8,47 +8,47 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ng.com.chprbn.mobile.feature.verification.data.api.ScanApiService
+import ng.com.chprbn.mobile.feature.verification.data.api.LicenseApiService
 import ng.com.chprbn.mobile.feature.verification.data.local.LicenseRecordDao
-import ng.com.chprbn.mobile.feature.verification.data.local.ScanDatabase
-import ng.com.chprbn.mobile.feature.verification.data.repository.ScanRepositoryImpl
+import ng.com.chprbn.mobile.feature.verification.data.local.VerificationDatabase
+import ng.com.chprbn.mobile.feature.verification.data.repository.LicenseRepositoryImpl
 import ng.com.chprbn.mobile.feature.verification.data.source.ApiLicenseRecordRemoteSource
 import ng.com.chprbn.mobile.feature.verification.data.source.CompositeLicenseRecordRemoteSource
 import ng.com.chprbn.mobile.feature.verification.data.source.FakeLicenseRecordRemoteSource
 import ng.com.chprbn.mobile.feature.verification.data.source.LicenseRecordRemoteSource
-import ng.com.chprbn.mobile.feature.verification.domain.repository.ScanRepository
+import ng.com.chprbn.mobile.feature.verification.domain.repository.LicenseRepository
 import retrofit2.Retrofit
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ScanModule {
+abstract class LicenseDataModule {
 
     @Binds
-    abstract fun bindScanRepository(impl: ScanRepositoryImpl): ScanRepository
+    abstract fun bindLicenseRepository(impl: LicenseRepositoryImpl): LicenseRepository
 
     companion object {
         @Provides
         @Singleton
-        fun provideScanDatabase(@ApplicationContext context: Context): ScanDatabase =
-            Room.databaseBuilder(context, ScanDatabase::class.java, "scan.db")
+        fun provideVerificationDatabase(@ApplicationContext context: Context): VerificationDatabase =
+            Room.databaseBuilder(context, VerificationDatabase::class.java, "scan.db")
                 .addMigrations(
-                    ScanDatabase.MIGRATION_2_3,
-                    ScanDatabase.MIGRATION_3_4,
-                    ScanDatabase.MIGRATION_4_5
+                    VerificationDatabase.MIGRATION_2_3,
+                    VerificationDatabase.MIGRATION_3_4,
+                    VerificationDatabase.MIGRATION_4_5
                 )
                 .fallbackToDestructiveMigration()
                 .build()
 
         @Provides
         @Singleton
-        fun provideLicenseRecordDao(db: ScanDatabase): LicenseRecordDao =
+        fun provideLicenseRecordDao(db: VerificationDatabase): LicenseRecordDao =
             db.licenseRecordDao()
 
         @Provides
         @Singleton
-        fun provideScanApiService(retrofit: Retrofit): ScanApiService =
-            retrofit.create(ScanApiService::class.java)
+        fun provideLicenseApiService(retrofit: Retrofit): LicenseApiService =
+            retrofit.create(LicenseApiService::class.java)
 
         @Provides
         @Singleton

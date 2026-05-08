@@ -8,7 +8,7 @@ import ng.com.chprbn.mobile.feature.verification.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.verification.data.source.LicenseRecordRemoteSource
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
-import ng.com.chprbn.mobile.feature.verification.domain.repository.ScanRepository
+import ng.com.chprbn.mobile.feature.verification.domain.repository.LicenseRepository
 import java.io.IOException
 import javax.inject.Inject
 
@@ -17,10 +17,10 @@ import javax.inject.Inject
  * Returns cached record if present; else fetches from [LicenseRecordRemoteSource] (API + fake
  * fallback), caches, and returns. [refreshLicenseRecord] performs silent refresh and updates cache.
  */
-class ScanRepositoryImpl @Inject constructor(
+class LicenseRepositoryImpl @Inject constructor(
     private val licenseRecordDao: LicenseRecordDao,
     private val remoteSource: LicenseRecordRemoteSource
-) : ScanRepository {
+) : LicenseRepository {
 
     override suspend fun getLicenseRecord(registrationNumber: String): LicenseRecordResult =
         withContext(Dispatchers.IO) {

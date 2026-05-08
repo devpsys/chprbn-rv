@@ -12,7 +12,7 @@ import ng.com.chprbn.mobile.feature.verification.data.local.VerifiedLicenseDao
     version = 5,
     exportSchema = false
 )
-abstract class ScanDatabase : RoomDatabase() {
+abstract class VerificationDatabase : RoomDatabase() {
     abstract fun licenseRecordDao(): LicenseRecordDao
     abstract fun verifiedLicenseDao(): VerifiedLicenseDao
 

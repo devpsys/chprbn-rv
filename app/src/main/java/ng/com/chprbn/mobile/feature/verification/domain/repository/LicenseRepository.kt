@@ -8,7 +8,7 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResul
  * Strategy: local first, then remote; cache remote result and return.
  * When serving from cache, call [refreshLicenseRecord] in background to silently update cache/UI.
  */
-interface ScanRepository {
+interface LicenseRepository {
     /**
      * Get license record by registration/license number.
      * Checks local DB first; if missing, fetches from API and caches.

@@ -8,7 +8,7 @@ import retrofit2.http.Query
 /**
  * Mobile API v1 — practitioner license card (Bearer required).
  */
-interface ScanApiService {
+interface LicenseApiService {
 
     @GET("practitioners/license")
     suspend fun getLicenseRecord(
