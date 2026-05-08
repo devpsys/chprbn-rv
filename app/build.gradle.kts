@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kover)
     id("com.google.dagger.hilt.android")
 }
 
@@ -41,6 +42,12 @@ android {
         buildConfig = true
     }
 }
+
+// Kover plugin is applied so we can wire up coverage reporting once AGP 9.x is
+// supported by Kover. As of Kover 0.9.1 + AGP 9.2.1, custom-variant inclusion
+// (`add("debug")`) cannot resolve the Android variant, so reports return
+// "No sources". Revisit when Kover ships AGP 9 support, or downgrade AGP.
+// kover { currentProject { createVariant("appDebug") { add("debug") } } }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
