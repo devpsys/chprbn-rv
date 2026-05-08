@@ -127,11 +127,15 @@ class SyncViewModel @Inject constructor(
     private suspend fun reloadFromDb() {
         runCatching { getSyncRecordsUseCase() }
             .onSuccess { rows ->
+                // Don't clear `error` here — sync/retry failure paths rely on
+                // the error message surviving the implicit reload that follows.
+                // Callers (refresh, syncAll, retryFailed) clear `error` up front
+                // when starting a fresh user-driven action; consumeError() handles
+                // explicit dismissal.
                 _uiState.update {
                     it.copy(
                         records = rows,
-                        isLoading = false,
-                        error = null
+                        isLoading = false
                     )
                 }
             }

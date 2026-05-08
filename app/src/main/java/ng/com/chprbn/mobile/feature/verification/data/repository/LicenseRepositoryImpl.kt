@@ -50,7 +50,11 @@ class LicenseRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             val trimmed = registrationNumber.trim()
             if (trimmed.isEmpty()) return@withContext null
-            val record = remoteSource.getLicenseRecord(trimmed) ?: return@withContext null
+            // Per KDoc: null on 404 / network / any error — cache stays untouched.
+            // Silent background refresh must never crash callers.
+            val record = runCatching { remoteSource.getLicenseRecord(trimmed) }
+                .getOrNull()
+                ?: return@withContext null
             licenseRecordDao.insertOrUpdate(record.toEntity())
             record
         }

@@ -2,11 +2,11 @@ package ng.com.chprbn.mobile.feature.profile.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
+import ng.com.chprbn.mobile.feature.auth.data.network.SessionTokenPolicy
 import ng.com.chprbn.mobile.feature.auth.domain.model.User
 import ng.com.chprbn.mobile.feature.profile.domain.repository.ProfileRepository
 import javax.inject.Inject
@@ -22,7 +22,12 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override suspend fun getUserProfile(): User? {
         val entity = withContext(Dispatchers.IO) { userDao.getUser() } ?: return null
-        val token = authTokenStore.peekToken() ?: return null
+        // A blank token or the legacy seed placeholder must not surface a User —
+        // any caller (e.g. ProfileViewModel) treats a non-null User as "logged in".
+        val token = authTokenStore.peekToken()
+            ?.trim()
+            ?.takeIf { SessionTokenPolicy.isValidForAuthenticatedApi(it) }
+            ?: return null
         return entity.toDomain(token)
     }
 
