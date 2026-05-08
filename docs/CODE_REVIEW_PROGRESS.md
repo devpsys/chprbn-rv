@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (PR A landed: backup hardening + network-security-config)
+**Last updated:** 2026-05-09 (PR A landed; PR B landed: R8 + ProGuard rules)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -12,7 +12,7 @@ This document tracks what has been done, what is pending, and what was deliberat
 
 | Phase | Item | Severity | Status |
 |---|---|---|---|
-| 1 | R8 minification + ProGuard rules | **Critical** | ⬜ Not started |
+| 1 | R8 minification + ProGuard rules | **Critical** | 🟡 Static build green (`:app:assembleRelease` produces a 22.4 MB shrunk APK + `mapping.txt`). Runtime smoke test (login → scan → manual entry → sync → verify) on a real device is still pending — Gson reflection breakage typically only surfaces at runtime. |
 | 1 | Network security config + cert pinning | **High** | 🟡 Config landed (cleartext disabled, base-config + domain-config wired). SPKI pin-set still pending — needs leaf + backup fingerprints from ops. |
 | 1 | Backup hardening (`data_extraction_rules.xml`) | High | 🟢 Done — `auth.db`, `scan.db`, `auth_prefs.xml` excluded from cloud-backup + device-transfer; `backup_rules.xml` mirrors for pre-Android-12. |
 | 1 | `signingConfigs` for release | Medium | ⬜ Not started |
@@ -161,6 +161,8 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/src/main/res/xml/backup_rules.xml` | Replaced stub with same excludes (legacy pre-Android-12 path) |
 | `app/src/main/res/xml/network_security_config.xml` | **New** — base-config + domain-config for `app.chprbn.gov.ng`; cleartext disabled; system trust anchors; `<pin-set>` left commented with a TODO until ops supplies SPKI fingerprints |
 | `app/src/main/AndroidManifest.xml` | Added `android:networkSecurityConfig="@xml/network_security_config"` on `<application>` |
+| `app/build.gradle.kts` | Release build type: `isMinifyEnabled = true` + `isShrinkResources = true` |
+| `app/proguard-rules.pro` | Authored R8 keep rules: app DTOs, Room entities/DAOs, Gson-serialized domain models, `@SerializedName` field preservation, anonymous `TypeToken<…>` subclasses, retrofit `@HTTP` method preservation, source-file/line-number retention. Replaces the empty boilerplate stub. |
 
 ---
 
@@ -168,10 +170,10 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 
 Pick one based on appetite — the test foundation is broad enough now that any of these can land safely:
 
-1. **Phase 1 release-hardening sprint** — PR A done; PR B/C remain.
+1. **Phase 1 release-hardening sprint** — PR A + PR B done; PR C + runtime smoke test remain.
    - ~~PR A: backup hardening + `network_security_config.xml` (cleartext disabled).~~ ✅ Landed. SPKI pin-set still TODO — once ops supplies leaf + backup fingerprints, uncomment the `<pin-set>` block in `network_security_config.xml` and optionally mirror it as an OkHttp `CertificatePinner` for defense-in-depth.
-   - PR B: enable R8 (`isMinifyEnabled = true`, `isShrinkResources = true`) + author `proguard-rules.pro` for Gson DTOs, Room entities, Hilt-generated code, Retrofit interfaces. Build a release APK and exercise login → scan → manual entry → sync → verify. Plan for one or two iterations because Gson reflection often blows up at runtime.
-   - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user.
+   - ~~PR B: enable R8 + author `proguard-rules.pro`.~~ ✅ Landed at the build level. **Runtime smoke test still required**: install the unsigned release APK on a device and exercise login → fetch profile → scan QR → manual license lookup → save verified record → sync → submit irregularity report. Watch logcat for `JsonSyntaxException`, `IllegalStateException` from Gson reflection, missing-class errors from Hilt, or Room `RuntimeException: cannot find adapter` — those are the typical R8 fallout patterns and will require a follow-up PR to extend the keep rules. Until smoke-tested, treat S1/S2/S3 as 🟡 not 🟢.
+   - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
 2. **Verification-DB encryption** (Phase 2). SQLCipher (`net.zetetic:android-database-sqlcipher` + Room `SupportFactory`) with the key derived/stored via `MasterKey` + `EncryptedSharedPreferences`. The test foundation around `LicenseRepositoryImpl` and `VerifiedRepositoryImpl` will catch breakage.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.
@@ -194,4 +196,4 @@ If picking up cold, start by **re-reading `CODE_REVIEW.md` §13 (severity matrix
 ./gradlew :app:koverHtmlReport
 ```
 
-Last verified: 2026-05-09 — 102 tests, all green; `:app:assembleDebug` succeeds against the new manifest + `network_security_config.xml`.
+Last verified: 2026-05-09 — 102 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed. Release APK lives at `app/build/outputs/apk/release/app-release-unsigned.apk` (22.4 MB) with `mapping.txt` at `app/build/outputs/mapping/release/`. Runtime smoke test of the release APK is still outstanding — see §7 PR B note.
