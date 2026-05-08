@@ -81,6 +81,7 @@ fun QrScanScreen(
     onManualEntry: () -> Unit = {},
     qrValidator: (String) -> String? = { it },
     onQrScanned: (String) -> Unit = {},
+    manualEntryButtonLabel: String = "Enter License Manually",
 ) {
     val uiState by viewModel.uiState.collectAsState()
     LaunchedEffect(uiState.scannedRegistrationNumber) {
@@ -95,7 +96,8 @@ fun QrScanScreen(
         qrValidator = qrValidator,
         onQrScanned = { value -> viewModel.handleEvent(ScanUiEvent.RegistrationScanned(value)) },
         onToggleTorch = { viewModel.handleEvent(ScanUiEvent.ToggleTorch) },
-        onManualEntry = onManualEntry
+        onManualEntry = onManualEntry,
+        manualEntryButtonLabel = manualEntryButtonLabel,
     )
 }
 
@@ -105,7 +107,8 @@ fun QrScanContent(
     qrValidator: (String) -> String?,
     onQrScanned: (String) -> Unit,
     onToggleTorch: () -> Unit,
-    onManualEntry: () -> Unit
+    onManualEntry: () -> Unit,
+    manualEntryButtonLabel: String = "Enter License Manually",
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -312,7 +315,8 @@ fun QrScanContent(
             // Footer (status, progress, manual entry, help) – can be re-used or adjusted as needed
             QrScanFooter(
                 statusText = "Waiting for QR code...",
-                onManualEntry = onManualEntry
+                onManualEntry = onManualEntry,
+                manualEntryButtonLabel = manualEntryButtonLabel,
             )
         }
         }
@@ -455,7 +459,8 @@ private fun CameraScanPreview(
 @Composable
 fun QrScanFooter(
     statusText: String,
-    onManualEntry: () -> Unit
+    onManualEntry: () -> Unit,
+    manualEntryButtonLabel: String = "Enter License Manually",
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -527,7 +532,7 @@ fun QrScanFooter(
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = "Enter License Manually",
+                        text = manualEntryButtonLabel,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -555,7 +560,7 @@ fun QrScanScreenPreview() {
             qrValidator = { it },
             onQrScanned = {},
             onToggleTorch = {},
-            onManualEntry = {}
+            onManualEntry = {},
         )
     }
 }

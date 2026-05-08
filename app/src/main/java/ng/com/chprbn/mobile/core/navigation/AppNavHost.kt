@@ -25,7 +25,11 @@ import ng.com.chprbn.mobile.feature.verification.presentation.VerificationFormSc
 import ng.com.chprbn.mobile.feature.verification.domain.extractRegistrationFromQrPayload
 import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamDashboardScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.ExamPapersScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
 /**
  * Single-activity navigation host.
@@ -103,7 +107,11 @@ fun AppNavHost() {
         composable(Routes.ExamDashboard) {
             ExamDashboardScreen(
                 onNotifications = { /* TODO: exam notifications */ },
-                onLogAttendance = { /* TODO: attendance */ },
+                onLogAttendance = {
+                    if (navController.currentDestination?.route != Routes.ExamPapers) {
+                        navController.navigate(Routes.ExamPapers)
+                    }
+                },
                 onAttendanceMore = { /* TODO */ },
                 onGradePractical = { /* TODO: practical */ },
                 onPracticalInfo = { /* TODO */ },
@@ -114,6 +122,40 @@ fun AppNavHost() {
                         navController.navigate(Routes.ExamStatistics)
                     }
                 }
+            )
+        }
+        composable(Routes.ExamPapers) {
+            ExamPapersScreen(
+                onBack = { navController.popBackStack() },
+                onOpenPaper = {
+                    if (navController.currentDestination?.route != Routes.ExamPaper) {
+                        navController.navigate(Routes.ExamPaper)
+                    }
+                },
+                onSyncNow = { /* TODO: sync attendance */ }
+            )
+        }
+        composable(Routes.ExamPaper) {
+            ExamPaperScreen(
+                onBack = { navController.popBackStack() },
+                onViewCandidates = {
+                    if (navController.currentDestination?.route != Routes.ExamCandidates) {
+                        navController.navigate(Routes.ExamCandidates)
+                    }
+                },
+                onSyncData = { /* TODO: sync paper data */ },
+                onScanQr = {
+                    if (navController.currentDestination?.route != Routes.ExamScan) {
+                        navController.navigate(Routes.ExamScan)
+                    }
+                }
+            )
+        }
+        composable(Routes.ExamCandidates) {
+            ExamCandidatesScreen(
+                onBack = { navController.popBackStack() },
+                onAddRemark = { /* TODO */ },
+                onViewProfile = { /* TODO */ }
             )
         }
         composable(Routes.ExamStatistics) {
@@ -351,27 +393,77 @@ fun AppNavHost() {
                 onSubmitted = { navController.popBackStack() }
             )
         }
-        composable(Routes.ManualLicenseEntry) {
+        composable(
+            route = Routes.ManualLicenseEntry,
+            arguments = listOf(
+                navArgument("forExam") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+            ),
+        ) { backStackEntry ->
+            val forExamIndexing =
+                backStackEntry.arguments?.getBoolean("forExam") ?: false
             ManualEntryScreen(
+                forExamIndexing = forExamIndexing,
                 onBack = {
-                    // Pop QrScanScreen as well so we return to the screen before scan
-                    navController.popBackStack(Routes.Scan, inclusive = true)
+                    if (!navController.popBackStack(Routes.ExamScan, inclusive = true)) {
+                        navController.popBackStack(Routes.Scan, inclusive = true)
+                    }
                 },
                 onVerifyLicense = { enteredLicense ->
                     navController.navigate(Routes.recordDetailRoute(enteredLicense))
-                }
+                },
             )
         }
         composable(Routes.Scan) {
             QrScanScreen(
                 onManualEntry = {
                     if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
-                        navController.navigate(Routes.ManualLicenseEntry)
+                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = false))
                     }
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
                     navController.navigate(Routes.recordDetailRoute(registrationNumber))
+                }
+            )
+        }
+        composable(Routes.ExamScan) {
+            QrScanScreen(
+                manualEntryButtonLabel = "Enter Indexing Manually",
+                onManualEntry = {
+                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
+                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = true))
+                    }
+                },
+                qrValidator = { extractRegistrationFromQrPayload(it) },
+                onQrScanned = { registrationNumber ->
+                    navController.navigate(Routes.candidateScanResultRoute(registrationNumber))
+                }
+            )
+        }
+        composable(
+            route = Routes.CandidateScanResult,
+            arguments = listOf(
+                navArgument("scannedPayload") { type = NavType.StringType }
+            )
+        ) {
+            CandidateScanResultScreen(
+                onBack = {
+                    navController.popBackStack()
+                    navController.popBackStack()
+                },
+                onMarkAttendance = {
+                    navController.popBackStack()
+                    navController.popBackStack()
+//                    navController.navigate(Routes.ExamCandidates) {
+//                        launchSingleTop = true
+//                    }
+                },
+                onCancel = {
+                    navController.popBackStack()
+                    navController.popBackStack()
                 }
             )
         }
@@ -387,7 +479,9 @@ fun AppNavHost() {
             RecordDetailScreen(
                 registrationNumber = registrationNumber,
                 onBack = {
-                    navController.popBackStack(Routes.Scan, inclusive = true)
+                    if (!navController.popBackStack(Routes.ExamScan, inclusive = true)) {
+                        navController.popBackStack(Routes.Scan, inclusive = true)
+                    }
                 },
                 onMenu = { /* TODO: overflow menu */ },
                 onProceedToVerification = { record ->
@@ -407,7 +501,7 @@ fun AppNavHost() {
                 },
                 onManualEntry = {
                     if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
-                        navController.navigate(Routes.ManualLicenseEntry)
+                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = false))
                     }
                 }
             )

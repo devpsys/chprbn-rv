@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -42,11 +43,13 @@ import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 
 /**
- * Presentation-only screen matching `ui-designs/manually_license_entry/code.html`.
+ * Typed entry for a registration / indexing value. Verification uses license wording;
+ * [forExamIndexing] uses exam attendance and indexing wording.
  */
 @Composable
 fun ManualEntryScreen(
     modifier: Modifier = Modifier,
+    forExamIndexing: Boolean = false,
     onBack: () -> Unit = {},
     onVerifyLicense: (String) -> Unit = {},
     viewModel: ManualEntryViewModel = hiltViewModel()
@@ -55,6 +58,7 @@ fun ManualEntryScreen(
 
     ManualEntryContent(
         modifier = modifier,
+        forExamIndexing = forExamIndexing,
         uiState = uiState,
         onBack = onBack,
         onLicenseNumberChange = viewModel::onLicenseNumberChange,
@@ -65,18 +69,42 @@ fun ManualEntryScreen(
 @Composable
 fun ManualEntryContent(
     modifier: Modifier = Modifier,
+    forExamIndexing: Boolean = false,
     uiState: ManualEntryUiState,
     onBack: () -> Unit = {},
     onLicenseNumberChange: (String) -> Unit = {},
     onVerifyLicense: (String) -> Unit = {}
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val headline = if (forExamIndexing) {
+        "Look Up Candidate"
+    } else {
+        "Verify Practitioner"
+    }
+    val description = if (forExamIndexing) {
+        "Enter the candidate's indexing number exactly as shown on their exam slip or letter. " +
+            "It must match the roster for this session before you can record attendance."
+    } else {
+        "Enter the details from the physical license to proceed with verification. " +
+            "Ensure all information matches the document exactly."
+    }
+    val fieldLabel = if (forExamIndexing) "Indexing Number" else "License Number"
+    val placeholder = if (forExamIndexing) "e.g., ABC-12345-XY" else "e.g., MED-12345"
+    val primaryButtonLabel = if (forExamIndexing) "Find Candidate" else "Search License"
+    val trustCaption = if (forExamIndexing) {
+        "OFFICIAL CHPRBN EXAM ATTENDANCE"
+    } else {
+        "OFFICIAL CHPRBN VERIFICATION PORTAL"
+    }
+    val headerTitle = if (forExamIndexing) "Manual Indexing" else "Manual Entry"
+
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = scheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            ManualEntryHeader(onBack = onBack)
+            ManualEntryHeader(onBack = onBack, title = headerTitle)
 
             Column(
                 modifier = Modifier
@@ -86,25 +114,25 @@ fun ManualEntryContent(
                     .padding(bottom = 96.dp)
             ) {
                 Text(
-                    text = "Verify Practitioner",
+                    text = headline,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen
                 )
                 Text(
-                    text = "Enter the details from the physical license to proceed with verification. Ensure all information matches the document exactly.",
+                    text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = scheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "License Number",
+                    text = fieldLabel,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = scheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 OutlinedTextField(
@@ -115,8 +143,8 @@ fun ManualEntryContent(
                         .height(56.dp),
                     placeholder = {
                         Text(
-                            "e.g., MED-12345",
-                            color = Color(0xFF94A3B8)
+                            placeholder,
+                            color = scheme.onSurfaceVariant.copy(alpha = 0.75f)
                         )
                     },
                     singleLine = true,
@@ -159,7 +187,7 @@ fun ManualEntryContent(
                         )
                         Spacer(modifier = Modifier.size(10.dp))
                         Text(
-                            text = "Search License",
+                            text = primaryButtonLabel,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -175,16 +203,20 @@ fun ManualEntryContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Gavel,
+                        imageVector = if (forExamIndexing) {
+                            Icons.AutoMirrored.Filled.Assignment
+                        } else {
+                            Icons.Filled.Gavel
+                        },
                         contentDescription = null,
                         modifier = Modifier.size(44.dp),
                         tint = PrimaryGreen.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "OFFICIAL CHPRBN VERIFICATION PORTAL",
+                        text = trustCaption,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF94A3B8),
+                        color = scheme.onSurfaceVariant.copy(alpha = 0.85f),
                         letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
                         modifier = Modifier.padding(top = 12.dp),
                         textAlign = TextAlign.Center
@@ -197,7 +229,7 @@ fun ManualEntryContent(
 }
 
 @Composable
-private fun ManualEntryHeader(onBack: () -> Unit) {
+private fun ManualEntryHeader(onBack: () -> Unit, title: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
@@ -218,7 +250,7 @@ private fun ManualEntryHeader(onBack: () -> Unit) {
                 )
             }
             Text(
-                text = "Manual Entry",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -233,11 +265,22 @@ private fun ManualEntryHeader(onBack: () -> Unit) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Verification")
 @Composable
 private fun ManualEntryScreenPreview() {
     ChprbnTheme {
         ManualEntryContent(uiState = ManualEntryUiState())
+    }
+}
+
+@Preview(showBackground = true, name = "Exam indexing")
+@Composable
+private fun ManualEntryExamPreview() {
+    ChprbnTheme {
+        ManualEntryContent(
+            forExamIndexing = true,
+            uiState = ManualEntryUiState(),
+        )
     }
 }
 

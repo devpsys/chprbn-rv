@@ -112,7 +112,6 @@ private fun ExamDashboardScreenContent(
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     onClick = onDownloadDossier,
-                    modifier = Modifier.padding(end = 24.dp),
                     containerColor = scheme.primary,
                     contentColor = scheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
@@ -124,7 +123,7 @@ private fun ExamDashboardScreenContent(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Download Dossier",
+                        text = "Download Records",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
