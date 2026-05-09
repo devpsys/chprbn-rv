@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
@@ -123,8 +125,10 @@ fun RecordDetailContent(
     onManualEntry: () -> Unit = {},
     onRetry: () -> Unit = {}
 ) {
+    val emDash = stringResource(R.string.placeholder_em_dash)
     val digitalLicenseId =
-        record?.registrationNumber?.takeIf { it.isNotBlank() } ?: registrationNumber.ifEmpty { "—" }
+        record?.registrationNumber?.takeIf { it.isNotBlank() }
+            ?: registrationNumber.ifEmpty { emDash }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -191,7 +195,7 @@ fun RecordDetailContent(
                                 )
                                 Spacer(modifier = Modifier.size(8.dp))
                                 Text(
-                                    text = "Proceed to Verification",
+                                    text = stringResource(R.string.record_detail_proceed_action),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -212,14 +216,14 @@ fun RecordDetailContent(
                             )
                             Spacer(modifier = Modifier.size(8.dp))
                             Text(
-                                text = "Report irregularity",
+                                text = stringResource(R.string.record_detail_report_action),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
                         Text(
-                            text = "Digital License ID: $digitalLicenseId",
+                            text = stringResource(R.string.record_detail_digital_id_format, digitalLicenseId),
                             style = MaterialTheme.typography.labelSmall,
                             color = PrimaryGreen.copy(alpha = 0.75f),
                             modifier = Modifier
@@ -237,6 +241,7 @@ fun RecordDetailContent(
 
 @Composable
 private fun RecordDetailInfo(record: LicenseRecord) {
+    val emDash = stringResource(R.string.placeholder_em_dash)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,7 +268,7 @@ private fun RecordDetailInfo(record: LicenseRecord) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = record.fullName.ifEmpty { "—" },
+            text = record.fullName.ifEmpty { emDash },
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = PrimaryGreen,
@@ -294,7 +299,12 @@ private fun RecordDetailInfo(record: LicenseRecord) {
                     tint = if (record.licenseStatus == "Active") SuccessGreen else ErrorRed
                 )
                 Text(
-                    text = record.licenseStatus.ifEmpty { "Active" } + " License",
+                    text = stringResource(
+                        R.string.record_detail_status_format,
+                        record.licenseStatus.ifEmpty {
+                            stringResource(R.string.record_detail_status_default)
+                        }
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (record.licenseStatus == "Active") SuccessGreen else ErrorRed
@@ -309,13 +319,14 @@ private fun RecordDetailInfo(record: LicenseRecord) {
             .height(90.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        val defaultExpiry = stringResource(R.string.record_detail_default_expiry)
         IssueDateCard(
             modifier = Modifier.weight(1f),
-            issueDate = record.issueDate.ifBlank { "—" }
+            issueDate = record.issueDate.ifBlank { emDash }
         )
         ExpiryDateCard(
             modifier = Modifier.weight(1f),
-            expiryDate = record.expiryDate.ifEmpty { "Dec 2026" }
+            expiryDate = record.expiryDate.ifEmpty { defaultExpiry }
         )
     }
     Surface(
@@ -328,43 +339,43 @@ private fun RecordDetailInfo(record: LicenseRecord) {
     ) {
         Column {
             DetailRow(
-                label = "LICENSE NUMBER",
-                value = record.registrationNumber.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_license_number),
+                value = record.registrationNumber.ifEmpty { emDash },
                 showDivider = true
             )
             DetailRow(
-                label = "CERTIFICATE NO",
-                value = record.certificateNo.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_certificate_no),
+                value = record.certificateNo.ifEmpty { emDash },
                 showDivider = true
             )
             DetailRow(
-                label = "EMAIL",
-                value = record.email.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_email),
+                value = record.email.ifEmpty { emDash },
                 showDivider = true
             )
             DetailRow(
-                label = "PHONE",
-                value = record.phone.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_phone),
+                value = record.phone.ifEmpty { emDash },
                 showDivider = true
             )
             DetailRow(
-                label = "GENDER",
-                value = record.gender.ifEmpty { "—" }.uppercase(Locale.UK),
+                label = stringResource(R.string.record_detail_field_gender),
+                value = record.gender.ifEmpty { emDash }.uppercase(Locale.UK),
                 showDivider = true
             )
             DetailRow(
-                label = "CADRE",
-                value = record.profession.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_cadre),
+                value = record.profession.ifEmpty { emDash },
                 showDivider = true
             )
             DetailRow(
-                label = "INSTITUTION ATTENDED",
-                value = record.institutionAttended?.name?.takeIf { it.isNotBlank() } ?: "—",
+                label = stringResource(R.string.record_detail_field_institution),
+                value = record.institutionAttended?.name?.takeIf { it.isNotBlank() } ?: emDash,
                 showDivider = true
             )
             DetailRow(
-                label = "GRADUATION DATE",
-                value = record.graduationDate.ifEmpty { "—" },
+                label = stringResource(R.string.record_detail_field_graduation_date),
+                value = record.graduationDate.ifEmpty { emDash },
                 showDivider = false
             )
         }
@@ -520,13 +531,13 @@ private fun RecordDetailErrorContent(
         }
 
         Text(
-            text = "Connection lost",
+            text = stringResource(R.string.record_detail_error_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "We’re having trouble connecting to the national database. Please check your internet connection and try again.",
+            text = stringResource(R.string.record_detail_error_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -560,7 +571,7 @@ private fun RecordDetailErrorContent(
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = "Retry connection",
+                        text = stringResource(R.string.record_detail_error_retry_action),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -645,13 +656,13 @@ private fun RecordDetailLoadingContent() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Verification in progress",
+                        text = stringResource(R.string.record_detail_loading_progress_title),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "60%",
+                        text = stringResource(R.string.record_detail_loading_progress_percent),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
@@ -685,7 +696,7 @@ private fun RecordDetailLoadingContent() {
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Connecting to national database...",
+                        text = stringResource(R.string.record_detail_loading_status),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -701,7 +712,7 @@ private fun RecordDetailLoadingContent() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "LICENSE DETAILS",
+                text = stringResource(R.string.record_detail_loading_section),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen.copy(alpha = 0.7f),
@@ -801,16 +812,16 @@ private fun RecordDetailNoRecordContent(
         }
 
         Text(
-            text = "No record found",
+            text = stringResource(R.string.record_detail_not_found_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = if (registrationNumber.isNotBlank()) {
-                "We couldn't find a practitioner matching license \"$registrationNumber\". Please try scanning again or enter the details manually."
+                stringResource(R.string.record_detail_not_found_subtitle_format, registrationNumber)
             } else {
-                "We couldn't find a practitioner matching this license number. Please try scanning again or enter the details manually."
+                stringResource(R.string.record_detail_not_found_subtitle_generic)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -845,7 +856,7 @@ private fun RecordDetailNoRecordContent(
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = "Try Again",
+                        text = stringResource(R.string.record_detail_not_found_retry_action),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -867,7 +878,7 @@ private fun RecordDetailNoRecordContent(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Manual Entry",
+                        text = stringResource(R.string.record_detail_not_found_manual_action),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
@@ -877,7 +888,7 @@ private fun RecordDetailNoRecordContent(
         }
 
         Text(
-            text = "Need help with verification?",
+            text = stringResource(R.string.record_detail_not_found_help_caption),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -904,12 +915,12 @@ private fun RecordDetailHeader(onBack: () -> Unit, onMenu: () -> Unit) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.record_detail_action_back),
                     tint = PrimaryGreen
                 )
             }
             Text(
-                text = "Verification Panel",
+                text = stringResource(R.string.record_detail_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -921,7 +932,7 @@ private fun RecordDetailHeader(onBack: () -> Unit, onMenu: () -> Unit) {
             IconButton(onClick = onMenu, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More",
+                    contentDescription = stringResource(R.string.record_detail_action_more),
                     tint = PrimaryGreen
                 )
             }
@@ -934,6 +945,7 @@ private fun IssueDateCard(
     modifier: Modifier = Modifier,
     issueDate: String = "Dec 2024"
 ) {
+    val emDash = stringResource(R.string.placeholder_em_dash)
     Surface(
         modifier = modifier.fillMaxHeight(),
         shape = RoundedCornerShape(12.dp),
@@ -948,7 +960,7 @@ private fun IssueDateCard(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "ISSUE DATE",
+                text = stringResource(R.string.record_detail_card_issue_date),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen.copy(alpha = 0.75f),
@@ -965,7 +977,7 @@ private fun IssueDateCard(
                     tint = PrimaryGreen.copy(alpha = 0.75f)
                 )
                 Text(
-                    text = issueDate.ifEmpty { "—" },
+                    text = issueDate.ifEmpty { emDash },
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -980,6 +992,7 @@ private fun ExpiryDateCard(
     modifier: Modifier = Modifier,
     expiryDate: String = "Dec 2026"
 ) {
+    val emDash = stringResource(R.string.placeholder_em_dash)
     Surface(
         modifier = modifier.fillMaxHeight(),
         shape = RoundedCornerShape(12.dp),
@@ -994,7 +1007,7 @@ private fun ExpiryDateCard(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "EXPIRY DATE",
+                text = stringResource(R.string.record_detail_card_expiry_date),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen.copy(alpha = 0.75f),
@@ -1011,7 +1024,7 @@ private fun ExpiryDateCard(
                     tint = PrimaryGreen.copy(alpha = 0.75f)
                 )
                 Text(
-                    text = expiryDate.ifEmpty { "—" },
+                    text = expiryDate.ifEmpty { emDash },
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

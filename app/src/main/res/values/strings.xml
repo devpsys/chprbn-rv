@@ -128,4 +128,40 @@
     <string name="manual_entry_exam_placeholder">e.g., ABC-12345-XY</string>
     <string name="manual_entry_exam_button">Find Candidate</string>
     <string name="manual_entry_exam_trust_caption">OFFICIAL CHPRBN EXAM ATTENDANCE</string>
+
+    <!-- ============== Record detail ============== -->
+    <string name="record_detail_header_title">Verification Panel</string>
+    <string name="record_detail_action_back">Back</string>
+    <string name="record_detail_action_more">More</string>
+    <string name="record_detail_proceed_action">Proceed to Verification</string>
+    <string name="record_detail_report_action">Report irregularity</string>
+    <string name="record_detail_digital_id_format">Digital License ID: %1$s</string>
+    <string name="record_detail_status_format">%1$s License</string>
+    <string name="record_detail_status_default">Active</string>
+    <string name="record_detail_field_license_number">LICENSE NUMBER</string>
+    <string name="record_detail_field_certificate_no">CERTIFICATE NO</string>
+    <string name="record_detail_field_email">EMAIL</string>
+    <string name="record_detail_field_phone">PHONE</string>
+    <string name="record_detail_field_gender">GENDER</string>
+    <string name="record_detail_field_cadre">CADRE</string>
+    <string name="record_detail_field_institution">INSTITUTION ATTENDED</string>
+    <string name="record_detail_field_graduation_date">GRADUATION DATE</string>
+    <string name="record_detail_card_issue_date">ISSUE DATE</string>
+    <string name="record_detail_card_expiry_date">EXPIRY DATE</string>
+    <string name="record_detail_default_expiry">Dec 2026</string>
+    <string name="record_detail_loading_progress_title">Verification in progress</string>
+    <string name="record_detail_loading_progress_percent">60%</string>
+    <string name="record_detail_loading_status">Connecting to national database…</string>
+    <string name="record_detail_loading_section">LICENSE DETAILS</string>
+    <string name="record_detail_error_title">Connection lost</string>
+    <string name="record_detail_error_subtitle">We’re having trouble connecting to the national database. Please check your internet connection and try again.</string>
+    <string name="record_detail_error_retry_action">Retry connection</string>
+    <string name="record_detail_not_found_title">No record found</string>
+    <string name="record_detail_not_found_subtitle_format">We couldn\'t find a practitioner matching license &#8220;%1$s&#8221;. Please try scanning again or enter the details manually.</string>
+    <string name="record_detail_not_found_subtitle_generic">We couldn\'t find a practitioner matching this license number. Please try scanning again or enter the details manually.</string>
+    <string name="record_detail_not_found_retry_action">Try Again</string>
+    <string name="record_detail_not_found_manual_action">Manual Entry</string>
+    <string name="record_detail_not_found_help_caption">Need help with verification?</string>
+    <!-- Reusable em-dash placeholder for empty values. -->
+    <string name="placeholder_em_dash">—</string>
 </resources>
