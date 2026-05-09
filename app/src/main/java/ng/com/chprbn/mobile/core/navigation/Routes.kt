@@ -93,4 +93,9 @@ object Routes {
      *  exists; today the placeholder UiState is the same regardless. */
     @Serializable
     data class AssessmentPaperDetail(val scheduleId: String)
+
+    /** Full candidates directory for a paper, reached from Paper Detail's
+     *  "View Full Directory" button. [scheduleId] keys the lookup. */
+    @Serializable
+    data class AssessmentCandidates(val scheduleId: String)
 }

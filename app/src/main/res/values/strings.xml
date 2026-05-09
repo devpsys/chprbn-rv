@@ -391,4 +391,18 @@
     <string name="assessment_paper_detail_directory_status_unsynced">UNSYNCED</string>
     <string name="assessment_paper_detail_view_full_directory">VIEW FULL DIRECTORY</string>
     <string name="assessment_paper_detail_action_scan_qr">Scan QR Code</string>
+
+    <!-- ============== Assessment — candidates directory ============== -->
+    <string name="assessment_candidates_header_title">Candidates</string>
+    <string name="assessment_candidates_action_back">Back</string>
+    <string name="assessment_candidates_total_format">%1$d Total</string>
+    <string name="assessment_candidates_clinical_notes_cd">Clinical notes</string>
+    <string name="assessment_candidates_search_placeholder">Search Candidate</string>
+    <string name="assessment_candidates_search_action_cd">Search</string>
+    <string name="assessment_candidates_view_toggle_list_cd">List view</string>
+    <string name="assessment_candidates_view_toggle_grid_cd">Grid view</string>
+    <string name="assessment_candidates_score_label">SCR</string>
+    <string name="assessment_candidates_action_add_remark_cd">Add remark</string>
+    <string name="assessment_candidates_empty_title">No candidates found</string>
+    <string name="assessment_candidates_empty_subtitle">No candidates match your current search criteria. Try adjusting your filters or search term.</string>
 </resources>

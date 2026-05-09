@@ -26,6 +26,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
@@ -342,19 +343,29 @@ fun AppNavHost() {
                 },
             )
         }
-        composable<Routes.AssessmentPaperDetail> {
+        composable<Routes.AssessmentPaperDetail> { backStackEntry ->
+            val args: Routes.AssessmentPaperDetail = backStackEntry.toRoute()
             AssessmentPaperDetailScreen(
                 onBack = { navController.popBackStack() },
                 onShare = { /* TODO: assessment share */ },
                 onMore = { /* TODO: assessment paper-detail overflow */ },
                 onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
-                onViewFullDirectory = { /* TODO: full directory screen */ },
+                onViewFullDirectory = {
+                    navController.navigate(Routes.AssessmentCandidates(args.scheduleId))
+                },
                 onScanQr = {
                     // Reuse the existing ExamScan flow (lands on
                     // CandidateScanResult) until the assessment feature
                     // grows its own scan destination.
                     navController.navigate(Routes.ExamScan)
                 },
+            )
+        }
+        composable<Routes.AssessmentCandidates> {
+            AssessmentCandidatesScreen(
+                onBack = { navController.popBackStack() },
+                onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
+                onAddRemark = { /* TODO: remark sheet/screen */ },
             )
         }
     }
