@@ -121,7 +121,7 @@ fun VerificationFormContent(
 
             OfficerRemarkDropdown(
                 selectedRemark = uiState.selectedOfficerRemark,
-                options = VerificationFormViewModel.officerRemarkOptions,
+                options = uiState.officerRemarkOptions,
                 onSelect = onOfficerRemarkSelected
             )
 

@@ -38,6 +38,7 @@ data class VerificationFormUiState(
     val loadState: VerificationFormLoadState = VerificationFormLoadState.Loading,
     val licenseRecord: LicenseRecord? = null,
     val selectedOfficerRemark: String = "",
+    val officerRemarkOptions: List<String> = emptyList(),
     val saveState: SaveVerificationState = SaveVerificationState.Idle
 )
 
@@ -49,7 +50,13 @@ class VerificationFormViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(VerificationFormUiState())
+    private val _uiState = MutableStateFlow(
+        VerificationFormUiState(
+            officerRemarkOptions = context.resources
+                .getStringArray(R.array.officer_remark_options)
+                .toList()
+        )
+    )
     val uiState: StateFlow<VerificationFormUiState> = _uiState.asStateFlow()
 
     init {
@@ -117,14 +124,5 @@ class VerificationFormViewModel @Inject constructor(
 
     fun consumeSaveState() {
         _uiState.update { it.copy(saveState = SaveVerificationState.Idle) }
-    }
-
-    companion object {
-        val officerRemarkOptions = listOf(
-            "Documents verified; identity matches register",
-            "Practitioner present; credentials checked",
-            "Routine verification completed",
-            "License confirmed valid for practice"
-        )
     }
 }

@@ -176,6 +176,18 @@
     <string name="verification_form_last_verified_default">Last verified: Oct 24, 2023 at 09:45 AM</string>
     <!-- VM-side error: surfaced when the user taps Save with no record loaded. -->
     <string name="verification_form_error_no_record">No license record found to verify.</string>
+    <!--
+        Officer remark canonical choices. Loaded by VerificationFormViewModel via
+        context.resources.getStringArray(); shape (length, ordering) is the
+        contract callers depend on, so adding/removing items needs to be done
+        deliberately (callers persist the selected string verbatim today).
+    -->
+    <string-array name="officer_remark_options">
+        <item>Documents verified; identity matches register</item>
+        <item>Practitioner present; credentials checked</item>
+        <item>Routine verification completed</item>
+        <item>License confirmed valid for practice</item>
+    </string-array>
 
     <!-- ============== Irregularity report ============== -->
     <string name="irregularity_header_title">Irregularity report</string>

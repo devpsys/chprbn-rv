@@ -40,9 +40,13 @@ class VerificationFormViewModelTest {
     fun setUp() {
         getLicenseRecordUseCase = mockk()
         saveVerifiedLicenseUseCase = mockk()
+        val resources = mockk<android.content.res.Resources> {
+            every { getStringArray(R.array.officer_remark_options) } returns sampleOfficerRemarkOptions
+        }
         context = mockk {
             every { getString(R.string.verification_form_error_no_record) } returns
                 "No license record found to verify."
+            every { this@mockk.resources } returns resources
         }
         // Uri.decode is an Android framework call; stub statically so JVM tests can run
         // without Robolectric. Identity-decode keeps the registration number unchanged.
@@ -189,10 +193,11 @@ class VerificationFormViewModelTest {
     }
 
     @Test
-    fun `officerRemarkOptions exposes the four canonical choices`() {
-        val options = VerificationFormViewModel.officerRemarkOptions
+    fun `officerRemarkOptions are loaded from the string-array resource into uiState`() = runTest {
+        val viewModel = makeViewModel(SavedStateHandle())
 
-        assertEquals(4, options.size)
+        val options = viewModel.uiState.value.officerRemarkOptions
+        assertEquals(sampleOfficerRemarkOptions.toList(), options)
         assertTrue(options.all { it.isNotBlank() })
     }
 
@@ -201,6 +206,13 @@ class VerificationFormViewModelTest {
 
     private fun savedStateWith(registrationNumber: String) =
         SavedStateHandle(mapOf("registrationNumber" to registrationNumber))
+
+    private val sampleOfficerRemarkOptions = arrayOf(
+        "Documents verified; identity matches register",
+        "Practitioner present; credentials checked",
+        "Routine verification completed",
+        "License confirmed valid for practice"
+    )
 
     private fun sampleRecord(registrationNumber: String) = LicenseRecord(
         registrationNumber = registrationNumber,
