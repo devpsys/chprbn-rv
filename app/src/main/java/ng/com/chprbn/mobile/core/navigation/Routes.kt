@@ -112,4 +112,14 @@ object Routes {
         val scheduleId: String,
         val candidateId: String,
     )
+
+    /** Per-section scoring screen, reached by tapping a section card on
+     *  the Practical Sections hub. [sectionId] picks the question set
+     *  (e.g. "A", "B", "C"). */
+    @Serializable
+    data class AssessmentPracticalScoring(
+        val scheduleId: String,
+        val candidateId: String,
+        val sectionId: String,
+    )
 }

@@ -425,4 +425,17 @@
     <string name="assessment_practical_sections_action_assess_project">Assess Project</string>
     <string name="assessment_practical_sections_photo_open_cd">View enlarged photo</string>
     <string name="assessment_practical_sections_photo_close_cd">Close enlarged photo</string>
+
+    <!-- ============== Assessment — practical scoring ============== -->
+    <string name="assessment_practical_scoring_header_title">Practical Questions</string>
+    <string name="assessment_practical_scoring_action_back">Back</string>
+    <string name="assessment_practical_scoring_action_info_cd">Section info</string>
+    <string name="assessment_practical_scoring_question_image_cd_format">Question %1$d illustration</string>
+    <string name="assessment_practical_scoring_question_number_format">%1$d. %2$s</string>
+    <string name="assessment_practical_scoring_status_scored">Status: Scored</string>
+    <string name="assessment_practical_scoring_status_unscored">Status: Unscored</string>
+    <string name="assessment_practical_scoring_max_score_format">Max Score: %1$d</string>
+    <string name="assessment_practical_scoring_decrement_cd_format">Decrement question %1$d</string>
+    <string name="assessment_practical_scoring_increment_cd_format">Increment question %1$d</string>
+    <string name="assessment_practical_scoring_action_save">Save Scores</string>
 </resources>

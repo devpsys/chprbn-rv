@@ -28,6 +28,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
+import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalSectionsScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
@@ -390,11 +391,27 @@ fun AppNavHost() {
                 },
             )
         }
-        composable<Routes.AssessmentPracticalSections> {
+        composable<Routes.AssessmentPracticalSections> { backStackEntry ->
+            val args: Routes.AssessmentPracticalSections = backStackEntry.toRoute()
             AssessmentPracticalSectionsScreen(
                 onBack = { navController.popBackStack() },
-                onSectionClick = { /* TODO: section detail screen */ },
+                onSectionClick = { section ->
+                    navController.navigate(
+                        Routes.AssessmentPracticalScoring(
+                            scheduleId = args.scheduleId,
+                            candidateId = args.candidateId,
+                            sectionId = section.id,
+                        ),
+                    )
+                },
                 onAssessProject = { /* TODO: project assessment flow */ },
+            )
+        }
+        composable<Routes.AssessmentPracticalScoring> {
+            AssessmentPracticalScoringScreen(
+                onBack = { navController.popBackStack() },
+                onInfoClick = { /* TODO: section info sheet */ },
+                onSaveScores = { /* TODO: persist + return to hub */ },
             )
         }
     }
