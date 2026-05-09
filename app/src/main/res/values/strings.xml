@@ -210,6 +210,10 @@
     <string name="irregularity_action_submitting">Submitting…</string>
     <string name="irregularity_field_remark_label">Remark</string>
     <string name="irregularity_field_remark_placeholder">Select remark</string>
+    <!-- Display labels for IrregularityRemark enum variants; resolved at the screen layer. -->
+    <string name="irregularity_remark_fake">Fake</string>
+    <string name="irregularity_remark_over_due">Over Due</string>
+    <string name="irregularity_remark_long_over_due">Long Over Due</string>
     <!-- VM-side validation errors (ReportIrregularityViewModel.submit). -->
     <string name="irregularity_error_required">Required</string>
     <string name="irregularity_error_select_remark">Select an option</string>

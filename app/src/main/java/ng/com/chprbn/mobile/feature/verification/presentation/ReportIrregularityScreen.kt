@@ -444,7 +444,7 @@ private fun RemarkDropdown(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = selected?.displayLabel.orEmpty(),
+                value = selected?.let { stringResource(it.labelRes()) }.orEmpty(),
                 onValueChange = {},
                 readOnly = true,
                 modifier = Modifier
@@ -481,7 +481,7 @@ private fun RemarkDropdown(
             ) {
                 IrregularityRemark.entries.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.displayLabel) },
+                        text = { Text(stringResource(option.labelRes())) },
                         onClick = {
                             onSelect(option)
                             expanded = false
@@ -530,6 +530,17 @@ private fun ReportIrregularityHeader(onBack: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * Presentation-layer label for [IrregularityRemark]. Kept here (not on the
+ * enum itself) so the domain model stays Android-free.
+ */
+@androidx.annotation.StringRes
+private fun IrregularityRemark.labelRes(): Int = when (this) {
+    IrregularityRemark.Fake -> R.string.irregularity_remark_fake
+    IrregularityRemark.OverDue -> R.string.irregularity_remark_over_due
+    IrregularityRemark.LongOverDue -> R.string.irregularity_remark_long_over_due
 }
 
 private fun createIrregularitySnapshotFileUri(context: Context): Uri {
