@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,9 +27,10 @@ fun CandidateScanResultScreen(
 @Preview(showBackground = true)
 @Composable
 private fun CandidateScanResultScreenPreview() {
+    val context = LocalContext.current
     ChprbnTheme {
         CandidateScanResultContent(
-            uiState = CandidateScanResultUiState.fromScannedPayload(""),
+            uiState = CandidateScanResultUiState.fromScannedPayload("", context),
             onBack = {},
             onMarkAttendance = {},
             onCancel = {},

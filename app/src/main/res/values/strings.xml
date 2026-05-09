@@ -278,6 +278,22 @@
     <string name="candidate_scan_action_back">Back</string>
     <string name="candidate_scan_action_cancel">Cancel</string>
     <string name="candidate_scan_action_mark_attendance">Mark Attendance</string>
+    <!--
+        Demo / placeholder content for the candidate scan result UiState. These
+        are still hardcoded copy because the screen is not yet wired to a real
+        candidate-lookup backend; once it is, the UiState should be populated
+        from the use-case result rather than these defaults.
+    -->
+    <string name="candidate_scan_default_name">Johnathan Doe</string>
+    <string name="candidate_scan_exam_number_format">Exam Number: %1$s</string>
+    <string name="candidate_scan_default_exam_number">ABC-12345-XY</string>
+    <string name="candidate_scan_verification_section">Identity Verification</string>
+    <string name="candidate_scan_identity_verified_headline">Identity Verified</string>
+    <string name="candidate_scan_match_label">MATCH 98%</string>
+    <string name="candidate_scan_exam_date_caption">Exam Date</string>
+    <string name="candidate_scan_default_exam_date">Oct 24, 2023</string>
+    <string name="candidate_scan_testing_center_caption">Testing Center</string>
+    <string name="candidate_scan_default_testing_center">Hall B - Room 12</string>
 
     <!-- ============== Exam — papers list ============== -->
     <string name="exam_papers_header_title">Exam Attendance</string>
