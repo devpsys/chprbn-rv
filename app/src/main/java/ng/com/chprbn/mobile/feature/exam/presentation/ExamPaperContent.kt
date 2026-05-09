@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -547,7 +546,10 @@ private fun SecondaryPillButton(
 ) {
     val scheme = MaterialTheme.colorScheme
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
+        // Surface(onClick) keeps the ripple inside the pill's rounded shape;
+        // a `.clickable` modifier on the outer chain would draw a sharp
+        // rectangular splash that pokes outside the pill.
+        onClick = onClick,
         shape = RoundedCornerShape(999.dp),
         color = scheme.surface,
         shadowElevation = 6.dp,

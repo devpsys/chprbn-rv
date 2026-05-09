@@ -366,9 +366,11 @@ private fun ExamCandidateItem(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onAddRemark),
+                    // Surface(onClick) clips the ripple to the rounded shape;
+                    // a `.clickable` modifier on the outer chain would draw a
+                    // sharp rectangular splash poking outside the corners.
+                    onClick = onAddRemark,
+                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
                     color = scheme.surfaceVariant.copy(alpha = 0.55f),
                     border = androidx.compose.foundation.BorderStroke(
@@ -396,9 +398,8 @@ private fun ExamCandidateItem(
                     }
                 }
                 Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onViewProfile),
+                    onClick = onViewProfile,
+                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
                     color = scheme.surfaceVariant.copy(alpha = 0.35f),
                     border = androidx.compose.foundation.BorderStroke(
