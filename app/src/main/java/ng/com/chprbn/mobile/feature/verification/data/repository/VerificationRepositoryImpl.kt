@@ -28,23 +28,8 @@ class VerificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getFeatures(): List<VerificationFeature> = listOf(
-            VerificationFeature(
-                id = FeatureType.VerifiedList,
-                title = "Verified Practitioners",
-                subtitle = "Search secure database",
-                isPrimary = false
-            ),
-            VerificationFeature(
-                id = FeatureType.Sync,
-                title = "Sync Records",
-                subtitle = "Last sync: 2 mins ago",
-                isPrimary = false
-            ),
-            VerificationFeature(
-                id = FeatureType.Profile,
-                title = "Profile",
-                subtitle = "Settings and identity",
-                isPrimary = false
-            )
-        )
+        VerificationFeature(id = FeatureType.VerifiedList, isPrimary = false),
+        VerificationFeature(id = FeatureType.Sync, isPrimary = false),
+        VerificationFeature(id = FeatureType.Profile, isPrimary = false)
+    )
 }

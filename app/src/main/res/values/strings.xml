@@ -64,6 +64,15 @@
 
     <!-- ============== Verification ============== -->
     <string name="verification_retry_action">Retry</string>
+    <!-- Feature grid titles + subtitles, keyed by domain.model.FeatureType. -->
+    <string name="verification_feature_scan_qr_title">Scan License QR</string>
+    <string name="verification_feature_scan_qr_subtitle">Validate practitioner credentials</string>
+    <string name="verification_feature_verified_list_title">Verified Practitioners</string>
+    <string name="verification_feature_verified_list_subtitle">Search secure database</string>
+    <string name="verification_feature_sync_title">Sync Records</string>
+    <string name="verification_feature_sync_subtitle">Last sync: 2 mins ago</string>
+    <string name="verification_feature_profile_title">Profile</string>
+    <string name="verification_feature_profile_subtitle">Settings and identity</string>
     <string name="verification_system_status_section_label">SYSTEM STATUS</string>
     <string name="verification_status_device_encryption_label">Device Encryption</string>
     <string name="verification_status_active">Active</string>

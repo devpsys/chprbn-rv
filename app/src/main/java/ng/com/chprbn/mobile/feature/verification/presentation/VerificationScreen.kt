@@ -321,8 +321,8 @@ fun FeatureGridSection(
                 rowFeatures.forEach { feature ->
                     GridMenuCard(
                         modifier = Modifier.weight(1f),
-                        title = feature.title,
-                        subtitle = feature.subtitle,
+                        title = stringResource(feature.id.titleRes()),
+                        subtitle = stringResource(feature.id.subtitleRes()),
                         icon = feature.id.toIcon(),
                         isPrimary = feature.isPrimary,
                         onClick = { onFeatureClick(feature) }
@@ -342,6 +342,24 @@ private fun FeatureType.toIcon(): ImageVector = when (this) {
     FeatureType.VerifiedList -> Icons.Filled.VerifiedUser
     FeatureType.Sync -> Icons.Filled.Sync
     FeatureType.Profile -> Icons.Filled.AccountCircle
+}
+
+/** Maps domain [FeatureType] to its localized grid-card title. */
+@androidx.annotation.StringRes
+private fun FeatureType.titleRes(): Int = when (this) {
+    FeatureType.ScanQr -> R.string.verification_feature_scan_qr_title
+    FeatureType.VerifiedList -> R.string.verification_feature_verified_list_title
+    FeatureType.Sync -> R.string.verification_feature_sync_title
+    FeatureType.Profile -> R.string.verification_feature_profile_title
+}
+
+/** Maps domain [FeatureType] to its localized grid-card subtitle. */
+@androidx.annotation.StringRes
+private fun FeatureType.subtitleRes(): Int = when (this) {
+    FeatureType.ScanQr -> R.string.verification_feature_scan_qr_subtitle
+    FeatureType.VerifiedList -> R.string.verification_feature_verified_list_subtitle
+    FeatureType.Sync -> R.string.verification_feature_sync_subtitle
+    FeatureType.Profile -> R.string.verification_feature_profile_subtitle
 }
 
 @Composable
