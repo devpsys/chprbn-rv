@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (PR A + PR B + SQLCipher + 16 KB compliance landed; C1 BASE_URL buildConfigField landed)
+**Last updated:** 2026-05-09 (audit response continues: A2 type-safe nav landed across two commits)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -23,7 +23,7 @@ This document tracks what has been done, what is pending, and what was deliberat
 | 2 | Strings to `strings.xml` + accessibility pass | Medium | ⬜ Not started |
 | 2 | OkHttp `Authenticator` for token refresh | Medium | ✅ **Resolved by decision** — API has no refresh endpoint (§2). No code change needed; document the no-refresh model. |
 | 3 | Gson → kotlinx.serialization | Low | ⬜ Not started |
-| 3 | Type-safe Compose navigation | Low | ⬜ Not started |
+| 3 | Type-safe Compose navigation | Low | 🟢 Done — every destination is a `@Serializable` route in `Routes` (data object / data class). `composable<Route>`, `navigate(Route(...))`, `popBackStack<Route>()` are type-checked. Domain models no longer cross the nav boundary; ViewModels re-fetch by ID. |
 | 3 | Backfill `data` + `domain` layers for `dashboard`, `exam`, `scan` | Medium | ⬜ Not started |
 | 3 | Multi-module split | Low | ✅ **Resolved by decision** — single-module retained per user (§2). |
 | 3 | Dependabot / Renovate | Low | ⬜ Not started |
@@ -47,7 +47,7 @@ These came from the explicit Q&A at the start of implementation. They constrain 
 
 ## 3. Test Coverage Built So Far
 
-**Total: 113 tests across 24 files. All green at last run.**
+**Total: 115 tests across 24 files. All green at last run.**
 
 The test foundation now covers every ViewModel, use case, and repository in the auth, profile, and (most of the) verification + exam features that has non-trivial logic.
 
@@ -68,7 +68,7 @@ The test foundation now covers every ViewModel, use case, and repository in the 
 | verification | `SaveVerifiedLicenseUseCaseTest` | 4 | empty/whitespace remark, trim + delegation, default `verifiedAt` bracket |
 | verification | `ManualEntryViewModelTest` | 2 | initial state, mutation via Turbine |
 | verification | `RecordDetailViewModelTest` | 6 | Loading→Success/NotFound/Error, silent refresh updates / leaves alone, retry |
-| verification | `VerificationFormViewModelTest` | 9 | Gson nav-arg decode (valid/missing/malformed), remark selection, save Idle→Saving→Success/Error, missing-record guard, `consumeSaveState`, options sanity |
+| verification | `VerificationFormViewModelTest` | 11 | After A2: missing/whitespace registrationNumber → `LoadState.NotFound`; `GetLicenseRecordUseCase` Success → `Loaded`; NotFound → `LoadState.NotFound`; Error → `LoadState.Error(message)`; remark selection; save Idle→Saving→Success/Error; missing-record save guard; `consumeSaveState`; options sanity |
 | verification | `SyncViewModelTest` | 13 | init load + load failure, syncAll happy path + summaries, syncAll/retryFailed failure surfaces error (regression), `consumeError`, derived counts, `lastSuccessfulSyncMillis` ignores failed records, `formatRelativeLastSync(null)`, refresh re-invokes loader |
 | exam | `ExamPapersViewModelTest` | 3 | placeholder identity, all three statuses, only Active has primary action |
 | exam | `ExamPaperViewModelTest` | 3 | placeholder identity, hero URL constant, progress fraction in [0..1] |
@@ -189,6 +189,16 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/build.gradle.kts` (C1) | Added `buildConfigField "String" "BASE_URL"` to both `debug` and `release` build types. Debug points at prod for now with a TODO to retarget at a staging API once one exists. |
 | `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` (C1) | Removed the `private const val BASE_URL` literal; Retrofit builder now uses `BuildConfig.BASE_URL`. |
 | `README.md` (C1) | Replaced the "edit `BASE_URL` in `AuthDataModule`" instructions with a `buildConfigField`-based env-switching recipe. |
+| `app/src/main/.../core/navigation/Routes.kt` (A2) | Replaced string-constant `Routes` object with nested `@Serializable` `data object` / `data class` route types. `verificationFormRoute(...)` / `reportIrregularityRoute(...)` builder fns deleted — `navController.navigate(Routes.VerificationForm(...))` is the call site now. |
+| `app/src/main/.../core/navigation/AppNavHost.kt` (A2) | Every `composable(Routes.X)` migrated to `composable<Routes.X>`; arg extraction switched from `arguments?.getString(...)` to `backStackEntry.toRoute<Routes.X>()`. Gson + `IrregularityReportPrefill` imports removed. `popUpTo<T>` and `popBackStack<T>` overloads in use. |
+| `app/src/main/.../feature/verification/presentation/VerificationFormViewModel.kt` (A2) | Drops `Gson` constructor dep; injects `GetLicenseRecordUseCase`; re-fetches in `init {}`; new `VerificationFormLoadState` (Loading / Loaded / NotFound / Error) drives the screen's empty-state rendering. |
+| `app/src/main/.../feature/verification/presentation/ReportIrregularityViewModel.kt` (A2) | Same shape: drops `Gson`, injects `GetLicenseRecordUseCase`, populates form prefill from re-fetched record. Form remains submittable when the record can't be loaded (user fills manually). |
+| `app/src/main/.../feature/verification/presentation/VerificationFormScreen.kt` (A2) | Drops `licenseRecord` param — VM is the single source of truth. |
+| `app/src/main/.../feature/verification/domain/model/IrregularityReportPrefill.kt` (A2) | **Deleted** — no longer used. |
+| `app/proguard-rules.pro` (A2) | Removed the `domain.model.**` keep — domain models no longer round-trip through Gson at the nav layer, so R8 can shrink them normally. |
+| `gradle/libs.versions.toml` (A2) | Added `kotlin-serialization` plugin alias (Kotlin 2.2.10's bundled `org.jetbrains.kotlin.plugin.serialization`). |
+| `app/build.gradle.kts` (A2) | Applied `alias(libs.plugins.kotlin.serialization)`. |
+| `app/src/test/.../feature/verification/presentation/VerificationFormViewModelTest.kt` (A2) | Replaced 3 Gson nav-arg decode tests with 4 `GetLicenseRecordUseCase`-driven tests (Loaded / NotFound / Error / blank-arg fall-through). Save-flow tests re-pinned. 8 → 11 tests. |
 
 ---
 
@@ -201,6 +211,7 @@ Pick one based on appetite — the test foundation is broad enough now that any 
    - ~~PR B: enable R8 + author `proguard-rules.pro`.~~ ✅ Landed at the build level. **Runtime smoke test still required**: install the unsigned release APK on a device and exercise login → fetch profile → scan QR → manual license lookup → save verified record → sync → submit irregularity report. Watch logcat for `JsonSyntaxException`, `IllegalStateException` from Gson reflection, missing-class errors from Hilt, or Room `RuntimeException: cannot find adapter` — those are the typical R8 fallout patterns and will require a follow-up PR to extend the keep rules. Until smoke-tested, treat S1/S2/S3 as 🟡 not 🟢.
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
    - ~~`buildConfigField BASE_URL` per build type (audit C1).~~ ✅ Landed.
+   - ~~Type-safe Compose navigation + drop Gson nav payloads (audit A2).~~ ✅ Landed across two commits: (a) pass IDs through nav args + re-fetch in destination VMs; (b) `@Serializable` route types via `kotlin-serialization` plugin.
 2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.15.0 (`net.zetetic:sqlcipher-android`) wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportOpenHelperFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). The new SQLCipher artifact, along with bumped CameraX (1.5.3) and ML Kit barcode-scanning (17.3.0), also resolves the Google Play **16 KB page-size requirement** (effective 2025-11-01 for Android 15+ targets) — see §9.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.

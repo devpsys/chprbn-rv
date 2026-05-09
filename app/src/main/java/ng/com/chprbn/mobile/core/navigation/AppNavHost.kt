@@ -1,12 +1,10 @@
 package ng.com.chprbn.mobile.core.navigation
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.verification.presentation.VerificationScreen
@@ -29,8 +27,9 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
 /**
- * Single-activity navigation host.
- * Each feature will contribute its start destination and routes here.
+ * Single-activity navigation host. Destinations are declared as @Serializable
+ * route types in [Routes]; navigate calls pass the route instance directly,
+ * which gives compile-time type safety and removes Gson-encoded nav payloads.
  */
 @Composable
 fun AppNavHost() {
@@ -40,74 +39,60 @@ fun AppNavHost() {
         navController = navController,
         startDestination = Routes.Splash
     ) {
-        composable(Routes.Splash) {
+        composable<Routes.Splash> {
             SplashScreen(
                 onNavigateToLogin = {
                     navController.navigate(Routes.Login) {
-                        popUpTo(Routes.Splash) { inclusive = true }
+                        popUpTo<Routes.Splash> { inclusive = true }
                     }
                 },
                 onNavigateToDashboard = {
                     navController.navigate(Routes.Dashboard) {
-                        popUpTo(Routes.Splash) { inclusive = true }
+                        popUpTo<Routes.Splash> { inclusive = true }
                     }
                 }
             )
         }
-        composable(Routes.Login) {
+        composable<Routes.Login> {
             LoginScreen(
                 onSignIn = {
                     navController.navigate(Routes.Dashboard) {
-                        popUpTo(Routes.Login) { inclusive = true }
+                        popUpTo<Routes.Login> { inclusive = true }
                     }
                 },
                 onRecovery = { /* TODO: recovery flow */ },
                 onRequestAccess = { /* TODO: request access */ }
             )
         }
-        composable(Routes.Dashboard) {
+        composable<Routes.Dashboard> {
             UnifiedDashboardScreen(
                 onNavigateToVerification = {
-                    if (navController.currentDestination?.route != Routes.Verification) {
-                        navController.navigate(Routes.Verification)
-                    }
+                    navController.navigate(Routes.Verification)
                 },
                 onNavigateToVerifiedList = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
+                    navController.navigate(Routes.Verified)
                 },
                 onNavigateToSync = {
-                    if (navController.currentDestination?.route != Routes.Sync) {
-                        navController.navigate(Routes.Sync)
-                    }
+                    navController.navigate(Routes.Sync)
                 },
                 onNavigateToProfile = {
-                    if (navController.currentDestination?.route != Routes.Profile) {
-                        navController.navigate(Routes.Profile)
-                    }
+                    navController.navigate(Routes.Profile)
                 },
                 onNavigateToExamAttendance = {
-                    if (navController.currentDestination?.route != Routes.ExamDashboard) {
-                        navController.navigate(Routes.ExamDashboard)
-                    }
+                    navController.navigate(Routes.ExamDashboard)
                 },
                 onNavigateToPracticalAssessment = { /* TODO: Practical Assessment feature */ },
                 onNavigateToAccreditation = { /* TODO: Accreditation feature */ },
                 onViewRecentLogs = {
-                    if (navController.currentDestination?.route != Routes.SyncHistory) {
-                        navController.navigate(Routes.SyncHistory)
-                    }
+                    navController.navigate(Routes.SyncHistory)
                 }
             )
         }
-        composable(Routes.ExamDashboard) {
+        composable<Routes.ExamDashboard> {
             ExamDashboardScreen(
                 onNotifications = { /* TODO: exam notifications */ },
                 onLogAttendance = {
-                    if (navController.currentDestination?.route != Routes.ExamPapers) {
-                        navController.navigate(Routes.ExamPapers)
-                    }
+                    navController.navigate(Routes.ExamPapers)
                 },
                 onAttendanceMore = { /* TODO */ },
                 onGradePractical = { /* TODO: practical */ },
@@ -115,90 +100,62 @@ fun AppNavHost() {
                 onDownloadDossier = { /* TODO: export dossier */ },
                 onExamDashboardTab = {},
                 onStatisticsTab = {
-                    if (navController.currentDestination?.route != Routes.ExamStatistics) {
-                        navController.navigate(Routes.ExamStatistics)
-                    }
+                    navController.navigate(Routes.ExamStatistics)
                 }
             )
         }
-        composable(Routes.ExamPapers) {
+        composable<Routes.ExamPapers> {
             ExamPapersScreen(
                 onBack = { navController.popBackStack() },
                 onOpenPaper = {
-                    if (navController.currentDestination?.route != Routes.ExamPaper) {
-                        navController.navigate(Routes.ExamPaper)
-                    }
+                    navController.navigate(Routes.ExamPaper)
                 },
                 onSyncNow = { /* TODO: sync attendance */ }
             )
         }
-        composable(Routes.ExamPaper) {
+        composable<Routes.ExamPaper> {
             ExamPaperScreen(
                 onBack = { navController.popBackStack() },
                 onViewCandidates = {
-                    if (navController.currentDestination?.route != Routes.ExamCandidates) {
-                        navController.navigate(Routes.ExamCandidates)
-                    }
+                    navController.navigate(Routes.ExamCandidates)
                 },
                 onSyncData = { /* TODO: sync paper data */ },
                 onScanQr = {
-                    if (navController.currentDestination?.route != Routes.ExamScan) {
-                        navController.navigate(Routes.ExamScan)
-                    }
+                    navController.navigate(Routes.ExamScan)
                 }
             )
         }
-        composable(Routes.ExamCandidates) {
+        composable<Routes.ExamCandidates> {
             ExamCandidatesScreen(
                 onBack = { navController.popBackStack() },
                 onAddRemark = { /* TODO */ },
                 onViewProfile = { /* TODO */ }
             )
         }
-        composable(Routes.ExamStatistics) {
+        composable<Routes.ExamStatistics> {
             ExamStatisticsScreen(
                 onBack = { navController.popBackStack() },
                 onRefresh = { /* TODO: refresh statistics */ },
                 onSyncNow = { /* TODO: sync */ },
                 onClearCached = { /* TODO: clear cache */ },
                 onExamDashboardTab = {
-                    navController.popBackStack(Routes.ExamDashboard, inclusive = false)
+                    navController.popBackStack<Routes.ExamDashboard>(inclusive = false)
                 },
                 onStatisticsTab = { /* already on statistics */ }
             )
         }
-        composable(Routes.Verification) {
+        composable<Routes.Verification> {
             VerificationScreen(
-                onScanQr = {
-                    if (navController.currentDestination?.route != Routes.Scan) {
-                        navController.navigate(Routes.Scan)
-                    }
-                },
-                onVerifiedList = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
-                },
-                onSync = {
-                    if (navController.currentDestination?.route != Routes.Sync) {
-                        navController.navigate(Routes.Sync)
-                    }
-                },
-                onProfile = {
-                    if (navController.currentDestination?.route != Routes.Profile) {
-                        navController.navigate(Routes.Profile)
-                    }
-                },
+                onScanQr = { navController.navigate(Routes.Scan) },
+                onVerifiedList = { navController.navigate(Routes.Verified) },
+                onSync = { navController.navigate(Routes.Sync) },
+                onProfile = { navController.navigate(Routes.Profile) },
                 onHome = { /* already on home */ },
-                onSearch = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
-                },
+                onSearch = { navController.navigate(Routes.Verified) },
                 onSettings = { /* TODO: settings/profile options */ }
             )
         }
-        composable(Routes.Profile) {
+        composable<Routes.Profile> {
             ProfileScreen(
                 onBack = { navController.popBackStack() },
                 onMenu = { /* TODO: overflow menu */ },
@@ -206,95 +163,49 @@ fun AppNavHost() {
                 onChangePassword = { /* TODO */ },
                 onLogout = {
                     navController.navigate(Routes.Login) {
-                        popUpTo(Routes.Splash) { inclusive = true }
+                        popUpTo<Routes.Splash> { inclusive = true }
                     }
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Verification) {
-                        navController.navigate(Routes.Verification) {
-                            popUpTo(Routes.Verification) { inclusive = false }
-                        }
+                    navController.navigate(Routes.Verification) {
+                        popUpTo<Routes.Verification> { inclusive = false }
                     }
                 },
-                onVerified = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
-                },
-                onScanQr = {
-                    if (navController.currentDestination?.route != Routes.Scan) {
-                        navController.navigate(Routes.Scan)
-                    }
-                },
-                onSync = {
-                    if (navController.currentDestination?.route != Routes.Sync) {
-                        navController.navigate(Routes.Sync)
-                    }
-                },
+                onVerified = { navController.navigate(Routes.Verified) },
+                onScanQr = { navController.navigate(Routes.Scan) },
+                onSync = { navController.navigate(Routes.Sync) },
                 onProfile = { /* already on profile */ }
             )
         }
-        composable(Routes.Sync) {
+        composable<Routes.Sync> {
             SyncScreen(
                 onBack = { navController.popBackStack() },
-                onViewAllHistory = {
-                    if (navController.currentDestination?.route != Routes.SyncHistory) {
-                        navController.navigate(Routes.SyncHistory)
-                    }
-                },
+                onViewAllHistory = { navController.navigate(Routes.SyncHistory) },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Verification) {
-                        navController.navigate(Routes.Verification) {
-                            popUpTo(Routes.Verification) { inclusive = false }
-                        }
+                    navController.navigate(Routes.Verification) {
+                        popUpTo<Routes.Verification> { inclusive = false }
                     }
                 },
-                onVerified = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
-                },
-                onScanQr = {
-                    if (navController.currentDestination?.route != Routes.Scan) {
-                        navController.navigate(Routes.Scan)
-                    }
-                },
-                onProfile = {
-                    if (navController.currentDestination?.route != Routes.Profile) {
-                        navController.navigate(Routes.Profile)
-                    }
-                }
+                onVerified = { navController.navigate(Routes.Verified) },
+                onScanQr = { navController.navigate(Routes.Scan) },
+                onProfile = { navController.navigate(Routes.Profile) }
             )
         }
-        composable(Routes.SyncHistory) {
+        composable<Routes.SyncHistory> {
             SyncHistoryScreen(
                 onBack = { navController.popBackStack() },
                 onItemClick = { /* TODO: navigate to record detail */ },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Verification) {
-                        navController.navigate(Routes.Verification) {
-                            popUpTo(Routes.Verification) { inclusive = false }
-                        }
+                    navController.navigate(Routes.Verification) {
+                        popUpTo<Routes.Verification> { inclusive = false }
                     }
                 },
-                onVerified = {
-                    if (navController.currentDestination?.route != Routes.Verified) {
-                        navController.navigate(Routes.Verified)
-                    }
-                },
-                onScanQr = {
-                    if (navController.currentDestination?.route != Routes.Scan) {
-                        navController.navigate(Routes.Scan)
-                    }
-                },
-                onProfile = {
-                    if (navController.currentDestination?.route != Routes.Profile) {
-                        navController.navigate(Routes.Profile)
-                    }
-                }
+                onVerified = { navController.navigate(Routes.Verified) },
+                onScanQr = { navController.navigate(Routes.Scan) },
+                onProfile = { navController.navigate(Routes.Profile) }
             )
         }
-        composable(Routes.Verified) { backStackEntry ->
+        composable<Routes.Verified> { backStackEntry ->
             val refreshRequested =
                 backStackEntry.savedStateHandle.get<Boolean>("verified_list_refresh") == true
             VerifiedListScreen(
@@ -305,46 +216,21 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onMenu = { /* TODO: overflow menu */ },
                 onPractitionerClicked = { practitioner ->
-//                    navController.navigate(
-//                        Routes.verificationFormRoute(
-//                            practitioner.name,
-//                            practitioner.license
-//                        )
-//                    )
+                    // TODO: navigate to verification form with practitioner.license once
+                    // the route from this list re-uses the cached record.
                 },
                 onHome = {
-                    if (navController.currentDestination?.route != Routes.Verification) {
-                        navController.navigate(Routes.Verification) {
-                            popUpTo(Routes.Verification) { inclusive = false }
-                        }
+                    navController.navigate(Routes.Verification) {
+                        popUpTo<Routes.Verification> { inclusive = false }
                     }
                 },
-                onScanQr = {
-                    if (navController.currentDestination?.route != Routes.Scan) {
-                        navController.navigate(Routes.Scan)
-                    }
-                },
-                onSync = {
-                    if (navController.currentDestination?.route != Routes.Sync) {
-                        navController.navigate(Routes.Sync)
-                    }
-                },
-                onProfile = {
-                    if (navController.currentDestination?.route != Routes.Profile) {
-                        navController.navigate(Routes.Profile)
-                    }
-                }
+                onScanQr = { navController.navigate(Routes.Scan) },
+                onSync = { navController.navigate(Routes.Sync) },
+                onProfile = { navController.navigate(Routes.Profile) }
             )
         }
-        composable(
-            route = Routes.VerificationForm,
-            arguments = listOf(
-                navArgument("registrationNumber") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val registrationNumber = Uri.decode(
-                backStackEntry.arguments?.getString("registrationNumber").orEmpty()
-            )
+        composable<Routes.VerificationForm> { backStackEntry ->
+            val args: Routes.VerificationForm = backStackEntry.toRoute()
             VerificationFormScreen(
                 onBack = { navController.popBackStack() },
                 onSaveVerification = {
@@ -352,83 +238,60 @@ fun AppNavHost() {
                         navController.getBackStackEntry(Routes.Verified)
                             .savedStateHandle["verified_list_refresh"] = true
                     }
-                    val poppedBoth = navController.popBackStack(Routes.Scan, inclusive = true)
+                    val poppedBoth = navController.popBackStack<Routes.Scan>(inclusive = true)
                     if (!poppedBoth) {
                         navController.popBackStack()
                     }
                 },
                 onReportIrregularity = {
-                    navController.navigate(Routes.reportIrregularityRoute(registrationNumber))
+                    navController.navigate(Routes.ReportIrregularity(args.registrationNumber))
                 }
             )
         }
-        composable(
-            route = Routes.ReportIrregularity,
-            arguments = listOf(
-                navArgument("registrationNumber") { type = NavType.StringType }
-            )
-        ) {
+        composable<Routes.ReportIrregularity> {
             ReportIrregularityScreen(
                 onBack = { navController.popBackStack() },
                 onSubmitted = { navController.popBackStack() }
             )
         }
-        composable(
-            route = Routes.ManualLicenseEntry,
-            arguments = listOf(
-                navArgument("forExam") {
-                    type = NavType.BoolType
-                    defaultValue = false
-                },
-            ),
-        ) { backStackEntry ->
-            val forExamIndexing =
-                backStackEntry.arguments?.getBoolean("forExam") ?: false
+        composable<Routes.ManualLicenseEntry> { backStackEntry ->
+            val args: Routes.ManualLicenseEntry = backStackEntry.toRoute()
             ManualEntryScreen(
-                forExamIndexing = forExamIndexing,
+                forExamIndexing = args.forExam,
                 onBack = {
-                    if (!navController.popBackStack(Routes.ExamScan, inclusive = true)) {
-                        navController.popBackStack(Routes.Scan, inclusive = true)
+                    if (!navController.popBackStack<Routes.ExamScan>(inclusive = true)) {
+                        navController.popBackStack<Routes.Scan>(inclusive = true)
                     }
                 },
                 onVerifyLicense = { enteredLicense ->
-                    navController.navigate(Routes.recordDetailRoute(enteredLicense))
+                    navController.navigate(Routes.RecordDetail(enteredLicense))
                 },
             )
         }
-        composable(Routes.Scan) {
+        composable<Routes.Scan> {
             QrScanScreen(
                 onManualEntry = {
-                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
-                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = false))
-                    }
+                    navController.navigate(Routes.ManualLicenseEntry(forExam = false))
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
-                    navController.navigate(Routes.recordDetailRoute(registrationNumber))
+                    navController.navigate(Routes.RecordDetail(registrationNumber))
                 }
             )
         }
-        composable(Routes.ExamScan) {
+        composable<Routes.ExamScan> {
             QrScanScreen(
                 manualEntryButtonLabel = "Enter Indexing Manually",
                 onManualEntry = {
-                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
-                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = true))
-                    }
+                    navController.navigate(Routes.ManualLicenseEntry(forExam = true))
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
-                    navController.navigate(Routes.candidateScanResultRoute(registrationNumber))
+                    navController.navigate(Routes.CandidateScanResult(registrationNumber))
                 }
             )
         }
-        composable(
-            route = Routes.CandidateScanResult,
-            arguments = listOf(
-                navArgument("scannedPayload") { type = NavType.StringType }
-            )
-        ) {
+        composable<Routes.CandidateScanResult> {
             CandidateScanResultScreen(
                 onBack = {
                     navController.popBackStack()
@@ -437,9 +300,6 @@ fun AppNavHost() {
                 onMarkAttendance = {
                     navController.popBackStack()
                     navController.popBackStack()
-//                    navController.navigate(Routes.ExamCandidates) {
-//                        launchSingleTop = true
-//                    }
                 },
                 onCancel = {
                     navController.popBackStack()
@@ -447,36 +307,26 @@ fun AppNavHost() {
                 }
             )
         }
-        composable(
-            route = Routes.RecordDetail,
-            arguments = listOf(
-                navArgument("registrationNumber") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val registrationNumber = Uri.decode(
-                backStackEntry.arguments?.getString("registrationNumber").orEmpty()
-            )
+        composable<Routes.RecordDetail> { backStackEntry ->
+            val args: Routes.RecordDetail = backStackEntry.toRoute()
             RecordDetailScreen(
-                registrationNumber = registrationNumber,
+                registrationNumber = args.registrationNumber,
                 onBack = {
-                    if (!navController.popBackStack(Routes.ExamScan, inclusive = true)) {
-                        navController.popBackStack(Routes.Scan, inclusive = true)
+                    if (!navController.popBackStack<Routes.ExamScan>(inclusive = true)) {
+                        navController.popBackStack<Routes.Scan>(inclusive = true)
                     }
                 },
                 onMenu = { /* TODO: overflow menu */ },
                 onProceedToVerification = { record ->
-                    navController.navigate(Routes.verificationFormRoute(record.registrationNumber))
+                    navController.navigate(Routes.VerificationForm(record.registrationNumber))
                 },
                 onReportIrregularity = { record ->
-                    navController.navigate(Routes.reportIrregularityRoute(record.registrationNumber))
+                    navController.navigate(Routes.ReportIrregularity(record.registrationNumber))
                 },
                 onManualEntry = {
-                    if (navController.currentDestination?.route != Routes.ManualLicenseEntry) {
-                        navController.navigate(Routes.manualLicenseEntryRoute(forExam = false))
-                    }
+                    navController.navigate(Routes.ManualLicenseEntry(forExam = false))
                 }
             )
         }
     }
 }
-

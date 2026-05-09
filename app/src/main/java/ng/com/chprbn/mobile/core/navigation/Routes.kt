@@ -1,50 +1,85 @@
 package ng.com.chprbn.mobile.core.navigation
 
-import android.net.Uri
+import kotlinx.serialization.Serializable
 
+/**
+ * Type-safe navigation route declarations. Each destination is a @Serializable
+ * Kotlin object (no args) or data class (with args). Compose Nav 2.8+ generates
+ * the route patterns and arg encoding from the @Serializable descriptors, so:
+ *
+ *   * adding/removing a field on a route class produces a compile error at every
+ *     navigate() call — no more silent route-string drift,
+ *   * args are typed (Boolean, String, etc.), eliminating the previous Gson-via-
+ *     query-string round-trip and the manual Uri.encode/decode plumbing,
+ *   * the destination's `SavedStateHandle` continues to expose each property by
+ *     its name as a `String` (or `Boolean`, etc.), so existing ViewModel
+ *     extraction code (`savedStateHandle.get<String>("registrationNumber")`) is
+ *     unchanged.
+ */
 object Routes {
-    const val Splash = "splash"
-    const val Login = "login"
-    const val Dashboard = "dashboard"
-    const val ExamDashboard = "exam_dashboard"
-    const val ExamPapers = "exam_papers"
-    const val ExamStatistics = "exam_statistics"
-    const val ExamPaper = "exam_paper"
-    const val ExamCandidates = "exam_candidates"
-    const val ExamScan = "exam_scan"
-    const val Verification = "verification"
-    const val Profile = "profile"
-    const val Scan = "scan"
-    /** Query [forExam]: exam attendance uses indexing copy; verification uses license copy. */
-    const val ManualLicenseEntry = "manual_license_entry?forExam={forExam}"
+    @Serializable
+    data object Splash
 
-    fun manualLicenseEntryRoute(forExam: Boolean): String =
-        "manual_license_entry?forExam=$forExam"
-    const val Sync = "sync"
-    const val Verified = "verified"
+    @Serializable
+    data object Login
 
-    /** Path arg [registrationNumber]: VM re-fetches the license record via GetLicenseRecordUseCase. */
-    const val VerificationForm = "verification_form/{registrationNumber}"
+    @Serializable
+    data object Dashboard
 
-    fun verificationFormRoute(registrationNumber: String): String =
-        "verification_form/${Uri.encode(registrationNumber)}"
+    @Serializable
+    data object ExamDashboard
 
-    /** Path arg [registrationNumber]: VM re-fetches and pre-populates the form. Form remains editable when not found. */
-    const val ReportIrregularity = "report_irregularity/{registrationNumber}"
+    @Serializable
+    data object ExamPapers
 
-    fun reportIrregularityRoute(registrationNumber: String): String =
-        "report_irregularity/${Uri.encode(registrationNumber)}"
+    @Serializable
+    data object ExamStatistics
 
-    const val SyncHistory = "sync_history"
+    @Serializable
+    data object ExamPaper
 
-    /** Route pattern for record detail; use [recordDetailRoute] to build with argument. */
-    const val RecordDetail = "record_detail/{registrationNumber}"
+    @Serializable
+    data object ExamCandidates
 
-    fun recordDetailRoute(registrationNumber: String): String =
-        "record_detail/${Uri.encode(registrationNumber)}"
+    @Serializable
+    data object ExamScan
 
-    const val CandidateScanResult = "candidate_scan_result/{scannedPayload}"
+    @Serializable
+    data object Verification
 
-    fun candidateScanResultRoute(scannedPayload: String): String =
-        "candidate_scan_result/${Uri.encode(scannedPayload)}"
+    @Serializable
+    data object Profile
+
+    @Serializable
+    data object Scan
+
+    /**
+     * Manual license entry. [forExam] = true switches the copy from license
+     * verification to exam attendance indexing.
+     */
+    @Serializable
+    data class ManualLicenseEntry(val forExam: Boolean = false)
+
+    @Serializable
+    data object Sync
+
+    @Serializable
+    data object Verified
+
+    /** VM re-fetches the license record by [registrationNumber] via GetLicenseRecordUseCase. */
+    @Serializable
+    data class VerificationForm(val registrationNumber: String)
+
+    /** VM pre-populates the irregularity report form by re-fetching by [registrationNumber]. */
+    @Serializable
+    data class ReportIrregularity(val registrationNumber: String)
+
+    @Serializable
+    data object SyncHistory
+
+    @Serializable
+    data class RecordDetail(val registrationNumber: String)
+
+    @Serializable
+    data class CandidateScanResult(val scannedPayload: String)
 }
