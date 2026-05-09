@@ -122,4 +122,13 @@ object Routes {
         val candidateId: String,
         val sectionId: String,
     )
+
+    /** Project assessment — single overall score capture, reached by
+     *  tapping the "Assess Project" Extended FAB on the Practical
+     *  Sections hub. */
+    @Serializable
+    data class AssessmentProjectAssessment(
+        val scheduleId: String,
+        val candidateId: String,
+    )
 }

@@ -438,4 +438,18 @@
     <string name="assessment_practical_scoring_decrement_cd_format">Decrement question %1$d</string>
     <string name="assessment_practical_scoring_increment_cd_format">Increment question %1$d</string>
     <string name="assessment_practical_scoring_action_save">Save Scores</string>
+
+    <!-- ============== Assessment — project assessment ============== -->
+    <string name="assessment_project_header_title">Project Assessment</string>
+    <string name="assessment_project_action_back">Back</string>
+    <string name="assessment_project_brand_label">CHPRBN</string>
+    <string name="assessment_project_brand_initials">CH</string>
+    <string name="assessment_project_avatar_cd_format">%1$s photo</string>
+    <string name="assessment_project_verified_cd">Verified</string>
+    <string name="assessment_project_score_label">Project Score</string>
+    <string name="assessment_project_score_placeholder">0.0</string>
+    <string name="assessment_project_score_suffix_format">/ %1$d</string>
+    <string name="assessment_project_score_info">Numerical value based on CHPRBN criteria Section 4.2. Ensure all rubrics are reviewed before final submission.</string>
+    <string name="assessment_project_action_cancel">Cancel</string>
+    <string name="assessment_project_action_save">Save Score</string>
 </resources>

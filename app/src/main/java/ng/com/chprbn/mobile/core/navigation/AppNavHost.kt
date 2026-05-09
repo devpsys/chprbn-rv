@@ -30,6 +30,7 @@ import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidates
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalSectionsScreen
+import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentProjectAssessmentScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
@@ -404,7 +405,14 @@ fun AppNavHost() {
                         ),
                     )
                 },
-                onAssessProject = { /* TODO: project assessment flow */ },
+                onAssessProject = {
+                    navController.navigate(
+                        Routes.AssessmentProjectAssessment(
+                            scheduleId = args.scheduleId,
+                            candidateId = args.candidateId,
+                        ),
+                    )
+                },
             )
         }
         composable<Routes.AssessmentPracticalScoring> {
@@ -412,6 +420,13 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onInfoClick = { /* TODO: section info sheet */ },
                 onSaveScores = { /* TODO: persist + return to hub */ },
+            )
+        }
+        composable<Routes.AssessmentProjectAssessment> {
+            AssessmentProjectAssessmentScreen(
+                onBack = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                onSaveScore = { /* TODO: persist + return to hub */ },
             )
         }
     }
