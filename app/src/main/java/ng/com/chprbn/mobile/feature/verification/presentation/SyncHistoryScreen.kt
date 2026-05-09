@@ -35,12 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
@@ -152,12 +154,12 @@ private fun SyncHistoryHeader(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.sync_history_action_back),
                     tint = PrimaryGreen
                 )
             }
             Text(
-                text = "Sync History",
+                text = stringResource(R.string.sync_history_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -202,7 +204,7 @@ private fun SyncHistorySearchAndFilter(
                 },
                 placeholder = {
                     Text(
-                        text = "Search record ID or date...",
+                        text = stringResource(R.string.sync_history_search_placeholder),
                         style = MaterialTheme.typography.bodySmall,
                         color = PrimaryGreen.copy(alpha = 0.4f)
                     )
@@ -219,17 +221,17 @@ private fun SyncHistorySearchAndFilter(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
-                    text = "All",
+                    text = stringResource(R.string.sync_history_filter_all),
                     selected = filter == SyncHistoryFilter.All,
                     onClick = { onFilterSelected(SyncHistoryFilter.All) }
                 )
                 FilterChip(
-                    text = "Synced",
+                    text = stringResource(R.string.sync_history_filter_synced),
                     selected = filter == SyncHistoryFilter.Synced,
                     onClick = { onFilterSelected(SyncHistoryFilter.Synced) }
                 )
                 FilterChip(
-                    text = "Failed",
+                    text = stringResource(R.string.sync_history_filter_failed),
                     selected = filter == SyncHistoryFilter.Failed,
                     onClick = { onFilterSelected(SyncHistoryFilter.Failed) }
                 )

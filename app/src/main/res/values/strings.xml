@@ -202,4 +202,36 @@
     <string name="irregularity_error_required">Required</string>
     <string name="irregularity_error_select_remark">Select an option</string>
     <string name="irregularity_error_attach_image">Attach an image</string>
+
+    <!-- ============== Sync hub ============== -->
+    <string name="sync_header_title">Sync Records</string>
+    <string name="sync_action_back">Back</string>
+    <string name="sync_action_refresh">Refresh</string>
+    <string name="sync_loading">Loading sync status…</string>
+    <string name="sync_progress_pct_format">%1$d%%</string>
+    <string name="sync_progress_synced_label">SYNCED</string>
+    <string name="sync_status_connected">CONNECTED</string>
+    <string name="sync_status_offline">OFFLINE</string>
+    <string name="sync_status_waiting">Waiting for connection…</string>
+    <string name="sync_default_last_sync">Never synced</string>
+    <string name="sync_stat_total">Total</string>
+    <string name="sync_stat_synced">Synced</string>
+    <string name="sync_stat_pending">Pending</string>
+    <string name="sync_stat_failed">Failed</string>
+    <string name="sync_action_sync_all">SYNC ALL RECORDS</string>
+    <string name="sync_action_retry_failed">RETRY FAILED SYNC</string>
+    <string name="sync_recent_section">RECENT STATUS</string>
+    <string name="sync_view_all_action">View All</string>
+    <string name="sync_recent_empty">No verified records yet. Complete a verification to see it here.</string>
+    <string name="sync_record_subtitle_synced">Synced to central registry</string>
+    <string name="sync_record_subtitle_pending">Waiting to upload</string>
+    <string name="sync_record_subtitle_failed_default">Sync failed</string>
+
+    <!-- ============== Sync history ============== -->
+    <string name="sync_history_header_title">Sync History</string>
+    <string name="sync_history_action_back">Back</string>
+    <string name="sync_history_search_placeholder">Search record ID or date…</string>
+    <string name="sync_history_filter_all">All</string>
+    <string name="sync_history_filter_synced">Synced</string>
+    <string name="sync_history_filter_failed">Failed</string>
 </resources>

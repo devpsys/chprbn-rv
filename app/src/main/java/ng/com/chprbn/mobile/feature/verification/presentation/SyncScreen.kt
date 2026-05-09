@@ -54,11 +54,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
@@ -114,7 +116,7 @@ fun SyncContent(
     onVerified: () -> Unit = {},
     onScanQr: () -> Unit = {},
     onProfile: () -> Unit = {},
-    lastSyncLabel: String = "Never synced"
+    lastSyncLabel: String = ""
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -143,7 +145,7 @@ fun SyncContent(
                 }
                 if (uiState.isLoading && uiState.records.isEmpty()) {
                     Text(
-                        text = "Loading sync status…",
+                        text = stringResource(R.string.sync_loading),
                         style = MaterialTheme.typography.bodyMedium,
                         color = PrimaryGreen.copy(alpha = 0.7f),
                         modifier = Modifier.padding(bottom = 12.dp)
@@ -215,12 +217,12 @@ private fun SyncHeader(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.sync_action_back),
                     tint = PrimaryGreen
                 )
             }
             Text(
-                text = "Sync Records",
+                text = stringResource(R.string.sync_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -232,7 +234,7 @@ private fun SyncHeader(
             IconButton(onClick = onRefresh, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.Refresh,
-                    contentDescription = "Refresh",
+                    contentDescription = stringResource(R.string.sync_action_refresh),
                     tint = PrimaryGreen
                 )
             }
@@ -301,13 +303,13 @@ private fun SyncProgressSection(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     val pct = (progress.coerceIn(0f, 1f) * 100).toInt()
                     Text(
-                        text = "$pct%",
+                        text = stringResource(R.string.sync_progress_pct_format, pct),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
                     )
                     Text(
-                        text = "SYNCED",
+                        text = stringResource(R.string.sync_progress_synced_label),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen.copy(alpha = 0.7f)
@@ -345,15 +347,23 @@ private fun SyncProgressSection(
                     )
                 }
                 Text(
-                    text = if (isConnected) "CONNECTED" else "OFFLINE",
+                    text = stringResource(
+                        if (isConnected) R.string.sync_status_connected
+                        else R.string.sync_status_offline
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (isConnected) SuccessGreen else Color(0xFFC62828)
                 )
             }
 
+            val defaultLastSync = stringResource(R.string.sync_default_last_sync)
             Text(
-                text = if (isConnected) lastSyncLabel else "Waiting for connection…",
+                text = when {
+                    !isConnected -> stringResource(R.string.sync_status_waiting)
+                    lastSyncLabel.isBlank() -> defaultLastSync
+                    else -> lastSyncLabel
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = PrimaryGreen.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 6.dp)
@@ -379,13 +389,13 @@ private fun SyncStatsGrid(
         ) {
             SyncStatCard(
                 modifier = Modifier.weight(1f),
-                label = "Total",
+                label = stringResource(R.string.sync_stat_total),
                 value = total,
                 valueColor = PrimaryGreen
             )
             SyncStatCard(
                 modifier = Modifier.weight(1f),
-                label = "Synced",
+                label = stringResource(R.string.sync_stat_synced),
                 value = synced,
                 valueColor = PrimaryGreen
             )
@@ -396,13 +406,13 @@ private fun SyncStatsGrid(
         ) {
             SyncStatCard(
                 modifier = Modifier.weight(1f),
-                label = "Pending",
+                label = stringResource(R.string.sync_stat_pending),
                 value = pending,
                 valueColor = Color(0xFFEF6C00)
             )
             SyncStatCard(
                 modifier = Modifier.weight(1f),
-                label = "Failed",
+                label = stringResource(R.string.sync_stat_failed),
                 value = failed,
                 valueColor = Color(0xFFC62828)
             )
@@ -471,7 +481,7 @@ private fun SyncActionsSection(
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "SYNC ALL RECORDS",
+                text = stringResource(R.string.sync_action_sync_all),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -493,7 +503,7 @@ private fun SyncActionsSection(
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "RETRY FAILED SYNC",
+                text = stringResource(R.string.sync_action_retry_failed),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -522,13 +532,13 @@ private fun SyncRecentStatusSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "RECENT STATUS",
+                text = stringResource(R.string.sync_recent_section),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen.copy(alpha = 0.7f)
             )
             Text(
-                text = "View All",
+                text = stringResource(R.string.sync_view_all_action),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
                 color = PrimaryGreen,
@@ -539,11 +549,14 @@ private fun SyncRecentStatusSection(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (recent.isEmpty()) {
                 Text(
-                    text = "No verified records yet. Complete a verification to see it here.",
+                    text = stringResource(R.string.sync_recent_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = PrimaryGreen.copy(alpha = 0.6f)
                 )
             } else {
+                val syncedSubtitle = stringResource(R.string.sync_record_subtitle_synced)
+                val pendingSubtitle = stringResource(R.string.sync_record_subtitle_pending)
+                val failedDefault = stringResource(R.string.sync_record_subtitle_failed_default)
                 recent.forEach { record ->
                     val (bg, tint, icon, border, subtitle) = when (record.syncStatus) {
                         SyncStatus.Synced -> Quintuple(
@@ -551,7 +564,7 @@ private fun SyncRecentStatusSection(
                             SuccessGreen,
                             Icons.Filled.CheckCircle,
                             PrimaryGreen.copy(alpha = 0.05f),
-                            "Synced to central registry"
+                            syncedSubtitle
                         )
 
                         SyncStatus.Pending -> Quintuple(
@@ -559,7 +572,7 @@ private fun SyncRecentStatusSection(
                             Color(0xFFEF6C00),
                             Icons.Filled.CloudSync,
                             PrimaryGreen.copy(alpha = 0.05f),
-                            "Waiting to upload"
+                            pendingSubtitle
                         )
 
                         SyncStatus.Failed -> Quintuple(
@@ -567,7 +580,7 @@ private fun SyncRecentStatusSection(
                             Color(0xFFC62828),
                             Icons.Filled.Error,
                             Color(0xFFFFCDD2),
-                            record.syncError ?: "Sync failed"
+                            record.syncError ?: failedDefault
                         )
                     }
                     val ts = record.lastSyncAttempt ?: record.verifiedAt
