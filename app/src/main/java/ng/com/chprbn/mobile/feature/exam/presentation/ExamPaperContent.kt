@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import ng.com.chprbn.mobile.R
 
 @Composable
 fun ExamPaperContent(
@@ -129,13 +131,13 @@ private fun ExamPaperTopBar(onBack: () -> Unit) {
             ) {
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.exam_paper_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Paper Details",
+                text = stringResource(R.string.exam_paper_header_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onSurface,
@@ -285,13 +287,13 @@ private fun PaperSessionCard(uiState: ExamPaperUiState) {
             ) {
                 StatTile(
                     modifier = Modifier.weight(1f),
-                    label = "Total Candidates",
+                    label = stringResource(R.string.exam_paper_stat_total_candidates),
                     value = uiState.totalCandidates,
                     valueColor = scheme.onSurface
                 )
                 StatTile(
                     modifier = Modifier.weight(1f),
-                    label = "Verified Present",
+                    label = stringResource(R.string.exam_paper_stat_verified_present),
                     value = uiState.verifiedPresent,
                     valueColor = scheme.primary
                 )
@@ -305,7 +307,7 @@ private fun PaperSessionCard(uiState: ExamPaperUiState) {
                 ) {
                     Column {
                         Text(
-                            text = "Attendance Progress",
+                            text = stringResource(R.string.exam_paper_attendance_progress_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = scheme.onSurface
@@ -484,7 +486,7 @@ private fun PaperFloatingActions(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SecondaryPillButton(
-                label = "View Candidates",
+                label = stringResource(R.string.exam_paper_action_view_candidates),
                 icon = {
                     Icon(
                         imageVector = Icons.Outlined.Groups,
@@ -496,7 +498,7 @@ private fun PaperFloatingActions(
                 onClick = onViewCandidates
             )
             SecondaryPillButton(
-                label = "Sync Data",
+                label = stringResource(R.string.exam_paper_action_sync_data),
                 icon = {
                     Icon(
                         imageVector = Icons.Outlined.Sync,
@@ -515,7 +517,7 @@ private fun PaperFloatingActions(
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp)
         ) {
             Text(
-                text = "Scan QR Code",
+                text = stringResource(R.string.exam_paper_action_scan_qr),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )

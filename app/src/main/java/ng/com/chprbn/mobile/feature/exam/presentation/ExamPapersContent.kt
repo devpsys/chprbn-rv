@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.rememberScrollState
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -100,13 +102,13 @@ fun ExamPapersContent(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Text(
-                    text = "Assigned Papers",
+                    text = stringResource(R.string.exam_papers_section_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onBackground
                 )
                 Text(
-                    text = "Tap a paper to start recording attendance",
+                    text = stringResource(R.string.exam_papers_section_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -145,7 +147,7 @@ private fun FloatingSyncFab(onClick: () -> Unit) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Icon(
                 imageVector = Icons.Filled.Sync,
-                contentDescription = "Sync",
+                contentDescription = stringResource(R.string.exam_papers_action_sync),
                 tint = scheme.onPrimary,
                 modifier = Modifier.size(24.dp)
             )
@@ -168,13 +170,13 @@ private fun ExamAttendanceTopBar(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.exam_papers_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Exam Attendance",
+                text = stringResource(R.string.exam_papers_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onBackground,
@@ -225,8 +227,8 @@ private fun SummaryDailyOverview(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StatColumn(label = "Total Papers", value = totalPapersLabel)
-                StatColumn(label = "Students", value = studentsLabel)
+                StatColumn(label = stringResource(R.string.exam_papers_summary_total_papers), value = totalPapersLabel)
+                StatColumn(label = stringResource(R.string.exam_papers_summary_students), value = studentsLabel)
                 Spacer(modifier = Modifier.weight(1f))
                 StatusPill(text = statusPillLabel)
             }
@@ -374,7 +376,7 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
                 border = BorderStroke(1.dp, scheme.primary.copy(alpha = 0.2f))
             ) {
                 Text(
-                    text = "COMPLETED",
+                    text = stringResource(R.string.exam_papers_status_completed),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = scheme.primary,
@@ -388,7 +390,7 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
                 color = scheme.primary
             ) {
                 Text(
-                    text = "ACTIVE",
+                    text = stringResource(R.string.exam_papers_status_active),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onPrimary,
@@ -402,7 +404,7 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
                 color = scheme.surfaceVariant
             ) {
                 Text(
-                    text = "UPCOMING",
+                    text = stringResource(R.string.exam_papers_status_upcoming),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onSurfaceVariant,

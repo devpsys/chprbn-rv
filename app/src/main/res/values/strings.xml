@@ -253,4 +253,26 @@
     <string name="candidate_scan_action_back">Back</string>
     <string name="candidate_scan_action_cancel">Cancel</string>
     <string name="candidate_scan_action_mark_attendance">Mark Attendance</string>
+
+    <!-- ============== Exam — papers list ============== -->
+    <string name="exam_papers_header_title">Exam Attendance</string>
+    <string name="exam_papers_action_back">Back</string>
+    <string name="exam_papers_action_sync">Sync</string>
+    <string name="exam_papers_section_title">Assigned Papers</string>
+    <string name="exam_papers_section_subtitle">Tap a paper to start recording attendance</string>
+    <string name="exam_papers_summary_total_papers">Total Papers</string>
+    <string name="exam_papers_summary_students">Students</string>
+    <string name="exam_papers_status_completed">COMPLETED</string>
+    <string name="exam_papers_status_active">ACTIVE</string>
+    <string name="exam_papers_status_upcoming">UPCOMING</string>
+
+    <!-- ============== Exam — single paper detail ============== -->
+    <string name="exam_paper_header_title">Paper Details</string>
+    <string name="exam_paper_action_back">Back</string>
+    <string name="exam_paper_stat_total_candidates">Total Candidates</string>
+    <string name="exam_paper_stat_verified_present">Verified Present</string>
+    <string name="exam_paper_attendance_progress_title">Attendance Progress</string>
+    <string name="exam_paper_action_view_candidates">View Candidates</string>
+    <string name="exam_paper_action_sync_data">Sync Data</string>
+    <string name="exam_paper_action_scan_qr">Scan QR Code</string>
 </resources>
