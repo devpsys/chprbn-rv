@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
@@ -10,6 +11,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
@@ -32,11 +34,16 @@ class VerificationFormViewModelTest {
 
     private lateinit var getLicenseRecordUseCase: GetLicenseRecordUseCase
     private lateinit var saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
+    private lateinit var context: Context
 
     @Before
     fun setUp() {
         getLicenseRecordUseCase = mockk()
         saveVerifiedLicenseUseCase = mockk()
+        context = mockk {
+            every { getString(R.string.verification_form_error_no_record) } returns
+                "No license record found to verify."
+        }
         // Uri.decode is an Android framework call; stub statically so JVM tests can run
         // without Robolectric. Identity-decode keeps the registration number unchanged.
         mockkStatic(Uri::class)
@@ -190,7 +197,7 @@ class VerificationFormViewModelTest {
     }
 
     private fun makeViewModel(savedStateHandle: SavedStateHandle) =
-        VerificationFormViewModel(savedStateHandle, getLicenseRecordUseCase, saveVerifiedLicenseUseCase)
+        VerificationFormViewModel(savedStateHandle, getLicenseRecordUseCase, saveVerifiedLicenseUseCase, context)
 
     private fun savedStateWith(registrationNumber: String) =
         SavedStateHandle(mapOf("registrationNumber" to registrationNumber))

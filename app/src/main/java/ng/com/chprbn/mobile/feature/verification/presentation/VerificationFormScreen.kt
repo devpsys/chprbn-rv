@@ -38,12 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.feature.verification.domain.model.InstitutionAttended
@@ -58,7 +60,7 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 @Composable
 fun VerificationFormScreen(
     modifier: Modifier = Modifier,
-    lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
+    lastVerifiedText: String = "",
     onBack: () -> Unit = {},
     onSaveVerification: () -> Unit = {},
     onReportIrregularity: () -> Unit = {},
@@ -88,7 +90,7 @@ fun VerificationFormScreen(
 fun VerificationFormContent(
     modifier: Modifier = Modifier,
     uiState: VerificationFormUiState,
-    lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
+    lastVerifiedText: String = "",
     onBack: () -> Unit = {},
     onSaveVerification: () -> Unit = {},
     onReportIrregularity: () -> Unit = {},
@@ -138,7 +140,7 @@ fun VerificationFormContent(
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(
-                    text = "Report irregularity",
+                    text = stringResource(R.string.verification_form_report_action),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.error
@@ -174,7 +176,7 @@ private fun OfficerRemarkDropdown(
     var expanded by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Officer remark",
+            text = stringResource(R.string.verification_form_officer_remark_label),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -190,7 +192,7 @@ private fun OfficerRemarkDropdown(
                     .clickable { expanded = true },
                 placeholder = {
                     Text(
-                        "Select an option",
+                        stringResource(R.string.verification_form_officer_remark_placeholder),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 },
@@ -248,13 +250,13 @@ private fun VerificationFormHeader(onBack: () -> Unit) {
             IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.verification_form_action_back),
                     tint = PrimaryGreen,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Verify Practitioner",
+                text = stringResource(R.string.verification_form_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -307,7 +309,7 @@ private fun VerificationFormFooter(
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = "Save Verification",
+                        text = stringResource(R.string.verification_form_save_action),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -315,7 +317,7 @@ private fun VerificationFormFooter(
                 }
             }
             Text(
-                text = lastVerifiedText,
+                text = lastVerifiedText.ifBlank { stringResource(R.string.verification_form_last_verified_default) },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier

@@ -164,4 +164,16 @@
     <string name="record_detail_not_found_help_caption">Need help with verification?</string>
     <!-- Reusable em-dash placeholder for empty values. -->
     <string name="placeholder_em_dash">—</string>
+
+    <!-- ============== Verification form ============== -->
+    <string name="verification_form_header_title">Verify Practitioner</string>
+    <string name="verification_form_action_back">Back</string>
+    <string name="verification_form_report_action">Report irregularity</string>
+    <string name="verification_form_officer_remark_label">Officer remark</string>
+    <string name="verification_form_officer_remark_placeholder">Select an option</string>
+    <string name="verification_form_save_action">Save Verification</string>
+    <!-- Default verification footer caption shown until the screen receives a real timestamp. -->
+    <string name="verification_form_last_verified_default">Last verified: Oct 24, 2023 at 09:45 AM</string>
+    <!-- VM-side error: surfaced when the user taps Save with no record loaded. -->
+    <string name="verification_form_error_no_record">No license record found to verify.</string>
 </resources>

@@ -1,15 +1,18 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SaveVerifiedLicenseResult
@@ -42,7 +45,8 @@ data class VerificationFormUiState(
 class VerificationFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getLicenseRecordUseCase: GetLicenseRecordUseCase,
-    private val saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
+    private val saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VerificationFormUiState())
@@ -83,7 +87,11 @@ class VerificationFormViewModel @Inject constructor(
         if (uiState.value.saveState is SaveVerificationState.Saving) return
         val record = uiState.value.licenseRecord
         if (record == null) {
-            _uiState.update { it.copy(saveState = SaveVerificationState.Error("No license record found to verify.")) }
+            _uiState.update {
+                it.copy(saveState = SaveVerificationState.Error(
+                    context.getString(R.string.verification_form_error_no_record)
+                ))
+            }
             return
         }
 
