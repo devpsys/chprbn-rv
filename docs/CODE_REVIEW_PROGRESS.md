@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (PR A + PR B + SQLCipher landed; 16 KB page-size compliance fix landed)
+**Last updated:** 2026-05-09 (PR A + PR B + SQLCipher + 16 KB compliance landed; C1 BASE_URL buildConfigField landed)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -18,7 +18,7 @@ This document tracks what has been done, what is pending, and what was deliberat
 | 1 | `signingConfigs` for release | Medium | ⬜ Not started |
 | 1 | Comprehensive tests | **Critical** | 🟢 Substantial progress (113 tests across 24 files; see §3) |
 | 2 | Verification DB encryption (SQLCipher / column-level) | High | 🟡 SQLCipher wired (`auth.db` + `scan.db` open with `SupportFactory(passphrase)`); 256-bit key generated/persisted via EncryptedSharedPreferences. Static build green. Same runtime smoke-test caveat as R8 — needs device verification. |
-| 2 | `buildConfigField BASE_URL` per build type | Medium | ⬜ Not started |
+| 2 | `buildConfigField BASE_URL` per build type | Medium | 🟢 Done — declared in `app/build.gradle.kts` for both `debug` and `release`. `AuthDataModule` now reads `BuildConfig.BASE_URL`. Both build types currently point at prod; debug has a TODO marker for when a staging API exists. |
 | 2 | Detekt + ktlint + CI gate | Medium | ⬜ Not started — CI deferred per user (§2) |
 | 2 | Strings to `strings.xml` + accessibility pass | Medium | ⬜ Not started |
 | 2 | OkHttp `Authenticator` for token refresh | Medium | ✅ **Resolved by decision** — API has no refresh endpoint (§2). No code change needed; document the no-refresh model. |
@@ -186,6 +186,9 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `app/src/main/.../core/persistence/encryption/EncryptionModule.kt` | Import `net.sqlcipher.database.SupportFactory` → `net.zetetic.database.sqlcipher.SupportOpenHelperFactory` (class renamed in new artifact, same constructor signature) |
 | `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` | Same `SupportFactory` → `SupportOpenHelperFactory` rename |
 | `app/src/main/.../feature/verification/data/di/LicenseDataModule.kt` | Same |
+| `app/build.gradle.kts` (C1) | Added `buildConfigField "String" "BASE_URL"` to both `debug` and `release` build types. Debug points at prod for now with a TODO to retarget at a staging API once one exists. |
+| `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` (C1) | Removed the `private const val BASE_URL` literal; Retrofit builder now uses `BuildConfig.BASE_URL`. |
+| `README.md` (C1) | Replaced the "edit `BASE_URL` in `AuthDataModule`" instructions with a `buildConfigField`-based env-switching recipe. |
 
 ---
 
@@ -197,6 +200,7 @@ Pick one based on appetite — the test foundation is broad enough now that any 
    - ~~PR A: backup hardening + `network_security_config.xml` (cleartext disabled).~~ ✅ Landed. SPKI pin-set still TODO — once ops supplies leaf + backup fingerprints, uncomment the `<pin-set>` block in `network_security_config.xml` and optionally mirror it as an OkHttp `CertificatePinner` for defense-in-depth.
    - ~~PR B: enable R8 + author `proguard-rules.pro`.~~ ✅ Landed at the build level. **Runtime smoke test still required**: install the unsigned release APK on a device and exercise login → fetch profile → scan QR → manual license lookup → save verified record → sync → submit irregularity report. Watch logcat for `JsonSyntaxException`, `IllegalStateException` from Gson reflection, missing-class errors from Hilt, or Room `RuntimeException: cannot find adapter` — those are the typical R8 fallout patterns and will require a follow-up PR to extend the keep rules. Until smoke-tested, treat S1/S2/S3 as 🟡 not 🟢.
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
+   - ~~`buildConfigField BASE_URL` per build type (audit C1).~~ ✅ Landed.
 2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.15.0 (`net.zetetic:sqlcipher-android`) wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportOpenHelperFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). The new SQLCipher artifact, along with bumped CameraX (1.5.3) and ML Kit barcode-scanning (17.3.0), also resolves the Google Play **16 KB page-size requirement** (effective 2025-11-01 for Android 15+ targets) — see §9.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.
@@ -219,7 +223,7 @@ If picking up cold, start by **re-reading `CODE_REVIEW.md` §13 (severity matrix
 ./gradlew :app:koverHtmlReport
 ```
 
-Last verified: 2026-05-09 — 113 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed with SQLCipher + bumped CameraX/ML Kit/SQLCipher-android wired in. Release APK at `app/build/outputs/apk/release/app-release-unsigned.apk` is 32.3 MB (a small drop from 35.9 MB after the version bumps cleaned up some duplicated native code) with `mapping.txt` at `app/build/outputs/mapping/release/`. **All five arm64-v8a `.so` files now show ELF LOAD `Align 0x4000` (16 KB) and `zipalign -c -P 16 -v 4` reports "Verification successful"** — see §9. Runtime smoke test of the release APK is still outstanding — see §7 PR B / SQLCipher note.
+Last verified: 2026-05-09 — 113 tests green; `:app:assembleDebug` and `:app:assembleRelease` both succeed with SQLCipher + bumped CameraX/ML Kit/SQLCipher-android + `BuildConfig.BASE_URL` wired in. Release APK at `app/build/outputs/apk/release/app-release-unsigned.apk` is ~32 MB with `mapping.txt` at `app/build/outputs/mapping/release/`. **All five arm64-v8a `.so` files now show ELF LOAD `Align 0x4000` (16 KB) and `zipalign -c -P 16 -v 4` reports "Verification successful"** — see §9. Runtime smoke test of the release APK is still outstanding — see §7 PR B / SQLCipher note.
 
 ---
 

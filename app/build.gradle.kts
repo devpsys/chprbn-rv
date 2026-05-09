@@ -25,12 +25,26 @@ android {
     }
 
     buildTypes {
+        debug {
+            // TODO: when a staging API exists, change this to the staging base URL.
+            // Both build types point at prod today because there is no staging.
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"https://app.chprbn.gov.ng/api/v1/mobile/\""
+            )
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+            )
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"https://app.chprbn.gov.ng/api/v1/mobile/\""
             )
         }
     }

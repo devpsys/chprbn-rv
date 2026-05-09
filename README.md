@@ -160,19 +160,26 @@ Or use **Run ▸ Run 'app'** with a device/emulator (**minSdk 24**).
 
 ### Base API URL
 
-The Retrofit base URL is provided in **`AuthDataModule`** (auth feature), currently:
+The Retrofit base URL is exposed as `BuildConfig.BASE_URL`, generated from `buildConfigField` entries in **`app/build.gradle.kts`** under each build type. Today both `debug` and `release` point at prod (`https://app.chprbn.gov.ng/api/v1/mobile/` — see `mobile_api_v1_documentation.html` in repo root) because no staging API exists yet.
 
-`https://chprbn.gov.ng/api/v1/mobile/` (see `mobile_api_v1_documentation.html` in repo root)
-
-All feature Retrofit services share this `Retrofit` instance unless refactored.
-
-To point at staging or a local server, change `BASE_URL` in:
-
-`app/src/main/java/ng/com/chprbn/mobile/feature/auth/data/di/AuthDataModule.kt`
+`AuthDataModule` provides the singleton `Retrofit` instance using `BuildConfig.BASE_URL`; all feature Retrofit services share it unless refactored.
 
 ### Environments
 
-There is no separate product flavor in Gradle today; API target is effectively **single-environment** via the constant above. Add `buildConfigField` or flavors if you need dev/stage/prod switching without code edits.
+To point at staging or a local server, change the `BASE_URL` `buildConfigField` for the relevant build type in `app/build.gradle.kts` — no source edit, no code change. Example for a future staging environment:
+
+```kotlin
+buildTypes {
+    debug {
+        buildConfigField("String", "BASE_URL", "\"https://staging.chprbn.gov.ng/api/v1/mobile/\"")
+    }
+    release {
+        buildConfigField("String", "BASE_URL", "\"https://app.chprbn.gov.ng/api/v1/mobile/\"")
+    }
+}
+```
+
+If finer-grained switching is needed (dev / stage / prod / local), add product flavors instead of overloading the build types.
 
 ### Mock vs live license lookup
 

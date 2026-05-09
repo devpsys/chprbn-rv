@@ -30,8 +30,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 @Module
 @InstallIn(SingletonComponent::class)
 object AuthDataModule {
-    /** Mobile API v1 base (see `mobile_api_v1_documentation.html`). */
-    private const val BASE_URL = "https://app.chprbn.gov.ng/api/v1/mobile/"
 
     @Provides
     @Singleton
@@ -62,7 +60,7 @@ object AuthDataModule {
         gson: Gson
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
