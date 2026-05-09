@@ -53,11 +53,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import ng.com.chprbn.mobile.R
 import coil.request.ImageRequest
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.LazyColumn
@@ -150,13 +152,13 @@ private fun ExamCandidatesTopBar(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.exam_candidates_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Exam Candidates",
+                text = stringResource(R.string.exam_candidates_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onSurface,
@@ -218,7 +220,7 @@ private fun ExamCandidatesSearch(
                     .fillMaxWidth()
                     .wrapContentHeight(),
                 singleLine = true,
-                placeholder = { Text("Search candidate name or number") },
+                placeholder = { Text(stringResource(R.string.exam_candidates_search_placeholder)) },
                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -386,7 +388,7 @@ private fun ExamCandidateItem(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Add Remark",
+                            text = stringResource(R.string.exam_candidates_action_add_remark),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = scheme.onSurface
@@ -416,7 +418,7 @@ private fun ExamCandidateItem(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "View Profile",
+                            text = stringResource(R.string.exam_candidates_action_view_profile),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = scheme.onSurface
@@ -449,19 +451,19 @@ private fun ExamCandidatesBottomBar(
             BottomNavItem(
                 selected = true,
                 icon = Icons.Outlined.Group,
-                label = "Candidates",
+                label = stringResource(R.string.exam_candidates_nav_candidates),
                 onClick = onCandidatesTab
             )
             BottomNavItem(
                 selected = false,
                 icon = Icons.Outlined.BarChart,
-                label = "Reports",
+                label = stringResource(R.string.exam_candidates_nav_reports),
                 onClick = onReportsTab
             )
             BottomNavItem(
                 selected = false,
                 icon = Icons.Filled.Settings,
-                label = "Settings",
+                label = stringResource(R.string.exam_candidates_nav_settings),
                 onClick = onSettingsTab
             )
         }

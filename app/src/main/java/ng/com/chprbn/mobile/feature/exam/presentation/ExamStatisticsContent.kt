@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import ng.com.chprbn.mobile.R
 
 @Composable
 fun ExamStatisticsContent(
@@ -131,7 +133,7 @@ fun ExamStatisticsContent(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Sync Now",
+                            text = stringResource(R.string.exam_statistics_action_sync_now),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.onPrimary
@@ -163,7 +165,7 @@ fun ExamStatisticsContent(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Clear Cached Records",
+                            text = stringResource(R.string.exam_statistics_action_clear_cached),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.error
@@ -204,13 +206,13 @@ private fun ExamStatisticsTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.exam_statistics_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Exam Statistics",
+                text = stringResource(R.string.exam_statistics_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onBackground,
@@ -223,7 +225,7 @@ private fun ExamStatisticsTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "Refresh",
+                    contentDescription = stringResource(R.string.exam_statistics_action_refresh),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
@@ -260,7 +262,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Records Downloaded",
+                    label = stringResource(R.string.exam_statistics_stat_records_downloaded),
                     value = recordsDownloaded,
                     footer = {
                         Text(
@@ -279,7 +281,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Attendance Captured",
+                    label = stringResource(R.string.exam_statistics_stat_attendance_captured),
                     value = attendanceCaptured,
                     footer = {
                         Text(
@@ -299,7 +301,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Synced Records",
+                    label = stringResource(R.string.exam_statistics_stat_synced_records),
                     value = syncedRecords,
                     footer = {
                         LinearSyncProgress(fraction = syncProgressFraction)
@@ -321,7 +323,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Records Downloaded",
+                    label = stringResource(R.string.exam_statistics_stat_records_downloaded),
                     value = recordsDownloaded,
                     footer = {
                         Text(
@@ -341,7 +343,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Attendance Captured",
+                    label = stringResource(R.string.exam_statistics_stat_attendance_captured),
                     value = attendanceCaptured,
                     footer = {
                         Text(
@@ -362,7 +364,7 @@ private fun SummaryCardsSection(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    label = "Synced Records",
+                    label = stringResource(R.string.exam_statistics_stat_synced_records),
                     value = syncedRecords,
                     footer = {
                         LinearSyncProgress(fraction = syncProgressFraction)
@@ -469,7 +471,7 @@ private fun SyncComparisonSection(
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = "Sync Status Comparison",
+                    text = stringResource(R.string.exam_statistics_section_sync_status),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onSurface,
@@ -547,7 +549,7 @@ private fun ComparisonBars(
             trackColor = primaryLight,
             fillFraction = cachedBarFraction.coerceIn(0f, 1f),
             fillColor = cachedFill,
-            caption = "Cached",
+            caption = stringResource(R.string.exam_statistics_caption_cached),
             valueLabel = cachedCountLabel,
             valueColor = cachedFill,
             barHeight = barTotalHeight
@@ -556,7 +558,7 @@ private fun ComparisonBars(
             trackColor = primaryLight,
             fillFraction = syncedBarFraction.coerceIn(0f, 1f),
             fillColor = scheme.primary,
-            caption = "Synced",
+            caption = stringResource(R.string.exam_statistics_caption_synced),
             valueLabel = syncedCountLabel,
             valueColor = scheme.primary,
             barHeight = barTotalHeight
@@ -565,7 +567,7 @@ private fun ComparisonBars(
             trackColor = primaryLight,
             fillFraction = 1f,
             fillColor = totalFill,
-            caption = "Total",
+            caption = stringResource(R.string.exam_statistics_caption_total),
             valueLabel = totalCountLabel,
             valueColor = scheme.onSurface.copy(alpha = 0.75f),
             barHeight = barTotalHeight
@@ -653,7 +655,7 @@ private fun LegendColumn(
                         .background(scheme.tertiary)
                 )
                 Text(
-                    text = "Records Pending Sync",
+                    text = stringResource(R.string.exam_statistics_status_pending_sync),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = scheme.onSurface.copy(alpha = 0.85f)
@@ -686,7 +688,7 @@ private fun LegendColumn(
                         .background(scheme.primary)
                 )
                 Text(
-                    text = "Successfully Synced",
+                    text = stringResource(R.string.exam_statistics_status_successfully_synced),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = scheme.onSurface.copy(alpha = 0.85f)

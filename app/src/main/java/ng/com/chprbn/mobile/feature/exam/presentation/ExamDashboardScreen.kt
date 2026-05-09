@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.components.AppTopBar
 
@@ -123,7 +125,7 @@ private fun ExamDashboardScreenContent(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Download Records",
+                        text = stringResource(R.string.exam_dashboard_action_download),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -153,7 +155,7 @@ private fun ExamDashboardScreenContent(
                     )
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                         Text(
-                            text = "Administrative Tasks",
+                            text = stringResource(R.string.exam_dashboard_section_admin_tasks),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = scheme.onBackground,
@@ -174,7 +176,7 @@ private fun ExamDashboardScreenContent(
                             onPrimaryAction = onLogAttendance,
                             trailingIcon = Icons.Filled.MoreHoriz,
                             onTrailingClick = onAttendanceMore,
-                            trailingContentDescription = "More options"
+                            trailingContentDescription = stringResource(R.string.exam_dashboard_more_options_cd)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         ExamTaskCard(
@@ -192,7 +194,7 @@ private fun ExamDashboardScreenContent(
                             onPrimaryAction = onGradePractical,
                             trailingIcon = Icons.Filled.Info,
                             onTrailingClick = onPracticalInfo,
-                            trailingContentDescription = "Information"
+                            trailingContentDescription = stringResource(R.string.exam_dashboard_information_cd)
                         )
                         Spacer(modifier = Modifier.height(88.dp))
 //                        ExamQuickStatsRow(
@@ -313,7 +315,7 @@ private fun ExamOfficerSessionCard(
                             .data(heroImageUrl)
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Institution banner",
+                        contentDescription = stringResource(R.string.exam_dashboard_institution_banner_cd),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .width(imageWidth)
@@ -337,7 +339,7 @@ private fun ExamOfficerSessionCard(
                             .data(heroImageUrl)
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Institution banner",
+                        contentDescription = stringResource(R.string.exam_dashboard_institution_banner_cd),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -391,7 +393,7 @@ private fun InstitutionCardTextBlock(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Code: ",
+                    text = stringResource(R.string.exam_dashboard_label_code),
                     style = MaterialTheme.typography.bodySmall,
                     color = mutedOnPrimary
                 )
@@ -405,7 +407,7 @@ private fun InstitutionCardTextBlock(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Location: ",
+                    text = stringResource(R.string.exam_dashboard_label_location),
                     style = MaterialTheme.typography.bodySmall,
                     color = mutedOnPrimary
                 )

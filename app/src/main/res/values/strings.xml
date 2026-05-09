@@ -275,4 +275,39 @@
     <string name="exam_paper_action_view_candidates">View Candidates</string>
     <string name="exam_paper_action_sync_data">Sync Data</string>
     <string name="exam_paper_action_scan_qr">Scan QR Code</string>
+
+    <!-- ============== Exam — dashboard ============== -->
+    <string name="exam_dashboard_action_download">Download Records</string>
+    <string name="exam_dashboard_section_admin_tasks">Administrative Tasks</string>
+    <string name="exam_dashboard_more_options_cd">More options</string>
+    <string name="exam_dashboard_information_cd">Information</string>
+    <string name="exam_dashboard_institution_banner_cd">Institution banner</string>
+    <string name="exam_dashboard_label_code">Code: </string>
+    <string name="exam_dashboard_label_location">Location: </string>
+
+    <!-- ============== Exam — candidates list ============== -->
+    <string name="exam_candidates_header_title">Exam Candidates</string>
+    <string name="exam_candidates_action_back">Back</string>
+    <string name="exam_candidates_search_placeholder">Search candidate name or number</string>
+    <string name="exam_candidates_action_add_remark">Add Remark</string>
+    <string name="exam_candidates_action_view_profile">View Profile</string>
+    <string name="exam_candidates_nav_candidates">Candidates</string>
+    <string name="exam_candidates_nav_reports">Reports</string>
+    <string name="exam_candidates_nav_settings">Settings</string>
+
+    <!-- ============== Exam — statistics ============== -->
+    <string name="exam_statistics_header_title">Exam Statistics</string>
+    <string name="exam_statistics_action_back">Back</string>
+    <string name="exam_statistics_action_refresh">Refresh</string>
+    <string name="exam_statistics_action_sync_now">Sync Now</string>
+    <string name="exam_statistics_action_clear_cached">Clear Cached Records</string>
+    <string name="exam_statistics_stat_records_downloaded">Records Downloaded</string>
+    <string name="exam_statistics_stat_attendance_captured">Attendance Captured</string>
+    <string name="exam_statistics_stat_synced_records">Synced Records</string>
+    <string name="exam_statistics_section_sync_status">Sync Status Comparison</string>
+    <string name="exam_statistics_caption_cached">Cached</string>
+    <string name="exam_statistics_caption_synced">Synced</string>
+    <string name="exam_statistics_caption_total">Total</string>
+    <string name="exam_statistics_status_pending_sync">Records Pending Sync</string>
+    <string name="exam_statistics_status_successfully_synced">Successfully Synced</string>
 </resources>
