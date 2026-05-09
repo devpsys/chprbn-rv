@@ -25,7 +25,7 @@ This document tracks what has been done, what is pending, and what was deliberat
 | 2 | OkHttp `Authenticator` for token refresh | Medium | ✅ **Resolved by decision** — API has no refresh endpoint (§2). No code change needed; document the no-refresh model. |
 | 3 | Gson → kotlinx.serialization | Low | ⬜ Not started |
 | 3 | Type-safe Compose navigation | Low | 🟢 Done — every destination is a `@Serializable` route in `Routes` (data object / data class). `composable<Route>`, `navigate(Route(...))`, `popBackStack<Route>()` are type-checked. Domain models no longer cross the nav boundary; ViewModels re-fetch by ID. |
-| 3 | Backfill `data` + `domain` layers for `dashboard`, `exam`, `scan` | Medium | ⬜ Not started |
+| 3 | Backfill `data` + `domain` layers for `dashboard`, `exam`, `scan` | Medium | ✅ **Deferred by decision** — those features are currently UI compositions over auth/verification state and don't own state of their own; the audit (`CODE_REVIEW.md` §3) frames A1 as conditional. Backfill is the right move when (and only when) any of these features starts holding real business state. See §2 decision 7. |
 | 3 | Multi-module split | Low | ✅ **Resolved by decision** — single-module retained per user (§2). |
 | 3 | Dependabot / Renovate | Low | ⬜ Not started |
 
@@ -43,6 +43,7 @@ These came from the explicit Q&A at the start of implementation. They constrain 
 4. **Assertion library: JUnit assertions.** No migration to AssertJ / Truth / Kotest. New tests match the existing `LoginViewModelTest` style.
 5. **Coverage tooling: Kover (attempted).** Plugin is wired in `gradle/libs.versions.toml` and applied in `app/build.gradle.kts`, but Kover 0.9.1 cannot resolve Android variants on AGP 9.2.1. The custom-variant block is commented out with a reactivation note — see §5 (Open Follow-Ups).
 6. **No multi-module split.** Audit recommendation in `CODE_REVIEW.md` §3 weakness #2 and §14 Phase 3 step 14 is permanently de-scoped. Single-module project is the chosen structure for this codebase. Do not surface multi-module as a next move; if build performance or cross-feature coupling becomes a concern, address it without a `:core:*` / `:feature:*` split.
+7. **Defer A1 (`data`/`domain` backfill for `dashboard`/`exam`/`scan`) until real state lands.** The audit itself (`CODE_REVIEW.md` §3) frames A1 as conditional ("This is fine if they are purely UI compositions over other features' data") — and right now they are. `DashboardViewModel` aggregates auth/verification state, `exam` screens render placeholder UiState awaiting backend wiring, `scan` is camera + ML Kit only. Backfilling now would be speculative scaffolding that drifts as the real shape arrives. The trigger to introduce the layers is when any of these features starts holding real business state of its own — driven by that state's actual shape, not a checkbox.
 
 ---
 
