@@ -50,13 +50,14 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.InstitutionAttende
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 
 /**
- * Verification form screen (presentation layer).
- * Officer remark is chosen from a fixed list; [licenseRecord] is the source of truth when provided.
+ * Verification form screen (presentation layer). The license record is fetched
+ * by the ViewModel from the cached repository using the registration number passed
+ * as a nav arg, so the screen no longer accepts the record as a prop.
+ * Officer remark is chosen from a fixed list.
  */
 @Composable
 fun VerificationFormScreen(
     modifier: Modifier = Modifier,
-    licenseRecord: LicenseRecord? = null,
     lastVerifiedText: String = "Last verified: Oct 24, 2023 at 09:45 AM",
     onBack: () -> Unit = {},
     onSaveVerification: () -> Unit = {},
@@ -64,7 +65,6 @@ fun VerificationFormScreen(
     viewModel: VerificationFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val record = licenseRecord ?: uiState.licenseRecord
 
     LaunchedEffect(uiState.saveState) {
         if (uiState.saveState is SaveVerificationState.Success) {

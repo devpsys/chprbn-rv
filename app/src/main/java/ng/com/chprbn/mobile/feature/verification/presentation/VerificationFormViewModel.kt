@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,9 +11,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
+import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SaveVerifiedLicenseResult
+import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetLicenseRecordUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SaveVerifiedLicenseUseCase
 import javax.inject.Inject
+
+sealed interface VerificationFormLoadState {
+    data object Loading : VerificationFormLoadState
+    data object Loaded : VerificationFormLoadState
+    data object NotFound : VerificationFormLoadState
+    data class Error(val message: String) : VerificationFormLoadState
+}
 
 sealed interface SaveVerificationState {
     data object Idle : SaveVerificationState
@@ -24,6 +32,7 @@ sealed interface SaveVerificationState {
 }
 
 data class VerificationFormUiState(
+    val loadState: VerificationFormLoadState = VerificationFormLoadState.Loading,
     val licenseRecord: LicenseRecord? = null,
     val selectedOfficerRemark: String = "",
     val saveState: SaveVerificationState = SaveVerificationState.Idle
@@ -32,19 +41,39 @@ data class VerificationFormUiState(
 @HiltViewModel
 class VerificationFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val gson: Gson,
+    private val getLicenseRecordUseCase: GetLicenseRecordUseCase,
     private val saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(run {
-        val encodedJson = savedStateHandle.get<String>("licenseRecordJson").orEmpty()
-        val json = Uri.decode(encodedJson)
-        val record = runCatching {
-            if (json.isBlank()) null else gson.fromJson(json, LicenseRecord::class.java)
-        }.getOrNull()
-        VerificationFormUiState(licenseRecord = record)
-    })
+    private val _uiState = MutableStateFlow(VerificationFormUiState())
     val uiState: StateFlow<VerificationFormUiState> = _uiState.asStateFlow()
+
+    init {
+        val registrationNumber = Uri.decode(
+            savedStateHandle.get<String>("registrationNumber").orEmpty()
+        ).trim()
+        if (registrationNumber.isEmpty()) {
+            _uiState.update { it.copy(loadState = VerificationFormLoadState.NotFound) }
+        } else {
+            viewModelScope.launch {
+                val result = getLicenseRecordUseCase(registrationNumber)
+                _uiState.update {
+                    when (result) {
+                        is LicenseRecordResult.Success -> it.copy(
+                            loadState = VerificationFormLoadState.Loaded,
+                            licenseRecord = result.record
+                        )
+                        LicenseRecordResult.NotFound -> it.copy(
+                            loadState = VerificationFormLoadState.NotFound
+                        )
+                        is LicenseRecordResult.Error -> it.copy(
+                            loadState = VerificationFormLoadState.Error(result.message)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun onOfficerRemarkSelected(value: String) {
         _uiState.update { it.copy(selectedOfficerRemark = value) }

@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile.feature.verification.presentation
 
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
-import com.google.gson.Gson
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -13,7 +12,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
+import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SaveVerifiedLicenseResult
+import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetLicenseRecordUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SaveVerifiedLicenseUseCase
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -29,14 +30,15 @@ class VerificationFormViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val gson = Gson()
+    private lateinit var getLicenseRecordUseCase: GetLicenseRecordUseCase
     private lateinit var saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
 
     @Before
     fun setUp() {
+        getLicenseRecordUseCase = mockk()
         saveVerifiedLicenseUseCase = mockk()
         // Uri.decode is an Android framework call; stub statically so JVM tests can run
-        // without Robolectric. Identity-decode keeps the JSON payload unchanged.
+        // without Robolectric. Identity-decode keeps the registration number unchanged.
         mockkStatic(Uri::class)
         every { Uri.decode(any<String>()) } answers { firstArg<String>() }
     }
@@ -47,35 +49,56 @@ class VerificationFormViewModelTest {
     }
 
     @Test
-    fun `initial state has the license record decoded from the nav arg`() = runTest {
-        val record = sampleRecord("REG-123")
-        val savedStateHandle = SavedStateHandle(
-            mapOf("licenseRecordJson" to gson.toJson(record))
-        )
-
-        val viewModel = makeViewModel(savedStateHandle)
-
-        assertEquals("REG-123", viewModel.uiState.value.licenseRecord?.registrationNumber)
-        assertEquals("", viewModel.uiState.value.selectedOfficerRemark)
-        assertEquals(SaveVerificationState.Idle, viewModel.uiState.value.saveState)
-    }
-
-    @Test
-    fun `initial state has null record when nav arg is missing`() = runTest {
+    fun `missing registrationNumber arg goes to NotFound without invoking the use case`() = runTest {
         val viewModel = makeViewModel(SavedStateHandle())
 
+        assertEquals(VerificationFormLoadState.NotFound, viewModel.uiState.value.loadState)
+        assertNull(viewModel.uiState.value.licenseRecord)
+        coVerify(exactly = 0) { getLicenseRecordUseCase(any()) }
+    }
+
+    @Test
+    fun `whitespace-only registrationNumber goes to NotFound`() = runTest {
+        val viewModel = makeViewModel(savedStateWith("   "))
+
+        assertEquals(VerificationFormLoadState.NotFound, viewModel.uiState.value.loadState)
+        coVerify(exactly = 0) { getLicenseRecordUseCase(any()) }
+    }
+
+    @Test
+    fun `successful fetch transitions to Loaded with the record`() = runTest {
+        val record = sampleRecord("REG-123")
+        coEvery { getLicenseRecordUseCase("REG-123") } returns LicenseRecordResult.Success(record)
+
+        val viewModel = makeViewModel(savedStateWith("REG-123"))
+
+        assertEquals(VerificationFormLoadState.Loaded, viewModel.uiState.value.loadState)
+        assertEquals(record, viewModel.uiState.value.licenseRecord)
+    }
+
+    @Test
+    fun `use case NotFound surfaces NotFound load state with null record`() = runTest {
+        coEvery { getLicenseRecordUseCase("REG-MISSING") } returns LicenseRecordResult.NotFound
+
+        val viewModel = makeViewModel(savedStateWith("REG-MISSING"))
+
+        assertEquals(VerificationFormLoadState.NotFound, viewModel.uiState.value.loadState)
         assertNull(viewModel.uiState.value.licenseRecord)
     }
 
     @Test
-    fun `initial state has null record when nav arg JSON is malformed`() = runTest {
-        val savedStateHandle = SavedStateHandle(
-            mapOf("licenseRecordJson" to "{ this is not valid json")
+    fun `use case Error surfaces Error load state with the message`() = runTest {
+        coEvery { getLicenseRecordUseCase("REG-FAIL") } returns
+            LicenseRecordResult.Error("Network unavailable")
+
+        val viewModel = makeViewModel(savedStateWith("REG-FAIL"))
+
+        val loadState = viewModel.uiState.value.loadState
+        assertTrue(loadState is VerificationFormLoadState.Error)
+        assertEquals(
+            "Network unavailable",
+            (loadState as VerificationFormLoadState.Error).message
         )
-
-        val viewModel = makeViewModel(savedStateHandle)
-
-        assertNull(viewModel.uiState.value.licenseRecord)
     }
 
     @Test
@@ -88,7 +111,7 @@ class VerificationFormViewModelTest {
     }
 
     @Test
-    fun `saveVerification with no record emits Error without invoking the use case`() = runTest {
+    fun `saveVerification with no record emits Error without invoking the save use case`() = runTest {
         val viewModel = makeViewModel(SavedStateHandle())
 
         viewModel.saveVerification()
@@ -105,17 +128,16 @@ class VerificationFormViewModelTest {
     @Test
     fun `saveVerification success transitions through Saving to Success`() = runTest {
         val record = sampleRecord("REG-123")
+        coEvery { getLicenseRecordUseCase("REG-123") } returns LicenseRecordResult.Success(record)
         coEvery {
             saveVerifiedLicenseUseCase(record, "Documents verified", any())
         } returns SaveVerifiedLicenseResult.Success
 
-        val viewModel = makeViewModel(savedStateWith(record))
+        val viewModel = makeViewModel(savedStateWith("REG-123"))
         viewModel.onOfficerRemarkSelected("Documents verified")
 
         viewModel.saveVerification()
 
-        // With UnconfinedTestDispatcher, the launched save call resolves
-        // synchronously, so the latest state is Success.
         assertEquals(SaveVerificationState.Success, viewModel.uiState.value.saveState)
         coVerify(exactly = 1) {
             saveVerifiedLicenseUseCase(record, "Documents verified", any())
@@ -125,11 +147,12 @@ class VerificationFormViewModelTest {
     @Test
     fun `saveVerification propagates use-case error message`() = runTest {
         val record = sampleRecord("REG-123")
+        coEvery { getLicenseRecordUseCase("REG-123") } returns LicenseRecordResult.Success(record)
         coEvery {
             saveVerifiedLicenseUseCase(record, any(), any())
         } returns SaveVerifiedLicenseResult.Error("DB locked")
 
-        val viewModel = makeViewModel(savedStateWith(record))
+        val viewModel = makeViewModel(savedStateWith("REG-123"))
         viewModel.onOfficerRemarkSelected("Documents verified")
 
         viewModel.saveVerification()
@@ -142,11 +165,12 @@ class VerificationFormViewModelTest {
     @Test
     fun `consumeSaveState resets save state to Idle`() = runTest {
         val record = sampleRecord("REG-123")
+        coEvery { getLicenseRecordUseCase("REG-123") } returns LicenseRecordResult.Success(record)
         coEvery {
             saveVerifiedLicenseUseCase(record, any(), any())
         } returns SaveVerifiedLicenseResult.Success
 
-        val viewModel = makeViewModel(savedStateWith(record))
+        val viewModel = makeViewModel(savedStateWith("REG-123"))
         viewModel.onOfficerRemarkSelected("Documents verified")
         viewModel.saveVerification()
         // sanity: we're at Success now
@@ -166,10 +190,10 @@ class VerificationFormViewModelTest {
     }
 
     private fun makeViewModel(savedStateHandle: SavedStateHandle) =
-        VerificationFormViewModel(savedStateHandle, gson, saveVerifiedLicenseUseCase)
+        VerificationFormViewModel(savedStateHandle, getLicenseRecordUseCase, saveVerifiedLicenseUseCase)
 
-    private fun savedStateWith(record: LicenseRecord) =
-        SavedStateHandle(mapOf("licenseRecordJson" to gson.toJson(record)))
+    private fun savedStateWith(registrationNumber: String) =
+        SavedStateHandle(mapOf("registrationNumber" to registrationNumber))
 
     private fun sampleRecord(registrationNumber: String) = LicenseRecord(
         registrationNumber = registrationNumber,

@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,8 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityRemark
-import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityReportPrefill
+import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SubmitIrregularityReportResult
+import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetLicenseRecordUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SubmitIrregularityReportUseCase
 import javax.inject.Inject
 
@@ -47,25 +47,37 @@ data class ReportIrregularityUiState(
 @HiltViewModel
 class ReportIrregularityViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val gson: Gson,
+    private val getLicenseRecordUseCase: GetLicenseRecordUseCase,
     private val submitIrregularityReportUseCase: SubmitIrregularityReportUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(run {
-        val encoded = savedStateHandle.get<String>("prefillJson").orEmpty()
-        val json = Uri.decode(encoded)
-        val prefill = runCatching {
-            if (json.isBlank()) IrregularityReportPrefill()
-            else gson.fromJson(json, IrregularityReportPrefill::class.java)
-        }.getOrNull() ?: IrregularityReportPrefill()
-        ReportIrregularityUiState(
-            nameOnCard = prefill.nameOnCard,
-            licenseNumber = prefill.licenseNumber,
-            cadre = prefill.cadre,
-            gender = prefill.gender
-        )
-    })
+    private val _uiState = MutableStateFlow(ReportIrregularityUiState())
     val uiState: StateFlow<ReportIrregularityUiState> = _uiState.asStateFlow()
+
+    init {
+        val registrationNumber = Uri.decode(
+            savedStateHandle.get<String>("registrationNumber").orEmpty()
+        ).trim()
+        if (registrationNumber.isNotEmpty()) {
+            // Pre-populate form fields from the cached record. If the record can't be
+            // fetched (NotFound / Error), the form stays editable with empty fields —
+            // user can still submit a report with manually-entered details.
+            viewModelScope.launch {
+                val result = getLicenseRecordUseCase(registrationNumber)
+                if (result is LicenseRecordResult.Success) {
+                    val record = result.record
+                    _uiState.update {
+                        it.copy(
+                            nameOnCard = record.fullName,
+                            licenseNumber = record.registrationNumber,
+                            cadre = record.profession,
+                            gender = record.gender
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun onNameOnCardChange(value: String) {
         _uiState.update { it.copy(nameOnCard = value, fieldErrors = it.fieldErrors.copy(nameOnCard = null)) }

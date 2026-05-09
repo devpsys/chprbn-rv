@@ -23,18 +23,17 @@ object Routes {
     const val Sync = "sync"
     const val Verified = "verified"
 
-    /** Optional: licenseRecordJson (Uri-encoded JSON). Use [verificationFormRoute] to build with [ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord]. */
-    const val VerificationForm = "verification_form?licenseRecordJson={licenseRecordJson}"
+    /** Path arg [registrationNumber]: VM re-fetches the license record via GetLicenseRecordUseCase. */
+    const val VerificationForm = "verification_form/{registrationNumber}"
 
-    /** Builds route with full record as single source of truth. Encode [licenseRecordJson] with [Uri.encode] before calling. */
-    fun verificationFormRoute(licenseRecordJson: String): String =
-        "verification_form?licenseRecordJson=$licenseRecordJson"
+    fun verificationFormRoute(registrationNumber: String): String =
+        "verification_form/${Uri.encode(registrationNumber)}"
 
-    /** Prefill JSON (name, license, cadre, gender only); use [reportIrregularityRoute] with [Uri.encode]. */
-    const val ReportIrregularity = "report_irregularity?prefillJson={prefillJson}"
+    /** Path arg [registrationNumber]: VM re-fetches and pre-populates the form. Form remains editable when not found. */
+    const val ReportIrregularity = "report_irregularity/{registrationNumber}"
 
-    fun reportIrregularityRoute(prefillJson: String): String =
-        "report_irregularity?prefillJson=$prefillJson"
+    fun reportIrregularityRoute(registrationNumber: String): String =
+        "report_irregularity/${Uri.encode(registrationNumber)}"
 
     const val SyncHistory = "sync_history"
 

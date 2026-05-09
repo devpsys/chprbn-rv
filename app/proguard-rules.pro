@@ -35,12 +35,6 @@
 -keep class ng.com.chprbn.mobile.feature.**.data.local.** { *; }
 
 
-# ---- App: domain models passed through nav args as Gson JSON --------------
-# Drop this rule once the audit follow-up to migrate to type-safe Compose
-# navigation lands and nav payloads stop going through Gson.
--keep class ng.com.chprbn.mobile.feature.**.domain.model.** { *; }
-
-
 # ---- Gson runtime ----------------------------------------------------------
 # Anonymous TypeToken<T>() {} subclasses (e.g. JsonStringListTypeConverter)
 # must keep their generic Signature so Gson can read the parameter type.
