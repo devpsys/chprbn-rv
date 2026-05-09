@@ -1,4 +1,48 @@
 <resources>
+    <!--
+        User-facing string resources. Organized by feature for readability;
+        new strings should be added to the section that owns the screen they
+        appear on. ViewModel error messages live alongside their screen
+        section. ContentDescription strings (accessibility) are migrated as
+        part of the U1 audit follow-up — not all of them are extracted yet.
+
+        For locale variants, mirror the same key set under res/values-<lang>/.
+    -->
+
+    <!-- ============== App / launcher ============== -->
     <string name="app_name">CHPRBN</string>
     <string name="title_activity_main">MainActivity</string>
+
+    <!-- ============== Auth — Splash ============== -->
+    <string name="splash_tagline">Governing Health with Integrity</string>
+    <string name="splash_portal_label">CHPRBN PORTAL</string>
+    <string name="splash_loading">INITIALIZING SECURE RECORDS</string>
+
+    <!-- ============== Auth — Login ============== -->
+    <string name="login_header_subtitle">Portal</string>
+    <string name="login_secure_node_label">Secure Node</string>
+    <string name="login_title">Verification Login</string>
+    <string name="login_subtitle">Access the centralized registry with your secure credentials.</string>
+    <string name="login_username_label">Username</string>
+    <string name="login_username_placeholder">Adhoc account username</string>
+    <string name="login_access_key_label">Access Key</string>
+    <string name="login_recovery_action">Recovery</string>
+    <string name="login_password_show">Show password</string>
+    <string name="login_password_hide">Hide password</string>
+    <string name="login_password_placeholder">••••••••</string>
+    <string name="login_sign_in_button">Sign In</string>
+    <string name="login_encrypted_protocol_label">ENCRYPTED PROTOCOL</string>
+    <!-- LoginViewModel-side validation; see LoginViewModel.signIn(). -->
+    <string name="login_error_missing_credentials">Username and password are required.</string>
+
+    <!-- ============== Shared design-system: AppTopBar ============== -->
+    <string name="app_top_bar_official_use_only">OFFICIAL USE ONLY</string>
+    <string name="app_top_bar_notifications_action">Notifications</string>
+
+    <!-- ============== Shared design-system: BottomNavBar ============== -->
+    <string name="bottom_nav_home">Home</string>
+    <string name="bottom_nav_verified">Verified</string>
+    <string name="bottom_nav_sync">Sync</string>
+    <string name="bottom_nav_profile">Profile</string>
+    <string name="bottom_nav_scan_qr">Scan QR</string>
 </resources>

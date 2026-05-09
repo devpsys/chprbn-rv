@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -104,13 +105,13 @@ fun SplashContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "CHPRBN",
+                        text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.displayLarge,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Governing Health with Integrity",
+                        text = stringResource(R.string.splash_tagline),
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White.copy(alpha = 0.9f),
                         textAlign = TextAlign.Center
@@ -137,7 +138,7 @@ fun SplashContent(
                         tint = Color.White.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "CHPRBN PORTAL",
+                        text = stringResource(R.string.splash_portal_label),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.6f)
                     )
@@ -163,7 +164,7 @@ fun SplashContent(
                     trackColor = Color.White.copy(alpha = 0.2f)
                 )
                 Text(
-                    text = "INITIALIZING SECURE RECORDS",
+                    text = stringResource(R.string.splash_loading),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center

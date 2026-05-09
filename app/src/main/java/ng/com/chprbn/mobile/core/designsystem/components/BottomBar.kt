@@ -30,8 +30,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 
 /** Indicates which bottom nav tab is selected (for styling). */
@@ -72,13 +74,13 @@ fun BottomNavBar(
         ) {
             BottomNavItem(
                 icon = Icons.Filled.Home,
-                label = "Home",
+                label = stringResource(R.string.bottom_nav_home),
                 selected = selectedTab == BottomNavTab.Home,
                 onClick = onHome
             )
             BottomNavItem(
                 icon = Icons.Filled.People,
-                label = "Verified",
+                label = stringResource(R.string.bottom_nav_verified),
                 selected = selectedTab == BottomNavTab.Verified,
                 onClick = onVerified
             )
@@ -100,20 +102,20 @@ fun BottomNavBar(
             ) {
                 Icon(
                     imageVector = Icons.Filled.QrCodeScanner,
-                    contentDescription = "Scan QR",
+                    contentDescription = stringResource(R.string.bottom_nav_scan_qr),
                     modifier = Modifier.size(28.dp),
                     tint = Color.White
                 )
             }
             BottomNavItem(
                 icon = Icons.Filled.Sync,
-                label = "Sync",
+                label = stringResource(R.string.bottom_nav_sync),
                 selected = selectedTab == BottomNavTab.Sync,
                 onClick = onSync
             )
             BottomNavItem(
                 icon = Icons.Filled.Person,
-                label = "Profile",
+                label = stringResource(R.string.bottom_nav_profile),
                 selected = selectedTab == BottomNavTab.Profile,
                 onClick = onProfile
             )

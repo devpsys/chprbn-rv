@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -157,13 +158,13 @@ fun LoginContent(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Text(
-                        text = "Verification Login",
+                        text = stringResource(R.string.login_title),
                         style = MaterialTheme.typography.displayLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Access the centralized registry with your secure credentials.",
+                        text = stringResource(R.string.login_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -172,8 +173,8 @@ fun LoginContent(
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Username") },
-                        placeholder = { Text("Adhoc account username") },
+                        label = { Text(stringResource(R.string.login_username_label)) },
+                        placeholder = { Text(stringResource(R.string.login_username_placeholder)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.VerifiedUser,
@@ -214,18 +215,18 @@ fun LoginContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Access Key",
+                            text = stringResource(R.string.login_access_key_label),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         TextButton(onClick = onRecovery) {
-                            Text("Recovery", color = PrimaryGreen)
+                            Text(stringResource(R.string.login_recovery_action), color = PrimaryGreen)
                         }
                     }
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        placeholder = { Text("••••••••") },
+                        placeholder = { Text(stringResource(R.string.login_password_placeholder)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.Lock,
@@ -241,7 +242,10 @@ fun LoginContent(
                             ) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                    contentDescription = stringResource(
+                                        if (passwordVisible) R.string.login_password_hide
+                                        else R.string.login_password_show
+                                    ),
                                     modifier = Modifier.size(24.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -268,7 +272,7 @@ fun LoginContent(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     PrimaryButton(
-                        text = "Sign In",
+                        text = stringResource(R.string.login_sign_in_button),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -306,7 +310,7 @@ fun LoginContent(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "ENCRYPTED PROTOCOL",
+                        text = stringResource(R.string.login_encrypted_protocol_label),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -344,12 +348,12 @@ private fun LoginHeader() {
             }
             Column {
                 Text(
-                    text = "CHPRBN",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Portal",
+                    text = stringResource(R.string.login_header_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -372,7 +376,7 @@ private fun LoginHeader() {
                     tint = PrimaryGreen
                 )
                 Text(
-                    text = "Secure Node",
+                    text = stringResource(R.string.login_secure_node_label),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

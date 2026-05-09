@@ -1,10 +1,13 @@
 package ng.com.chprbn.mobile.feature.auth.presentation.login
 
+import android.content.Context
 import app.cash.turbine.test
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.auth.domain.model.AuthResult
 import ng.com.chprbn.mobile.feature.auth.domain.model.User
@@ -22,12 +25,17 @@ class LoginViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var loginUseCase: LoginUseCase
+    private lateinit var context: Context
     private lateinit var viewModel: LoginViewModel
 
     @Before
     fun setUp() {
         loginUseCase = mockk()
-        viewModel = LoginViewModel(loginUseCase)
+        context = mockk {
+            every { getString(R.string.login_error_missing_credentials) } returns
+                "Username and password are required."
+        }
+        viewModel = LoginViewModel(loginUseCase, context)
     }
 
     @Test

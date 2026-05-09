@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ng.com.chprbn.mobile.R
@@ -66,13 +67,13 @@ fun AppTopBar(
                 }
                 Column {
                     Text(
-                        text = "CHPRBN",
+                        text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
                     )
                     Text(
-                        text = "OFFICIAL USE ONLY",
+                        text = stringResource(R.string.app_top_bar_official_use_only),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -86,7 +87,7 @@ fun AppTopBar(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Notifications,
-                            contentDescription = "Notifications",
+                            contentDescription = stringResource(R.string.app_top_bar_notifications_action),
                             modifier = Modifier.size(24.dp),
                             tint = PrimaryGreen
                         )
