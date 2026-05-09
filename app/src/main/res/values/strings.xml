@@ -368,4 +368,27 @@
     <string name="assessment_decorative_title">Upcoming Assessments</string>
     <string name="assessment_decorative_subtitle">Ensure all candidate records are synchronized before the examination window closes.</string>
     <string name="assessment_decorative_image_cd">Medical examination environment illustration</string>
+
+    <!-- ============== Assessment — paper detail ============== -->
+    <string name="assessment_paper_detail_overline">Clinical Regulation Unit</string>
+    <string name="assessment_paper_detail_header_title">Paper Detail</string>
+    <string name="assessment_paper_detail_action_back">Back</string>
+    <string name="assessment_paper_detail_action_share">Share</string>
+    <string name="assessment_paper_detail_action_more">More</string>
+    <string name="assessment_paper_detail_hero_image_cd">Examination facility</string>
+    <string name="assessment_paper_detail_status_active">Active Examination</string>
+    <string name="assessment_paper_detail_progress_title">Checked In Progress</string>
+    <string name="assessment_paper_detail_progress_percent_format">%1$d%%</string>
+    <string name="assessment_paper_detail_progress_count_format">%1$d of %2$d candidates arrived</string>
+    <string name="assessment_paper_detail_facility_label">FACILITY</string>
+    <string name="assessment_paper_detail_facility_icon_cd">Facility</string>
+    <string name="assessment_paper_detail_hall_label">ASSIGNED HALL</string>
+    <string name="assessment_paper_detail_hall_icon_cd">Hall</string>
+    <string name="assessment_paper_detail_directory_title">Candidate Directory</string>
+    <string name="assessment_paper_detail_directory_total_format">Total: %1$d</string>
+    <string name="assessment_paper_detail_directory_id_format">ID: #%1$s</string>
+    <string name="assessment_paper_detail_directory_status_synced">SYNCED</string>
+    <string name="assessment_paper_detail_directory_status_unsynced">UNSYNCED</string>
+    <string name="assessment_paper_detail_view_full_directory">VIEW FULL DIRECTORY</string>
+    <string name="assessment_paper_detail_action_scan_qr">Scan QR Code</string>
 </resources>

@@ -87,4 +87,10 @@ object Routes {
     /** Examination Schedules — first screen of the assessment feature. */
     @Serializable
     data object ExaminationSchedules
+
+    /** Paper Detail for a specific schedule. [scheduleId] is captured by the
+     *  destination VM and used to fetch the paper once a real data source
+     *  exists; today the placeholder UiState is the same regardless. */
+    @Serializable
+    data class AssessmentPaperDetail(val scheduleId: String)
 }

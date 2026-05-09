@@ -26,6 +26,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
@@ -336,7 +337,24 @@ fun AppNavHost() {
         composable<Routes.ExaminationSchedules> {
             ExaminationSchedulesScreen(
                 onBack = { navController.popBackStack() },
-                onScheduleClick = { /* TODO: open schedule detail when that screen lands */ },
+                onScheduleClick = { schedule ->
+                    navController.navigate(Routes.AssessmentPaperDetail(schedule.id))
+                },
+            )
+        }
+        composable<Routes.AssessmentPaperDetail> {
+            AssessmentPaperDetailScreen(
+                onBack = { navController.popBackStack() },
+                onShare = { /* TODO: assessment share */ },
+                onMore = { /* TODO: assessment paper-detail overflow */ },
+                onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
+                onViewFullDirectory = { /* TODO: full directory screen */ },
+                onScanQr = {
+                    // Reuse the existing ExamScan flow (lands on
+                    // CandidateScanResult) until the assessment feature
+                    // grows its own scan destination.
+                    navController.navigate(Routes.ExamScan)
+                },
             )
         }
     }
