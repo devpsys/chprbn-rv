@@ -26,6 +26,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
 /**
@@ -97,7 +98,9 @@ fun AppNavHost() {
                     navController.navigate(Routes.ExamPapers)
                 },
                 onAttendanceMore = { /* TODO */ },
-                onGradePractical = { /* TODO: practical */ },
+                onGradePractical = {
+                    navController.navigate(Routes.ExaminationSchedules)
+                },
                 onPracticalInfo = { /* TODO */ },
                 onDownloadDossier = { /* TODO: export dossier */ },
                 onExamDashboardTab = {},
@@ -328,6 +331,12 @@ fun AppNavHost() {
                 onManualEntry = {
                     navController.navigate(Routes.ManualLicenseEntry(forExam = false))
                 }
+            )
+        }
+        composable<Routes.ExaminationSchedules> {
+            ExaminationSchedulesScreen(
+                onBack = { navController.popBackStack() },
+                onScheduleClick = { /* TODO: open schedule detail when that screen lands */ },
             )
         }
     }

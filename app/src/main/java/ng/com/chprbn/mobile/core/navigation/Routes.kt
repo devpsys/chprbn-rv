@@ -82,4 +82,9 @@ object Routes {
 
     @Serializable
     data class CandidateScanResult(val scannedPayload: String)
+
+    // ============== Assessment ==============
+    /** Examination Schedules — first screen of the assessment feature. */
+    @Serializable
+    data object ExaminationSchedules
 }

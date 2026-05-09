@@ -352,4 +352,20 @@
     <string name="exam_statistics_caption_total">Total</string>
     <string name="exam_statistics_status_pending_sync">Records Pending Sync</string>
     <string name="exam_statistics_status_successfully_synced">Successfully Synced</string>
+
+    <!-- ============== Assessment — examination schedules ============== -->
+    <string name="assessment_schedules_header_title">Schedules</string>
+    <string name="assessment_schedules_action_back">Back</string>
+    <string name="assessment_schedules_action_more">More</string>
+    <string name="assessment_schedules_brand_logo_cd">Assessment logo</string>
+    <string name="assessment_schedules_help_banner">Tap the button above to Download Examination and Candidates\' data or Clear all records.</string>
+    <string name="assessment_schedules_help_banner_arrow_cd">Action arrow</string>
+    <string name="assessment_schedule_date_format">Date: %1$s</string>
+    <string name="assessment_schedule_calendar_icon_cd">Date</string>
+    <string name="assessment_schedule_open_action">Open schedule</string>
+    <string name="assessment_status_synced">SYNCED</string>
+    <string name="assessment_status_pending">PENDING</string>
+    <string name="assessment_decorative_title">Upcoming Assessments</string>
+    <string name="assessment_decorative_subtitle">Ensure all candidate records are synchronized before the examination window closes.</string>
+    <string name="assessment_decorative_image_cd">Medical examination environment illustration</string>
 </resources>
