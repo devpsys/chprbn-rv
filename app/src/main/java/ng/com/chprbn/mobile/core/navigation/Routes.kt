@@ -98,4 +98,18 @@ object Routes {
      *  "View Full Directory" button. [scheduleId] keys the lookup. */
     @Serializable
     data class AssessmentCandidates(val scheduleId: String)
+
+    /** Assessment-side QR scan. Distinct from `ExamScan` so the scan result
+     *  navigates into the practical-sections flow rather than the exam
+     *  attendance result. */
+    @Serializable
+    data class AssessmentScan(val scheduleId: String)
+
+    /** Practical Sections Hub, reached from the assessment scan once a
+     *  candidate code has been read. */
+    @Serializable
+    data class AssessmentPracticalSections(
+        val scheduleId: String,
+        val candidateId: String,
+    )
 }

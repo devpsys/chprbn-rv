@@ -405,4 +405,24 @@
     <string name="assessment_candidates_action_add_remark_cd">Add remark</string>
     <string name="assessment_candidates_empty_title">No candidates found</string>
     <string name="assessment_candidates_empty_subtitle">No candidates match your current search criteria. Try adjusting your filters or search term.</string>
+
+    <!-- ============== Assessment — practical sections hub ============== -->
+    <string name="assessment_practical_sections_header_title">Practical Sections</string>
+    <string name="assessment_practical_sections_action_back">Back</string>
+    <string name="assessment_practical_sections_header_icon_cd">Practical sections</string>
+    <string name="assessment_practical_sections_avatar_cd_format">%1$s photo</string>
+    <string name="assessment_practical_sections_candidate_label">Candidate</string>
+    <string name="assessment_practical_sections_stat_done_format">%1$d/%2$d</string>
+    <string name="assessment_practical_sections_stat_done_label">SECTIONS DONE</string>
+    <string name="assessment_practical_sections_stat_remaining_label">REMAINING</string>
+    <string name="assessment_practical_sections_status_complete">COMPLETE</string>
+    <string name="assessment_practical_sections_status_incomplete">INCOMPLETE</string>
+    <string name="assessment_practical_sections_status_not_started">NOT STARTED</string>
+    <string name="assessment_practical_sections_complete_updated_format">Updated: %1$s</string>
+    <string name="assessment_practical_sections_incomplete_remaining_format">%1$d tasks remaining</string>
+    <string name="assessment_practical_sections_not_started_caption">No data recorded</string>
+    <string name="assessment_practical_sections_card_arrow_cd">Open section</string>
+    <string name="assessment_practical_sections_action_assess_project">Assess Project</string>
+    <string name="assessment_practical_sections_photo_open_cd">View enlarged photo</string>
+    <string name="assessment_practical_sections_photo_close_cd">Close enlarged photo</string>
 </resources>

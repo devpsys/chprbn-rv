@@ -28,6 +28,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
+import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalSectionsScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.ExaminationSchedulesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
@@ -354,10 +355,9 @@ fun AppNavHost() {
                     navController.navigate(Routes.AssessmentCandidates(args.scheduleId))
                 },
                 onScanQr = {
-                    // Reuse the existing ExamScan flow (lands on
-                    // CandidateScanResult) until the assessment feature
-                    // grows its own scan destination.
-                    navController.navigate(Routes.ExamScan)
+                    // Assessment-side scan flow lands on the Practical
+                    // Sections hub for the scanned candidate.
+                    navController.navigate(Routes.AssessmentScan(args.scheduleId))
                 },
             )
         }
@@ -366,6 +366,35 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
                 onAddRemark = { /* TODO: remark sheet/screen */ },
+            )
+        }
+        composable<Routes.AssessmentScan> { backStackEntry ->
+            val args: Routes.AssessmentScan = backStackEntry.toRoute()
+            QrScanScreen(
+                manualEntryButtonLabel = stringResource(R.string.scan_manual_entry_exam_action),
+                onManualEntry = {
+                    navController.navigate(Routes.ManualLicenseEntry(forExam = true))
+                },
+                qrValidator = { extractRegistrationFromQrPayload(it) },
+                onQrScanned = { candidateId ->
+                    // Replace the scan destination so back doesn't bounce
+                    // through the camera screen.
+                    navController.navigate(
+                        Routes.AssessmentPracticalSections(
+                            scheduleId = args.scheduleId,
+                            candidateId = candidateId,
+                        ),
+                    ) {
+                        popUpTo<Routes.AssessmentScan> { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable<Routes.AssessmentPracticalSections> {
+            AssessmentPracticalSectionsScreen(
+                onBack = { navController.popBackStack() },
+                onSectionClick = { /* TODO: section detail screen */ },
+                onAssessProject = { /* TODO: project assessment flow */ },
             )
         }
     }
