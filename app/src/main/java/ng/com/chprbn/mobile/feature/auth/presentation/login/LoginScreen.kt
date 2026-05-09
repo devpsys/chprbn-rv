@@ -341,7 +341,7 @@ private fun LoginHeader() {
             ) {
                 Image(
                     painter = painterResource(R.drawable.logo),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.app_logo_cd),
                     modifier = Modifier.size(30.dp),
                     contentScale = ContentScale.Fit,
                 )

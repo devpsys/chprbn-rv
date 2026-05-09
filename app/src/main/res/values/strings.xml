@@ -12,6 +12,7 @@
     <!-- ============== App / launcher ============== -->
     <string name="app_name">CHPRBN</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="app_logo_cd">CHPRBN logo</string>
 
     <!-- ============== Auth — Splash ============== -->
     <string name="splash_tagline">Governing Health with Integrity</string>

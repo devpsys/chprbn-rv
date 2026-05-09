@@ -94,7 +94,7 @@ fun SplashContent(
                 ) {
                     Image(
                         painter = painterResource(R.drawable.logo),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.app_logo_cd),
                         modifier = Modifier.size(100.dp),
                         contentScale = ContentScale.Fit,
                     )

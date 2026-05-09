@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -491,7 +492,11 @@ private fun VerifiedPractitionerRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            // Merge name + license # + verified date + sync status into a single
+            // accessibility node so TalkBack reads the row as one focusable item
+            // rather than reading each Text composable separately.
+            .semantics(mergeDescendants = true) {},
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
