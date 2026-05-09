@@ -41,10 +41,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ng.com.chprbn.mobile.R
 
 @Composable
 fun CandidateScanResultContent(
@@ -76,12 +78,12 @@ fun CandidateScanResultContent(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.candidate_scan_action_back),
                             tint = scheme.primary,
                         )
                     }
                     Text(
-                        text = "Scan Result",
+                        text = stringResource(R.string.candidate_scan_header_title),
                         style = typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.015).sp,
@@ -296,7 +298,7 @@ fun CandidateScanResultContent(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = "Cancel",
+                            contentDescription = stringResource(R.string.candidate_scan_action_cancel),
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -321,7 +323,7 @@ fun CandidateScanResultContent(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Mark Attendance",
+                            text = stringResource(R.string.candidate_scan_action_mark_attendance),
                             style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         )
                     }

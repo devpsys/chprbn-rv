@@ -243,4 +243,14 @@
     <string name="scan_manual_entry_license_action">Enter License Manually</string>
     <string name="scan_manual_entry_exam_action">Enter Indexing Manually</string>
     <string name="scan_help_caption">Having trouble? Ensure the QR code is well-lit and not reflective.</string>
+
+    <!-- ============== Exam — shared bottom nav ============== -->
+    <string name="exam_nav_dashboard">Dashboard</string>
+    <string name="exam_nav_statistics">Statistics</string>
+
+    <!-- ============== Exam — candidate scan result ============== -->
+    <string name="candidate_scan_header_title">Scan Result</string>
+    <string name="candidate_scan_action_back">Back</string>
+    <string name="candidate_scan_action_cancel">Cancel</string>
+    <string name="candidate_scan_action_mark_attendance">Mark Attendance</string>
 </resources>

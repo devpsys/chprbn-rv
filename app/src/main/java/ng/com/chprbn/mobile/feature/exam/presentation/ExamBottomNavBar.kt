@@ -22,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ng.com.chprbn.mobile.R
 
 @Composable
 fun ExamBottomNavBar(
@@ -51,13 +53,13 @@ fun ExamBottomNavBar(
         ) {
             ExamNavItem(
                 icon = Icons.Outlined.Speed,
-                label = "Dashboard",
+                label = stringResource(R.string.exam_nav_dashboard),
                 selected = selectedTab == ExamBottomNavSelection.Dashboard,
                 onClick = onDashboard
             )
             ExamNavItem(
                 icon = Icons.Outlined.BarChart,
-                label = "Statistics",
+                label = stringResource(R.string.exam_nav_statistics),
                 selected = selectedTab == ExamBottomNavSelection.Statistics,
                 onClick = onStatistics
             )
