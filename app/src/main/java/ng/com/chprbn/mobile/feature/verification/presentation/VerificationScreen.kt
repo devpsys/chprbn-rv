@@ -42,10 +42,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
@@ -185,7 +187,7 @@ private fun VerificationContent(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(onClick = onRetry) {
-                            Text("Retry", color = PrimaryGreen)
+                            Text(stringResource(R.string.verification_retry_action), color = PrimaryGreen)
                         }
                     }
                 }
@@ -203,15 +205,18 @@ private fun VerificationContent(
 
 @Composable
 fun WelcomeCard(user: User? = null) {
-    val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "Officer"
-    val role = user?.role?.takeIf { it.isNotBlank() } ?: "Senior Field Officer"
+    val displayName = user?.fullName?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.welcome_card_default_name)
+    val role = user?.role?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.welcome_card_default_role)
+    val defaultIdAndUnit = stringResource(R.string.welcome_card_default_id_unit)
     val idAndUnit = when {
         user?.username?.isNotBlank() == true && user.unit != null ->
             "${user.username} • ${user.unit}"
 
         user?.username?.isNotBlank() == true -> user.username
         user?.unit != null -> user.unit
-        else -> "— • —"
+        else -> defaultIdAndUnit
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -252,7 +257,7 @@ fun WelcomeCard(user: User? = null) {
             }
             Column {
                 Text(
-                    text = "Welcome, $displayName",
+                    text = stringResource(R.string.welcome_card_greeting_format, displayName),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -287,7 +292,7 @@ fun FeatureGridSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "FEATURE GRID",
+                text = stringResource(R.string.feature_grid_section_label),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -297,7 +302,7 @@ fun FeatureGridSection(
                 color = PrimaryGreen.copy(alpha = 0.1f)
             ) {
                 Text(
-                    text = "ONLINE",
+                    text = stringResource(R.string.feature_grid_status_online),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
@@ -349,7 +354,7 @@ fun SystemStatusCard() {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "SYSTEM STATUS",
+                text = stringResource(R.string.verification_system_status_section_label),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -361,7 +366,7 @@ fun SystemStatusCard() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Device Encryption",
+                    text = stringResource(R.string.verification_status_device_encryption_label),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -374,7 +379,7 @@ fun SystemStatusCard() {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Active",
+                        text = stringResource(R.string.verification_status_active),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
@@ -388,7 +393,7 @@ fun SystemStatusCard() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Location Services",
+                    text = stringResource(R.string.verification_status_location_services_label),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -401,7 +406,7 @@ fun SystemStatusCard() {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Enabled",
+                        text = stringResource(R.string.verification_status_enabled),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
@@ -426,7 +431,7 @@ fun SystemStatusCard() {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "LOCAL DATABASE 75% CAPACITY",
+                text = stringResource(R.string.verification_status_db_capacity),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

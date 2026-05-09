@@ -37,11 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.AppTopBar
@@ -126,9 +128,9 @@ private fun DashboardWelcomeCard(
     userEmail: String,
     userStatus: String
 ) {
-    val displayName = userName.ifBlank { "Officer" }
-    val role = userStatus.ifBlank { "Senior Field Officer" }
-    val idAndUnit = userEmail.ifBlank { "— • —" }
+    val displayName = userName.ifBlank { stringResource(R.string.welcome_card_default_name) }
+    val role = userStatus.ifBlank { stringResource(R.string.welcome_card_default_role) }
+    val idAndUnit = userEmail.ifBlank { stringResource(R.string.welcome_card_default_id_unit) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -168,7 +170,7 @@ private fun DashboardWelcomeCard(
             }
             Column {
                 Text(
-                    text = "Welcome, $displayName",
+                    text = stringResource(R.string.welcome_card_greeting_format, displayName),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -206,22 +208,22 @@ private fun DashboardFeatureGridSection(
 ) {
     val items = listOf(
         DashboardGridItem(
-            title = "OSYVALAC",
-            subtitle = "Operation show your license",
+            title = stringResource(R.string.dashboard_feature_osyvalac_title),
+            subtitle = stringResource(R.string.dashboard_feature_osyvalac_subtitle),
             icon = Icons.Outlined.VerifiedUser,
             isPrimary = false,
             onClick = onLicenseVerification
         ),
         DashboardGridItem(
-            title = "EXAMS",
-            subtitle = "Exam attendance & practical assessment",
+            title = stringResource(R.string.dashboard_feature_exams_title),
+            subtitle = stringResource(R.string.dashboard_feature_exams_subtitle),
             icon = Icons.Outlined.AccountCircle,
             isPrimary = false,
             onClick = onExamAttendance
         ),
         DashboardGridItem(
-            title = "ACCREDITATION",
-            subtitle = "Accreditation",
+            title = stringResource(R.string.dashboard_feature_accreditation_title),
+            subtitle = stringResource(R.string.dashboard_feature_accreditation_subtitle),
             icon = Icons.Outlined.WorkspacePremium,
             isPrimary = false,
             onClick = onAccreditation
@@ -244,7 +246,7 @@ private fun DashboardFeatureGridSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "FEATURE GRID",
+                text = stringResource(R.string.feature_grid_section_label),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -254,7 +256,7 @@ private fun DashboardFeatureGridSection(
                 color = PrimaryGreen.copy(alpha = 0.1f)
             ) {
                 Text(
-                    text = "ONLINE",
+                    text = stringResource(R.string.feature_grid_status_online),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,

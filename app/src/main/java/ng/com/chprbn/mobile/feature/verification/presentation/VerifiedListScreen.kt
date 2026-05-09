@@ -48,12 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
@@ -142,7 +144,7 @@ fun VerifiedListContent(
             when {
                 uiState.isLoading -> {
                     Text(
-                        text = "Loading verified practitioners...",
+                        text = stringResource(R.string.verified_list_loading),
                         style = MaterialTheme.typography.bodyMedium,
                         color = PrimaryGreen.copy(alpha = 0.7f),
                         modifier = Modifier
@@ -312,7 +314,7 @@ private fun VerifiedPractitionersNoRecordsFound(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "No Records Found",
+            text = stringResource(R.string.verified_list_empty_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -320,7 +322,7 @@ private fun VerifiedPractitionersNoRecordsFound(
         )
 
         Text(
-            text = "We couldn't find any verified practitioners matching your criteria. Try adjusting your filters or start a fresh verification.",
+            text = stringResource(R.string.verified_list_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -349,12 +351,12 @@ private fun VerifiedHeader(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.verified_list_action_back),
                     tint = PrimaryGreen
                 )
             }
             Text(
-                text = "Verified Practitioners",
+                text = stringResource(R.string.verified_list_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -365,7 +367,7 @@ private fun VerifiedHeader(
             IconButton(onClick = onMenu, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More",
+                    contentDescription = stringResource(R.string.verified_list_action_more),
                     tint = PrimaryGreen
                 )
             }
@@ -400,7 +402,7 @@ private fun SearchBar(
             },
             placeholder = {
                 Text(
-                    text = "Search by name, ID or specialty...",
+                    text = stringResource(R.string.verified_list_search_placeholder),
                     style = MaterialTheme.typography.bodySmall,
                     color = PrimaryGreen.copy(alpha = 0.4f)
                 )
@@ -433,22 +435,22 @@ private fun FilterTabs(
         verticalAlignment = Alignment.CenterVertically
     ) {
         FilterPillTab(
-            text = "All",
+            text = stringResource(R.string.verified_filter_all),
             selected = selected == VerifiedFilter.All,
             onClick = { onFilterSelected(VerifiedFilter.All) }
         )
         FilterPillTab(
-            text = "Active",
+            text = stringResource(R.string.verified_filter_active),
             selected = selected == VerifiedFilter.Active,
             onClick = { onFilterSelected(VerifiedFilter.Active) }
         )
         FilterPillTab(
-            text = "Expired",
+            text = stringResource(R.string.verified_filter_expired),
             selected = selected == VerifiedFilter.Expired,
             onClick = { onFilterSelected(VerifiedFilter.Expired) }
         )
         FilterPillTab(
-            text = "Pending Sync",
+            text = stringResource(R.string.verified_filter_pending_sync),
             selected = selected == VerifiedFilter.PendingSync,
             onClick = { onFilterSelected(VerifiedFilter.PendingSync) }
         )
@@ -574,26 +576,26 @@ private fun VerifiedPractitionerRow(
                     )
                 }
                 Text(
-                    text = "License: ${practitioner.license}",
+                    text = stringResource(R.string.verified_row_license_format, practitioner.license),
                     style = MaterialTheme.typography.labelSmall,
                     color = PrimaryGreen.copy(alpha = 0.7f)
                 )
                 Text(
-                    text = "Verified: ${practitioner.verifiedAtText}",
+                    text = stringResource(R.string.verified_row_verified_format, practitioner.verifiedAtText),
                     style = MaterialTheme.typography.labelSmall,
                     color = PrimaryGreen.copy(alpha = 0.7f)
                 )
                 when (practitioner.syncStatus) {
                     VerifiedSyncStatus.Pending -> {
                         Text(
-                            text = "Pending Sync",
+                            text = stringResource(R.string.verified_row_pending_sync),
                             style = MaterialTheme.typography.labelSmall,
                             color = WarningYellow
                         )
                     }
                     VerifiedSyncStatus.Failed -> {
                         Text(
-                            text = "Sync failed — retry from Sync tab",
+                            text = stringResource(R.string.verified_row_sync_failed),
                             style = MaterialTheme.typography.labelSmall,
                             color = ErrorRed
                         )
@@ -623,25 +625,26 @@ private fun StatusChip(
     status: VerifiedStatus,
     expiry: String
 ) {
-    val (bg, textColor, label) = when (status) {
+    val (bg, textColor, labelRes) = when (status) {
         VerifiedStatus.Active -> Triple(
             Color(0xFFE8F5E9),
             Color(0xFF2E7D32),
-            "Active"
+            R.string.verified_status_chip_active
         )
 
         VerifiedStatus.Expired -> Triple(
             Color(0xFFFFEBEE),
             Color(0xFFC62828),
-            "Expired"
+            R.string.verified_status_chip_expired
         )
 
         VerifiedStatus.Syncing -> Triple(
             Color(0xFFE0E0E0),
             Color(0xFF616161),
-            "Syncing"
+            R.string.verified_status_chip_syncing
         )
     }
+    val label = stringResource(labelRes)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,

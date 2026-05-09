@@ -42,11 +42,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.components.BottomNavBar
@@ -175,12 +177,12 @@ private fun ProfileHeader(
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.profile_action_back),
                     tint = PrimaryGreen
                 )
             }
             Text(
-                text = "Profile",
+                text = stringResource(R.string.profile_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,
@@ -193,7 +195,7 @@ private fun ProfileHeader(
                 IconButton(onClick = onMenu, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "More",
+                        contentDescription = stringResource(R.string.profile_action_more),
                         tint = PrimaryGreen
                     )
                 }
@@ -204,8 +206,10 @@ private fun ProfileHeader(
 
 @Composable
 private fun ProfileHeroSection(user: User? = null, onEditProfile: () -> Unit) {
-    val displayName = user?.fullName?.takeIf { it.isNotBlank() } ?: "John Smith"
-    val role = user?.role?.takeIf { it.isNotBlank() } ?: "Field Officer"
+    val displayName = user?.fullName?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.profile_default_name)
+    val role = user?.role?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.profile_default_role)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -240,7 +244,7 @@ private fun ProfileHeroSection(user: User? = null, onEditProfile: () -> Unit) {
             ) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = "Edit",
+                    contentDescription = stringResource(R.string.profile_action_edit),
                     modifier = Modifier.size(14.dp),
                     tint = Color.White
                 )
@@ -269,16 +273,19 @@ private fun ProfileHeroSection(user: User? = null, onEditProfile: () -> Unit) {
 
 @Composable
 private fun AccountDetailsSection(user: User? = null) {
-    val organization = user?.organization?.takeIf { it.isNotBlank() } ?: "CHPRBN"
-    val email = user?.email?.takeIf { it.isNotBlank() } ?: "john.s@regulator.gov"
-    val lastLogin = user?.lastLoginAt?.takeIf { it.isNotBlank() } ?: "Today, 10:30 AM"
+    val organization = user?.organization?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.profile_default_organization)
+    val email = user?.email?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.profile_default_email)
+    val lastLogin = user?.lastLoginAt?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.profile_default_last_login)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "ACCOUNT DETAILS",
+            text = stringResource(R.string.profile_account_details_section),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = PrimaryGreen.copy(alpha = 0.8f),
@@ -287,17 +294,17 @@ private fun AccountDetailsSection(user: User? = null) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             AccountDetailRow(
                 icon = Icons.Outlined.Business,
-                label = "Organization",
+                label = stringResource(R.string.profile_account_organization_label),
                 value = organization
             )
             AccountDetailRow(
                 icon = Icons.Outlined.Email,
-                label = "Email Address",
+                label = stringResource(R.string.profile_account_email_label),
                 value = email
             )
             AccountDetailRow(
                 icon = Icons.Filled.History,
-                label = "Last Login",
+                label = stringResource(R.string.profile_account_last_login_label),
                 value = lastLogin
             )
         }
@@ -363,7 +370,7 @@ private fun SecurityAndSessionSection(
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "SECURITY & SESSION",
+            text = stringResource(R.string.profile_security_section),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = PrimaryGreen.copy(alpha = 0.8f),
@@ -404,7 +411,7 @@ private fun SecurityAndSessionSection(
                             )
                         }
                         Text(
-                            text = "Change Password",
+                            text = stringResource(R.string.profile_action_change_password),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
@@ -445,7 +452,7 @@ private fun SecurityAndSessionSection(
                         )
                     }
                     Text(
-                        text = "Logout",
+                        text = stringResource(R.string.profile_action_logout),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color.Red

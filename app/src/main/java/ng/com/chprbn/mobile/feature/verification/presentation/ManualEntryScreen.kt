@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 
@@ -76,27 +78,34 @@ fun ManualEntryContent(
     onVerifyLicense: (String) -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
-    val headline = if (forExamIndexing) {
-        "Look Up Candidate"
-    } else {
-        "Verify Practitioner"
-    }
-    val description = if (forExamIndexing) {
-        "Enter the candidate's indexing number exactly as shown on their exam slip or letter. " +
-            "It must match the roster for this session before you can record attendance."
-    } else {
-        "Enter the details from the physical license to proceed with verification. " +
-            "Ensure all information matches the document exactly."
-    }
-    val fieldLabel = if (forExamIndexing) "Indexing Number" else "License Number"
-    val placeholder = if (forExamIndexing) "e.g., ABC-12345-XY" else "e.g., MED-12345"
-    val primaryButtonLabel = if (forExamIndexing) "Find Candidate" else "Search License"
-    val trustCaption = if (forExamIndexing) {
-        "OFFICIAL CHPRBN EXAM ATTENDANCE"
-    } else {
-        "OFFICIAL CHPRBN VERIFICATION PORTAL"
-    }
-    val headerTitle = if (forExamIndexing) "Manual Indexing" else "Manual Entry"
+    val headline = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_headline
+        else R.string.manual_entry_license_headline
+    )
+    val description = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_description
+        else R.string.manual_entry_license_description
+    )
+    val fieldLabel = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_field_label
+        else R.string.manual_entry_license_field_label
+    )
+    val placeholder = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_placeholder
+        else R.string.manual_entry_license_placeholder
+    )
+    val primaryButtonLabel = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_button
+        else R.string.manual_entry_license_button
+    )
+    val trustCaption = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_trust_caption
+        else R.string.manual_entry_license_trust_caption
+    )
+    val headerTitle = stringResource(
+        if (forExamIndexing) R.string.manual_entry_exam_header
+        else R.string.manual_entry_license_header
+    )
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -245,7 +254,7 @@ private fun ManualEntryHeader(onBack: () -> Unit, title: String) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.manual_entry_action_back),
                     tint = PrimaryGreen
                 )
             }
