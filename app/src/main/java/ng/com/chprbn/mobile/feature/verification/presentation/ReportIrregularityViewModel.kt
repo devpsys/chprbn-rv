@@ -1,15 +1,18 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityRemark
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SubmitIrregularityReportResult
@@ -48,7 +51,8 @@ data class ReportIrregularityUiState(
 class ReportIrregularityViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getLicenseRecordUseCase: GetLicenseRecordUseCase,
-    private val submitIrregularityReportUseCase: SubmitIrregularityReportUseCase
+    private val submitIrregularityReportUseCase: SubmitIrregularityReportUseCase,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReportIrregularityUiState())
@@ -115,13 +119,16 @@ class ReportIrregularityViewModel @Inject constructor(
     fun submit() {
         if (_uiState.value.submitState is ReportIrregularitySubmitState.Submitting) return
         val s = _uiState.value
+        val requiredMessage = context.getString(R.string.irregularity_error_required)
+        val selectRemarkMessage = context.getString(R.string.irregularity_error_select_remark)
+        val attachImageMessage = context.getString(R.string.irregularity_error_attach_image)
         val errors = ReportIrregularityFieldErrors(
-            nameOnCard = if (s.nameOnCard.isBlank()) "Required" else null,
-            licenseNumber = if (s.licenseNumber.isBlank()) "Required" else null,
-            cadre = if (s.cadre.isBlank()) "Required" else null,
-            gender = if (s.gender.isBlank()) "Required" else null,
-            remark = if (s.selectedRemark == null) "Select an option" else null,
-            snapshot = if (s.snapshotContentUri.isNullOrBlank()) "Attach an image" else null
+            nameOnCard = if (s.nameOnCard.isBlank()) requiredMessage else null,
+            licenseNumber = if (s.licenseNumber.isBlank()) requiredMessage else null,
+            cadre = if (s.cadre.isBlank()) requiredMessage else null,
+            gender = if (s.gender.isBlank()) requiredMessage else null,
+            remark = if (s.selectedRemark == null) selectRemarkMessage else null,
+            snapshot = if (s.snapshotContentUri.isNullOrBlank()) attachImageMessage else null
         )
         val hasError = listOfNotNull(
             errors.nameOnCard,

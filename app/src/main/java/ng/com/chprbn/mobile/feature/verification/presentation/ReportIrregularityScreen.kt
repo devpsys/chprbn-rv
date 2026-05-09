@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +62,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.feature.verification.domain.model.IrregularityRemark
 
@@ -164,13 +166,13 @@ fun ReportIrregularityContent(
                 .padding(bottom = 120.dp)
         ) {
             Text(
-                text = "Report license irregularity",
+                text = stringResource(R.string.irregularity_headline),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen
             )
             Text(
-                text = "Provide accurate details from the physical license. A clear photo helps investigations.",
+                text = stringResource(R.string.irregularity_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp)
@@ -179,7 +181,7 @@ fun ReportIrregularityContent(
             Spacer(modifier = Modifier.height(28.dp))
 
             FormOutlinedField(
-                label = "Name on card",
+                label = stringResource(R.string.irregularity_field_name_on_card),
                 value = uiState.nameOnCard,
                 onValueChange = onNameOnCardChange,
                 error = uiState.fieldErrors.nameOnCard
@@ -187,7 +189,7 @@ fun ReportIrregularityContent(
             Spacer(modifier = Modifier.height(20.dp))
 
             FormOutlinedField(
-                label = "License number",
+                label = stringResource(R.string.irregularity_field_license_number),
                 value = uiState.licenseNumber,
                 onValueChange = onLicenseNumberChange,
                 error = uiState.fieldErrors.licenseNumber
@@ -195,7 +197,7 @@ fun ReportIrregularityContent(
             Spacer(modifier = Modifier.height(20.dp))
 
             FormOutlinedField(
-                label = "Cadre",
+                label = stringResource(R.string.irregularity_field_cadre),
                 value = uiState.cadre,
                 onValueChange = onCadreChange,
                 error = uiState.fieldErrors.cadre
@@ -203,7 +205,7 @@ fun ReportIrregularityContent(
             Spacer(modifier = Modifier.height(20.dp))
 
             FormOutlinedField(
-                label = "Gender",
+                label = stringResource(R.string.irregularity_field_gender),
                 value = uiState.gender,
                 onValueChange = onGenderChange,
                 error = uiState.fieldErrors.gender
@@ -218,7 +220,7 @@ fun ReportIrregularityContent(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Snapshot (license / document)",
+                text = stringResource(R.string.irregularity_field_snapshot_label),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -254,7 +256,7 @@ fun ReportIrregularityContent(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No image selected",
+                            text = stringResource(R.string.irregularity_snapshot_empty),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -266,7 +268,7 @@ fun ReportIrregularityContent(
                                 .data(uiState.snapshotContentUri)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "License snapshot preview",
+                            contentDescription = stringResource(R.string.irregularity_snapshot_preview_cd),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
@@ -278,7 +280,7 @@ fun ReportIrregularityContent(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
-                                contentDescription = "Remove image",
+                                contentDescription = stringResource(R.string.irregularity_snapshot_remove_cd),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -310,8 +312,10 @@ fun ReportIrregularityContent(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = if (uiState.snapshotContentUri.isNullOrBlank()) "Gallery"
-                        else "Replace (gallery)",
+                        text = stringResource(
+                            if (uiState.snapshotContentUri.isNullOrBlank()) R.string.irregularity_action_gallery_pick
+                            else R.string.irregularity_action_gallery_replace
+                        ),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -321,8 +325,10 @@ fun ReportIrregularityContent(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = if (uiState.snapshotContentUri.isNullOrBlank()) "Camera"
-                        else "Retake (camera)",
+                        text = stringResource(
+                            if (uiState.snapshotContentUri.isNullOrBlank()) R.string.irregularity_action_camera_capture
+                            else R.string.irregularity_action_camera_retake
+                        ),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -358,7 +364,10 @@ fun ReportIrregularityContent(
                     color = if (submitting) PrimaryGreen.copy(alpha = 0.5f) else PrimaryGreen
                 ) {
                     Text(
-                        text = if (submitting) "Submitting…" else "Submit report",
+                        text = stringResource(
+                            if (submitting) R.string.irregularity_action_submitting
+                            else R.string.irregularity_action_submit
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -423,7 +432,7 @@ private fun RemarkDropdown(
     var expanded by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Remark",
+            text = stringResource(R.string.irregularity_field_remark_label),
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -443,7 +452,7 @@ private fun RemarkDropdown(
                     .menuAnchor(),
                 placeholder = {
                     Text(
-                        "Select remark",
+                        stringResource(R.string.irregularity_field_remark_placeholder),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 },
@@ -502,13 +511,13 @@ private fun ReportIrregularityHeader(onBack: () -> Unit) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.irregularity_action_back),
                     tint = PrimaryGreen,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Text(
-                text = "Irregularity report",
+                text = stringResource(R.string.irregularity_header_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryGreen,

@@ -176,4 +176,30 @@
     <string name="verification_form_last_verified_default">Last verified: Oct 24, 2023 at 09:45 AM</string>
     <!-- VM-side error: surfaced when the user taps Save with no record loaded. -->
     <string name="verification_form_error_no_record">No license record found to verify.</string>
+
+    <!-- ============== Irregularity report ============== -->
+    <string name="irregularity_header_title">Irregularity report</string>
+    <string name="irregularity_action_back">Back</string>
+    <string name="irregularity_headline">Report license irregularity</string>
+    <string name="irregularity_subtitle">Provide accurate details from the physical license. A clear photo helps investigations.</string>
+    <string name="irregularity_field_name_on_card">Name on card</string>
+    <string name="irregularity_field_license_number">License number</string>
+    <string name="irregularity_field_cadre">Cadre</string>
+    <string name="irregularity_field_gender">Gender</string>
+    <string name="irregularity_field_snapshot_label">Snapshot (license / document)</string>
+    <string name="irregularity_snapshot_empty">No image selected</string>
+    <string name="irregularity_snapshot_preview_cd">License snapshot preview</string>
+    <string name="irregularity_snapshot_remove_cd">Remove image</string>
+    <string name="irregularity_action_gallery_pick">Gallery</string>
+    <string name="irregularity_action_gallery_replace">Replace (gallery)</string>
+    <string name="irregularity_action_camera_capture">Camera</string>
+    <string name="irregularity_action_camera_retake">Retake (camera)</string>
+    <string name="irregularity_action_submit">Submit report</string>
+    <string name="irregularity_action_submitting">Submitting…</string>
+    <string name="irregularity_field_remark_label">Remark</string>
+    <string name="irregularity_field_remark_placeholder">Select remark</string>
+    <!-- VM-side validation errors (ReportIrregularityViewModel.submit). -->
+    <string name="irregularity_error_required">Required</string>
+    <string name="irregularity_error_select_remark">Select an option</string>
+    <string name="irregularity_error_attach_image">Attach an image</string>
 </resources>
