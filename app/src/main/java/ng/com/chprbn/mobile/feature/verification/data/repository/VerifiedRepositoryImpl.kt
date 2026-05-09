@@ -21,11 +21,6 @@ class VerifiedRepositoryImpl @Inject constructor(
         remark: String,
         verifiedAt: Long
     ): SaveVerifiedLicenseResult = withContext(Dispatchers.IO) {
-        // Defensive check (UI/use-case should already enforce this).
-//        if (!licenseRecord.licenseStatus.equals("Active", ignoreCase = true)) {
-//            return SaveVerifiedLicenseResult.Error("Only practitioners with an active license can be verified.")
-//        }
-
         val entity = licenseRecord.toVerifiedLicenseEntity(
             verificationLocation = "",
             practitionerPresent = true,

@@ -2,9 +2,6 @@ package ng.com.chprbn.mobile.feature.auth.data.network
 
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import okhttp3.Interceptor
 import okhttp3.Response
 

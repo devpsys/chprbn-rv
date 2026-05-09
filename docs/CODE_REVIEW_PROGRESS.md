@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Code-Review Progress Tracker
 
 **Companion to:** [`CODE_REVIEW.md`](./CODE_REVIEW.md)
-**Last updated:** 2026-05-09 (audit response continues: A2 type-safe nav landed across two commits)
+**Last updated:** 2026-05-09 (audit response continues: A2 type-safe nav + trivial-cleanups bundle landed)
 **Branch:** `main`
 
 This document tracks what has been done, what is pending, and what was deliberately skipped against the recommendations in `CODE_REVIEW.md`. It also records decisions the user made about scope and ordering so a future session can pick up cold.
@@ -199,6 +199,12 @@ Items discovered during testing/refactoring that aren't in the original audit. T
 | `gradle/libs.versions.toml` (A2) | Added `kotlin-serialization` plugin alias (Kotlin 2.2.10's bundled `org.jetbrains.kotlin.plugin.serialization`). |
 | `app/build.gradle.kts` (A2) | Applied `alias(libs.plugins.kotlin.serialization)`. |
 | `app/src/test/.../feature/verification/presentation/VerificationFormViewModelTest.kt` (A2) | Replaced 3 Gson nav-arg decode tests with 4 `GetLicenseRecordUseCase`-driven tests (Loaded / NotFound / Error / blank-arg fall-through). Save-flow tests re-pinned. 8 → 11 tests. |
+| `app/src/main/.../feature/auth/data/network/AuthorizationInterceptor.kt` (Q4) | Removed unused `kotlinx.coroutines.runBlocking` + `Dispatchers` + `UserDao` imports left over from a partial refactor. |
+| `app/src/main/.../feature/verification/data/repository/VerificationRepositoryImpl.kt` (Q4 + Q2) | Removed duplicate `withContext` import; deleted commented-out `FeatureType.ScanQr` block. Re-ordered `FeatureType` / `VerificationFeature` imports alphabetically. |
+| `app/src/main/.../feature/verification/data/repository/VerifiedRepositoryImpl.kt` (Q2) | Deleted commented-out defensive `licenseStatus == "Active"` early-return; UI/use-case layer enforces the same. |
+| `app/src/main/.../feature/verification/presentation/RecordDetailScreen.kt` (Q1) | Replaced `bitmap = imageBitmap!!` with a captured local `currentBitmap` so the smart cast is checked. |
+| `app/src/main/.../feature/scan/presentation/QrScanScreen.kt` (U2) | Migrated `collectAsState()` → `collectAsStateWithLifecycle()` so the camera screen stops collecting when the lifecycle is paused. |
+| `app/src/main/.../feature/auth/data/di/AuthDataModule.kt` (N5) | Set explicit OkHttp timeouts: `connect 15s`, `read 30s`, `write 30s` (defaults are 10s across the board) to keep production behavior predictable on poor cellular networks. |
 
 ---
 
@@ -212,6 +218,7 @@ Pick one based on appetite — the test foundation is broad enough now that any 
    - PR C: `signingConfigs` skeleton with credentials from `~/.gradle/gradle.properties`. Needs a real keystore from the user. Required to package a signed release APK; the unsigned APK from PR B is sufficient for the smoke test via `adb install -t`.
    - ~~`buildConfigField BASE_URL` per build type (audit C1).~~ ✅ Landed.
    - ~~Type-safe Compose navigation + drop Gson nav payloads (audit A2).~~ ✅ Landed across two commits: (a) pass IDs through nav args + re-fetch in destination VMs; (b) `@Serializable` route types via `kotlin-serialization` plugin.
+   - ~~Trivial cleanups bundle (Q1, Q2, Q4, N5, U2).~~ ✅ Landed: `!!` removed from `RecordDetailScreen`, dead commented blocks pruned in `VerificationRepositoryImpl` + `VerifiedRepositoryImpl`, unused/duplicate imports cleaned, `collectAsState` → `collectAsStateWithLifecycle` in `QrScanScreen`, explicit OkHttp timeouts (15/30/30s).
 2. ~~**Verification-DB encryption** (Phase 2).~~ ✅ Landed. SQLCipher 4.15.0 (`net.zetetic:sqlcipher-android`) wired into both `auth.db` and `scan.db` via `Room.databaseBuilder(...).openHelperFactory(SupportOpenHelperFactory(passphrase, null, false))`. Passphrase is a 256-bit `SecureRandom` value persisted in a dedicated EncryptedSharedPreferences file (`db_keys`). Pre-SQLCipher unencrypted DB files are wiped one-shot by `DatabaseMigrationGuard` from `Application.onCreate()`. Trade-off: existing installs lose cached license records + unsynced verified records on first launch after upgrade — acceptable per the existing `fallbackToDestructiveMigration()` posture, and the auth token (in EncryptedSharedPreferences) survives so users do not have to re-authenticate. Runtime smoke test still pending (same caveat as PR B). The new SQLCipher artifact, along with bumped CameraX (1.5.3) and ML Kit barcode-scanning (17.3.0), also resolves the Google Play **16 KB page-size requirement** (effective 2025-11-01 for Android 15+ targets) — see §9.
 3. **Sprint 6 — finish verification ViewModel coverage.** `SyncHistoryViewModel`, `ReportIrregularityViewModel`, `VerifiedListViewModel`, `VerificationViewModel`. Same pattern as Sprint 5; ~15–20 tests.
 4. **Address open follow-up #2** (consolidate `VerificationRepository.getUserProfile()` with the profile path). Small security-adjacent cleanup.

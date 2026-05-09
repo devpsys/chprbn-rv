@@ -26,6 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -41,6 +42,12 @@ object AuthDataModule {
         authorizationInterceptor: AuthorizationInterceptor
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
+            // Explicit timeouts so production behavior on poor cellular networks is
+            // predictable. OkHttp defaults are 10s across the board; the read budget is
+            // raised to absorb the slower mobile-API responses (license lookup + sync).
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(authorizationInterceptor)
 
         if (BuildConfig.DEBUG) {

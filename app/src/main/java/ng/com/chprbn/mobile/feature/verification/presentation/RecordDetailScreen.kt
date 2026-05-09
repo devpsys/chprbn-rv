@@ -398,6 +398,9 @@ private fun PractitionerPhotoBase64(photoPayload: String?) {
         imageBitmap = bmp?.asImageBitmap()
     }
 
+    // Capture into a local so the smart cast inside `when` is checked — Compose's
+    // mutableStateOf delegate breaks the smart cast on the property itself.
+    val currentBitmap = imageBitmap
     when {
         decoding -> CircularProgressIndicator(
             modifier = Modifier.size(40.dp),
@@ -405,8 +408,8 @@ private fun PractitionerPhotoBase64(photoPayload: String?) {
             strokeWidth = 3.dp
         )
 
-        imageBitmap != null -> Image(
-            bitmap = imageBitmap!!,
+        currentBitmap != null -> Image(
+            bitmap = currentBitmap,
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop

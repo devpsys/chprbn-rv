@@ -46,8 +46,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -83,7 +83,7 @@ fun QrScanScreen(
     onQrScanned: (String) -> Unit = {},
     manualEntryButtonLabel: String = "Enter License Manually",
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(uiState.scannedRegistrationNumber) {
         uiState.scannedRegistrationNumber?.let { registrationNumber ->
             onQrScanned(registrationNumber)

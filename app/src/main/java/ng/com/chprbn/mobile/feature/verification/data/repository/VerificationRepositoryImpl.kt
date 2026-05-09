@@ -2,12 +2,11 @@ package ng.com.chprbn.mobile.feature.verification.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
-import ng.com.chprbn.mobile.feature.verification.domain.model.VerificationFeature
 import ng.com.chprbn.mobile.feature.verification.domain.model.FeatureType
+import ng.com.chprbn.mobile.feature.verification.domain.model.VerificationFeature
 import ng.com.chprbn.mobile.feature.verification.domain.repository.VerificationRepository
 import javax.inject.Inject
 
@@ -29,12 +28,6 @@ class VerificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getFeatures(): List<VerificationFeature> = listOf(
-//            VerificationFeature(
-//                id = FeatureType.ScanQr,
-//                title = "Scan License QR",
-//                subtitle = "Validate practitioner credentials",
-//                isPrimary = true
-//            ),
             VerificationFeature(
                 id = FeatureType.VerifiedList,
                 title = "Verified Practitioners",
