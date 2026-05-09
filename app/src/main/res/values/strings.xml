@@ -234,4 +234,13 @@
     <string name="sync_history_filter_all">All</string>
     <string name="sync_history_filter_synced">Synced</string>
     <string name="sync_history_filter_failed">Failed</string>
+
+    <!-- ============== QR scan ============== -->
+    <string name="scan_instruction">Position the practitioner\'s QR within the frame</string>
+    <string name="scan_torch_toggle_cd">Toggle Torch</string>
+    <string name="scan_status_waiting">Waiting for QR code…</string>
+    <string name="scan_status_label">Scanning status</string>
+    <string name="scan_manual_entry_license_action">Enter License Manually</string>
+    <string name="scan_manual_entry_exam_action">Enter Indexing Manually</string>
+    <string name="scan_help_caption">Having trouble? Ensure the QR code is well-lit and not reflective.</string>
 </resources>

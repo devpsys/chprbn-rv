@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,6 +72,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 
 private const val QR_SCAN_LOG_TAG = "QrScan"
@@ -81,7 +83,7 @@ fun QrScanScreen(
     onManualEntry: () -> Unit = {},
     qrValidator: (String) -> String? = { it },
     onQrScanned: (String) -> Unit = {},
-    manualEntryButtonLabel: String = "Enter License Manually",
+    manualEntryButtonLabel: String = "",
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(uiState.scannedRegistrationNumber) {
@@ -108,7 +110,7 @@ fun QrScanContent(
     onQrScanned: (String) -> Unit,
     onToggleTorch: () -> Unit,
     onManualEntry: () -> Unit,
-    manualEntryButtonLabel: String = "Enter License Manually",
+    manualEntryButtonLabel: String = "",
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -146,7 +148,7 @@ fun QrScanContent(
                 ) {
                     // Instruction Text
                     Text(
-                        text = "Position the practitioner's QR within the frame",
+                        text = stringResource(R.string.scan_instruction),
                         style = TextStyle(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -304,7 +306,7 @@ fun QrScanContent(
                     ) {
                         Icon(
                             imageVector = Icons.Default.FlashlightOn,
-                            contentDescription = "Toggle Torch",
+                            contentDescription = stringResource(R.string.scan_torch_toggle_cd),
                             modifier = Modifier.size(24.dp),
                             tint = Color.White
                         )
@@ -314,9 +316,11 @@ fun QrScanContent(
 
             // Footer (status, progress, manual entry, help) – can be re-used or adjusted as needed
             QrScanFooter(
-                statusText = "Waiting for QR code...",
+                statusText = stringResource(R.string.scan_status_waiting),
                 onManualEntry = onManualEntry,
-                manualEntryButtonLabel = manualEntryButtonLabel,
+                manualEntryButtonLabel = manualEntryButtonLabel.ifBlank {
+                    stringResource(R.string.scan_manual_entry_license_action)
+                },
             )
         }
         }
@@ -460,7 +464,7 @@ private fun CameraScanPreview(
 fun QrScanFooter(
     statusText: String,
     onManualEntry: () -> Unit,
-    manualEntryButtonLabel: String = "Enter License Manually",
+    manualEntryButtonLabel: String = "",
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -480,7 +484,7 @@ fun QrScanFooter(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Scanning status",
+                        text = stringResource(R.string.scan_status_label),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryGreen.copy(alpha = 0.7f)
@@ -532,7 +536,9 @@ fun QrScanFooter(
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = manualEntryButtonLabel,
+                        text = manualEntryButtonLabel.ifBlank {
+                            stringResource(R.string.scan_manual_entry_license_action)
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -541,7 +547,7 @@ fun QrScanFooter(
             }
 
             Text(
-                text = "Having trouble? Ensure the QR code is well-lit and not reflective.",
+                text = stringResource(R.string.scan_help_caption),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color(0xFF6B7280),
                 textAlign = TextAlign.Center,

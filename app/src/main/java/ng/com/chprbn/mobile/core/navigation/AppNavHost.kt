@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +25,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamPapersScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
 
 /**
@@ -281,7 +283,7 @@ fun AppNavHost() {
         }
         composable<Routes.ExamScan> {
             QrScanScreen(
-                manualEntryButtonLabel = "Enter Indexing Manually",
+                manualEntryButtonLabel = stringResource(R.string.scan_manual_entry_exam_action),
                 onManualEntry = {
                     navController.navigate(Routes.ManualLicenseEntry(forExam = true))
                 },
