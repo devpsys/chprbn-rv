@@ -3,6 +3,20 @@ package ng.com.chprbn.mobile.core.navigation
 import kotlinx.serialization.Serializable
 
 /**
+ * Identifies which feature opened the QR scan / manual-entry flow so the
+ * downstream destinations (scan result *and* manual-entry verify) can
+ * route to the correct screen for that flow.
+ */
+enum class ScanSource {
+    /** License verification flow (scan -> RecordDetail). */
+    Verification,
+    /** Exam attendance indexing (scan -> CandidateScanResult). */
+    ExamAttendance,
+    /** Practical assessment scoring (scan -> AssessmentPracticalSections). */
+    AssessmentScoring,
+}
+
+/**
  * Type-safe navigation route declarations. Each destination is a @Serializable
  * Kotlin object (no args) or data class (with args). Compose Nav 2.8+ generates
  * the route patterns and arg encoding from the @Serializable descriptors, so:
@@ -54,11 +68,18 @@ object Routes {
     data object Scan
 
     /**
-     * Manual license entry. [forExam] = true switches the copy from license
-     * verification to exam attendance indexing.
+     * Manual license / candidate-id entry. Mirrors the scan flow: the
+     * destination on verify is determined by [source], the same way the
+     * QR scan screens hand off to different screens per source.
+     *
+     * [scheduleId] is only meaningful for [ScanSource.AssessmentScoring]
+     * (carried through to the practical-sections destination).
      */
     @Serializable
-    data class ManualLicenseEntry(val forExam: Boolean = false)
+    data class ManualLicenseEntry(
+        val source: ScanSource = ScanSource.Verification,
+        val scheduleId: String? = null,
+    )
 
     @Serializable
     data object Sync

@@ -17,14 +17,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -166,6 +168,7 @@ fun VerificationFormContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OfficerRemarkDropdown(
     selectedRemark: String,
@@ -182,14 +185,24 @@ private fun OfficerRemarkDropdown(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        Box(modifier = Modifier.fillMaxWidth()) {
+        // ExposedDropdownMenuBox + menuAnchor wires the read-only field
+        // to the menu's open/close and sizes the menu to the field
+        // width. Replaces a prior `Modifier.clickable { expanded = true }`
+        // on the field — OutlinedTextField swallowed the touch via its
+        // own focus-request handling, so the click never reached the
+        // modifier and the menu never opened.
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             OutlinedTextField(
                 value = selectedRemark,
                 onValueChange = {},
                 readOnly = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = true },
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                 placeholder = {
                     Text(
                         stringResource(R.string.verification_form_officer_remark_placeholder),
@@ -199,11 +212,7 @@ private fun OfficerRemarkDropdown(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = null,
-                        tint = PrimaryGreen.copy(alpha = 0.8f)
-                    )
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 },
                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                     focusedIndicatorColor = PrimaryGreen,
@@ -215,10 +224,9 @@ private fun OfficerRemarkDropdown(
                     cursorColor = PrimaryGreen
                 )
             )
-            DropdownMenu(
+            ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth()
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(

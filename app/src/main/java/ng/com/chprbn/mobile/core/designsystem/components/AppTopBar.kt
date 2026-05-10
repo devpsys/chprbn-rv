@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,7 +40,15 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 fun AppTopBar(
     onNotifications: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    // statusBarsPadding keeps the bar below the system status bar on
+    // edge-to-edge displays (enforced from API 35+). Scaffold-based
+    // callers consume the inset before children render, so this becomes
+    // a no-op there and the bar still sits flush below their topBar slot.
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

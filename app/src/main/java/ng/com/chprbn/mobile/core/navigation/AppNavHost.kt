@@ -267,21 +267,54 @@ fun AppNavHost() {
         composable<Routes.ManualLicenseEntry> { backStackEntry ->
             val args: Routes.ManualLicenseEntry = backStackEntry.toRoute()
             ManualEntryScreen(
-                forExamIndexing = args.forExam,
+                // Anything other than Verification uses the exam/indexing
+                // copy variant; the strings are shared between exam
+                // attendance and assessment indexing.
+                forExamIndexing = args.source != ScanSource.Verification,
                 onBack = {
-                    if (!navController.popBackStack<Routes.ExamScan>(inclusive = true)) {
-                        navController.popBackStack<Routes.Scan>(inclusive = true)
+                    // Pop the originating scan screen (if it's on the
+                    // back stack) so back doesn't bounce through the
+                    // camera screen. Falls back to a plain pop when
+                    // manual entry was opened directly (e.g. from
+                    // RecordDetail to re-enter a license).
+                    val popped = when (args.source) {
+                        ScanSource.Verification ->
+                            navController.popBackStack<Routes.Scan>(inclusive = true)
+                        ScanSource.ExamAttendance ->
+                            navController.popBackStack<Routes.ExamScan>(inclusive = true)
+                        ScanSource.AssessmentScoring ->
+                            navController.popBackStack<Routes.AssessmentScan>(inclusive = true)
                     }
+                    if (!popped) navController.popBackStack()
                 },
                 onVerifyLicense = { enteredLicense ->
-                    navController.navigate(Routes.RecordDetail(enteredLicense))
+                    // Mirror the QR scan flow: the destination is chosen
+                    // by source so manual entry behaves the same as a
+                    // successful camera scan.
+                    when (args.source) {
+                        ScanSource.Verification ->
+                            navController.navigate(Routes.RecordDetail(enteredLicense))
+                        ScanSource.ExamAttendance ->
+                            navController.navigate(Routes.CandidateScanResult(enteredLicense))
+                        ScanSource.AssessmentScoring ->
+                            navController.navigate(
+                                Routes.AssessmentPracticalSections(
+                                    scheduleId = args.scheduleId.orEmpty(),
+                                    candidateId = enteredLicense,
+                                ),
+                            ) {
+                                popUpTo<Routes.ManualLicenseEntry> { inclusive = true }
+                            }
+                    }
                 },
             )
         }
         composable<Routes.Scan> {
             QrScanScreen(
                 onManualEntry = {
-                    navController.navigate(Routes.ManualLicenseEntry(forExam = false))
+                    navController.navigate(
+                        Routes.ManualLicenseEntry(source = ScanSource.Verification),
+                    )
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
@@ -293,7 +326,9 @@ fun AppNavHost() {
             QrScanScreen(
                 manualEntryButtonLabel = stringResource(R.string.scan_manual_entry_exam_action),
                 onManualEntry = {
-                    navController.navigate(Routes.ManualLicenseEntry(forExam = true))
+                    navController.navigate(
+                        Routes.ManualLicenseEntry(source = ScanSource.ExamAttendance),
+                    )
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
@@ -334,7 +369,9 @@ fun AppNavHost() {
                     navController.navigate(Routes.ReportIrregularity(record.registrationNumber))
                 },
                 onManualEntry = {
-                    navController.navigate(Routes.ManualLicenseEntry(forExam = false))
+                    navController.navigate(
+                        Routes.ManualLicenseEntry(source = ScanSource.Verification),
+                    )
                 }
             )
         }
@@ -375,7 +412,12 @@ fun AppNavHost() {
             QrScanScreen(
                 manualEntryButtonLabel = stringResource(R.string.scan_manual_entry_exam_action),
                 onManualEntry = {
-                    navController.navigate(Routes.ManualLicenseEntry(forExam = true))
+                    navController.navigate(
+                        Routes.ManualLicenseEntry(
+                            source = ScanSource.AssessmentScoring,
+                            scheduleId = args.scheduleId,
+                        ),
+                    )
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { candidateId ->
