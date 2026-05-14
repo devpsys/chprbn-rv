@@ -1,5 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalSectionDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.SectionQuestionDto
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.SectionQuestionEntity
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
@@ -38,3 +40,28 @@ internal fun SectionQuestion.toEntity(): SectionQuestionEntity = SectionQuestion
     imageUrl = imageUrl,
     maxScore = maxScore,
 )
+
+internal fun PracticalSectionDto.toEntity(): PracticalSectionEntity? {
+    val safeId = id?.takeIf { it.isNotBlank() } ?: return null
+    val safeScheduleId = scheduleId?.takeIf { it.isNotBlank() } ?: return null
+    return PracticalSectionEntity(
+        id = safeId,
+        scheduleId = safeScheduleId,
+        title = title.orEmpty(),
+        subtitle = subtitle.orEmpty(),
+        ordering = ordering ?: 0,
+    )
+}
+
+internal fun SectionQuestionDto.toEntity(): SectionQuestionEntity? {
+    val safeId = id?.takeIf { it.isNotBlank() } ?: return null
+    val safeSectionId = sectionId?.takeIf { it.isNotBlank() } ?: return null
+    return SectionQuestionEntity(
+        id = safeId,
+        sectionId = safeSectionId,
+        number = number ?: 0,
+        prompt = prompt.orEmpty(),
+        imageUrl = imageUrl,
+        maxScore = maxScore ?: 0,
+    )
+}
