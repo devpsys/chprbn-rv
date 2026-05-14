@@ -43,6 +43,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!--
+            Disable WorkManager's default androidx.startup initializer so the
+            HiltWorkerFactory wired via ChprbnApplication.workManagerConfiguration
+            is used instead. Without this, WorkManager initialises with the
+            default factory before Hilt is ready and @HiltWorker injection fails.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

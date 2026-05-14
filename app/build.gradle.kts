@@ -65,6 +65,59 @@ android {
 // "No sources". Revisit when Kover ships AGP 9 support, or downgrade AGP.
 // kover { currentProject { createVariant("appDebug") { add("debug") } } }
 
+// Domain-layer import enforcement.
+//
+// Files under core/domain/ and feature/<name>/domain/ must stay framework-free:
+// no Room, Retrofit, Gson, Android, Compose, and no leakage into a feature's
+// data/ package. This task scans those source files and fails the build if any
+// forbidden import line is present. Cheap to run, no external rule engine
+// (Detekt) required.
+val verifyDomainImports by tasks.registering {
+    group = "verification"
+    description = "Fails the build if domain/** Kotlin files import forbidden packages."
+
+    val domainSources = fileTree(layout.projectDirectory.dir("src/main/java")) {
+        include(
+            "**/feature/*/domain/**/*.kt",
+            "**/core/domain/**/*.kt"
+        )
+    }
+    inputs.files(domainSources)
+
+    doLast {
+        val forbidden = listOf(
+            Regex("""^\s*import\s+ng\.com\.chprbn\.mobile\.feature\.[^.]+\.data\.""")
+                to "feature.<name>.data.*  (data layer)",
+            Regex("""^\s*import\s+androidx\.room\.""")          to "androidx.room.*",
+            Regex("""^\s*import\s+retrofit2\.""")               to "retrofit2.*",
+            Regex("""^\s*import\s+com\.google\.gson\.""")       to "com.google.gson.*",
+            Regex("""^\s*import\s+android\.""")                 to "android.*",
+            Regex("""^\s*import\s+androidx\.compose\.""")       to "androidx.compose.*"
+        )
+
+        val violations = mutableListOf<String>()
+        domainSources.forEach { file ->
+            file.useLines { lines ->
+                lines.forEachIndexed { idx, line ->
+                    forbidden.forEach { (pattern, label) ->
+                        if (pattern.containsMatchIn(line)) {
+                            violations += "${file.relativeTo(rootDir)}:${idx + 1}  forbidden import [$label]  →  ${line.trim()}"
+                        }
+                    }
+                }
+            }
+        }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Domain-layer import violations (see docs/exam-assessment-clean-architecture-plan.md §5.4):\n" +
+                    violations.joinToString(separator = "\n")
+            )
+        }
+    }
+}
+
+tasks.named("check") { dependsOn(verifyDomainImports) }
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -93,6 +146,11 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     ksp(libs.hilt.compiler)
 
+    // WorkManager + Hilt integration (background sync engine)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
 
     // CameraX + ML Kit for QR scanning
     implementation(libs.androidx.camera.core)
@@ -120,6 +178,9 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.work.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
