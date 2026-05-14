@@ -8,7 +8,19 @@ package ng.com.chprbn.mobile.feature.assessment.domain.model
  * - `Complete`: every question in the section is scored.
  *
  * Derived in the repository from the score row count vs section's question
- * count; not persisted. Mirrored by the presentation enum of the same name —
- * the mapper at the presentation seam is a 1:1 copy.
+ * count via [from]; not persisted. Mirrored by the presentation enum of the
+ * same name — the mapper at the presentation seam is a 1:1 copy.
  */
-enum class PracticalSectionStatus { NotStarted, Incomplete, Complete }
+enum class PracticalSectionStatus {
+    NotStarted,
+    Incomplete,
+    Complete;
+
+    companion object {
+        fun from(scoredCount: Int, totalCount: Int): PracticalSectionStatus = when {
+            scoredCount <= 0 -> NotStarted
+            scoredCount >= totalCount -> Complete
+            else -> Incomplete
+        }
+    }
+}
