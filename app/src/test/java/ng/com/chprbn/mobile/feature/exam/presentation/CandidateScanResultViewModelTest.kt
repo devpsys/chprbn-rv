@@ -3,20 +3,30 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
+import ng.com.chprbn.mobile.feature.exam.domain.usecase.LookupCandidateByExamNumberUseCase
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 class CandidateScanResultViewModelTest {
 
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
     private lateinit var context: Context
+    private val lookupCandidate = mockk<LookupCandidateByExamNumberUseCase>().also {
+        coEvery { it(any()) } returns null
+    }
 
     @Before
     fun setUp() {
@@ -60,7 +70,7 @@ class CandidateScanResultViewModelTest {
     fun `state derives exam number from the scanned payload nav arg`() {
         val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "REG-123"))
 
-        val viewModel = CandidateScanResultViewModel(savedStateHandle, context)
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
 
         assertEquals("Exam Number: REG-123", viewModel.uiState.value.examNumberLine)
     }
@@ -70,7 +80,7 @@ class CandidateScanResultViewModelTest {
         every { Uri.decode("REG%2D123") } returns "REG-123"
         val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "REG%2D123"))
 
-        val viewModel = CandidateScanResultViewModel(savedStateHandle, context)
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
 
         assertEquals("Exam Number: REG-123", viewModel.uiState.value.examNumberLine)
     }
@@ -79,14 +89,14 @@ class CandidateScanResultViewModelTest {
     fun `state trims whitespace around the scanned payload`() {
         val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "  REG-123  "))
 
-        val viewModel = CandidateScanResultViewModel(savedStateHandle, context)
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
 
         assertEquals("Exam Number: REG-123", viewModel.uiState.value.examNumberLine)
     }
 
     @Test
     fun `state falls back to placeholder exam number when nav arg is missing`() {
-        val viewModel = CandidateScanResultViewModel(SavedStateHandle(), context)
+        val viewModel = CandidateScanResultViewModel(SavedStateHandle(), context, lookupCandidate)
 
         assertEquals("Exam Number: ABC-12345-XY", viewModel.uiState.value.examNumberLine)
     }
@@ -95,7 +105,7 @@ class CandidateScanResultViewModelTest {
     fun `state falls back to placeholder exam number when nav arg is blank`() {
         val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "   "))
 
-        val viewModel = CandidateScanResultViewModel(savedStateHandle, context)
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
 
         assertEquals("Exam Number: ABC-12345-XY", viewModel.uiState.value.examNumberLine)
     }
@@ -105,6 +115,7 @@ class CandidateScanResultViewModelTest {
         val viewModel = CandidateScanResultViewModel(
             SavedStateHandle(mapOf("scannedPayload" to "REG-123")),
             context,
+            lookupCandidate,
         )
 
         val state = viewModel.uiState.value

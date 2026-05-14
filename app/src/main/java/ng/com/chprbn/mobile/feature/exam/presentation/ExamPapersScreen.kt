@@ -11,7 +11,7 @@ import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 fun ExamPapersScreen(
     viewModel: ExamPapersViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onOpenPaper: () -> Unit = {},
+    onOpenPaper: (String) -> Unit = {},
     onSyncNow: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

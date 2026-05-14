@@ -117,8 +117,8 @@ fun AppNavHost() {
         composable<Routes.ExamPapers> {
             ExamPapersScreen(
                 onBack = { navController.popBackStack() },
-                onOpenPaper = {
-                    navController.navigate(Routes.ExamPaper)
+                onOpenPaper = { paperId ->
+                    navController.navigate(Routes.ExamPaper(paperId))
                 },
                 onSyncNow = { /* TODO: sync attendance */ }
             )

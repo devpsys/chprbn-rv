@@ -66,7 +66,7 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 fun ExamPapersContent(
     uiState: ExamPapersUiState,
     onBack: () -> Unit,
-    onOpenPaper: () -> Unit,
+    onOpenPaper: (String) -> Unit,
     onSyncNow: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -124,7 +124,7 @@ fun ExamPapersContent(
                 uiState.papers.forEach { paper ->
                     PaperCard(
                         paper = paper,
-                        onOpenPaper = onOpenPaper
+                        onOpenPaper = { onOpenPaper(paper.id) }
                     )
                 }
             }

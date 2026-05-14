@@ -49,8 +49,9 @@ object Routes {
     @Serializable
     data object ExamStatistics
 
+    /** Single paper's detail screen. [paperId] is captured via SavedStateHandle. */
     @Serializable
-    data object ExamPaper
+    data class ExamPaper(val paperId: String)
 
     @Serializable
     data object ExamCandidates
