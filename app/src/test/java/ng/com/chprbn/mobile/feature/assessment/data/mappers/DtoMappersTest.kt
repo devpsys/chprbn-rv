@@ -6,7 +6,6 @@ import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentCandidateDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentPaperDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentScheduleDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalSectionDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ScheduleCandidateAssignmentDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.SectionQuestionDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -15,15 +14,15 @@ import org.junit.Test
 /**
  * Covers two invariants the speculative DTO mappers must hold:
  *
- * 1. A well-formed DTO maps to the expected entity.
+ * 1. A well-formed DTO maps to the expected domain object.
  * 2. A DTO missing a required identity field (e.g. `id`, `schedule_id`)
- *    returns `null` — the repository drops unmappable rows rather than
- *    persisting placeholders.
+ *    returns `null` — callers drop unmappable rows rather than passing
+ *    placeholders down to the repository.
  */
 class DtoMappersTest {
 
     @Test
-    fun `schedule dto maps to entity with Synced default status`() {
+    fun `schedule dto maps to domain with Synced default status`() {
         val dto = AssessmentScheduleDto(
             id = "PE-2024",
             title = "PE-2024 / Practical Exam",
@@ -32,31 +31,31 @@ class DtoMappersTest {
             centerId = "C-1",
         )
 
-        val entity = dto.toEntity()!!
+        val domain = dto.toDomain()!!
 
-        assertEquals("PE-2024", entity.id)
-        assertEquals("PE-2024 / Practical Exam", entity.title)
-        assertEquals(1_700_000_000_000L, entity.date)
-        assertEquals(PaperKind.Practical.name, entity.paperKind)
-        assertEquals("C-1", entity.centerId)
-        assertEquals(SyncStatus.Synced.name, entity.syncStatus)
+        assertEquals("PE-2024", domain.id)
+        assertEquals("PE-2024 / Practical Exam", domain.title)
+        assertEquals(1_700_000_000_000L, domain.date)
+        assertEquals(PaperKind.Practical, domain.paperKind)
+        assertEquals("C-1", domain.centerId)
+        assertEquals(SyncStatus.Synced, domain.syncStatus)
     }
 
     @Test
     fun `schedule dto missing id returns null`() {
-        assertNull(AssessmentScheduleDto(id = null).toEntity())
-        assertNull(AssessmentScheduleDto(id = "   ").toEntity())
+        assertNull(AssessmentScheduleDto(id = null).toDomain())
+        assertNull(AssessmentScheduleDto(id = "   ").toDomain())
     }
 
     @Test
     fun `schedule dto with unknown paper kind degrades to Theory`() {
-        val entity = AssessmentScheduleDto(id = "x", paperKind = "garbage").toEntity()!!
+        val domain = AssessmentScheduleDto(id = "x", paperKind = "garbage").toDomain()!!
 
-        assertEquals(PaperKind.Theory.name, entity.paperKind)
+        assertEquals(PaperKind.Theory, domain.paperKind)
     }
 
     @Test
-    fun `paper dto maps to entity`() {
+    fun `paper dto maps to domain`() {
         val dto = AssessmentPaperDto(
             scheduleId = "PE-2024",
             title = "Paper A",
@@ -68,30 +67,32 @@ class DtoMappersTest {
             heroImageUrl = "https://x/hero.jpg",
         )
 
-        val entity = dto.toEntity()!!
+        val domain = dto.toDomain()!!
 
-        assertEquals("PE-2024", entity.scheduleId)
-        assertEquals("Paper A", entity.title)
-        assertEquals("Hall B", entity.hallName)
-        assertEquals("https://x/hero.jpg", entity.heroImageUrl)
+        assertEquals("PE-2024", domain.scheduleId)
+        assertEquals("Paper A", domain.title)
+        assertEquals("Lagos", domain.facility.name)
+        assertEquals("Hall B", domain.hall.name)
+        assertEquals("https://x/hero.jpg", domain.heroImageUrl)
     }
 
     @Test
     fun `paper dto missing scheduleId returns null`() {
-        assertNull(AssessmentPaperDto(scheduleId = null).toEntity())
+        assertNull(AssessmentPaperDto(scheduleId = null).toDomain())
     }
 
     @Test
     fun `paper dto with missing optional fields defaults to empty strings`() {
-        val entity = AssessmentPaperDto(scheduleId = "x").toEntity()!!
+        val domain = AssessmentPaperDto(scheduleId = "x").toDomain()!!
 
-        assertEquals("", entity.title)
-        assertEquals("", entity.facilityName)
-        assertNull(entity.heroImageUrl)
+        assertEquals("", domain.title)
+        assertEquals("", domain.facility.name)
+        assertEquals("", domain.hall.address)
+        assertNull(domain.heroImageUrl)
     }
 
     @Test
-    fun `section dto maps to entity`() {
+    fun `section dto maps to domain`() {
         val dto = PracticalSectionDto(
             id = "sec-A",
             scheduleId = "PE-2024",
@@ -100,21 +101,21 @@ class DtoMappersTest {
             ordering = 1,
         )
 
-        val entity = dto.toEntity()!!
+        val domain = dto.toDomain()!!
 
-        assertEquals("sec-A", entity.id)
-        assertEquals("PE-2024", entity.scheduleId)
-        assertEquals(1, entity.ordering)
+        assertEquals("sec-A", domain.id)
+        assertEquals("PE-2024", domain.scheduleId)
+        assertEquals(1, domain.ordering)
     }
 
     @Test
     fun `section dto missing id or scheduleId returns null`() {
-        assertNull(PracticalSectionDto(id = null, scheduleId = "x").toEntity())
-        assertNull(PracticalSectionDto(id = "x", scheduleId = null).toEntity())
+        assertNull(PracticalSectionDto(id = null, scheduleId = "x").toDomain())
+        assertNull(PracticalSectionDto(id = "x", scheduleId = null).toDomain())
     }
 
     @Test
-    fun `question dto maps to entity`() {
+    fun `question dto maps to domain`() {
         val dto = SectionQuestionDto(
             id = "q1",
             sectionId = "sec-A",
@@ -124,24 +125,24 @@ class DtoMappersTest {
             maxScore = 10,
         )
 
-        val entity = dto.toEntity()!!
+        val domain = dto.toDomain()!!
 
-        assertEquals("q1", entity.id)
-        assertEquals("sec-A", entity.sectionId)
-        assertEquals(1, entity.number)
-        assertEquals(10, entity.maxScore)
+        assertEquals("q1", domain.id)
+        assertEquals("sec-A", domain.sectionId)
+        assertEquals(1, domain.number)
+        assertEquals(10, domain.maxScore)
     }
 
     @Test
     fun `question dto null number and maxScore default to zero`() {
-        val entity = SectionQuestionDto(id = "q", sectionId = "s").toEntity()!!
+        val domain = SectionQuestionDto(id = "q", sectionId = "s").toDomain()!!
 
-        assertEquals(0, entity.number)
-        assertEquals(0, entity.maxScore)
+        assertEquals(0, domain.number)
+        assertEquals(0, domain.maxScore)
     }
 
     @Test
-    fun `candidate dto maps to entity`() {
+    fun `candidate dto maps to domain`() {
         val dto = AssessmentCandidateDto(
             id = "c1",
             examNumber = "EX-001",
@@ -149,32 +150,16 @@ class DtoMappersTest {
             photoUrl = "https://x/1.jpg",
         )
 
-        val entity = dto.toEntity()!!
+        val domain = dto.toDomain()!!
 
-        assertEquals("c1", entity.id)
-        assertEquals("EX-001", entity.examNumber)
-        assertEquals("Jane Doe", entity.fullName)
-        assertEquals("https://x/1.jpg", entity.photoUrl)
+        assertEquals("c1", domain.id)
+        assertEquals("EX-001", domain.examNumber)
+        assertEquals("Jane Doe", domain.fullName)
+        assertEquals("https://x/1.jpg", domain.photoUrl)
     }
 
     @Test
     fun `candidate dto missing id returns null`() {
-        assertNull(AssessmentCandidateDto(id = null).toEntity())
-    }
-
-    @Test
-    fun `assignment dto maps to entity`() {
-        val dto = ScheduleCandidateAssignmentDto(scheduleId = "PE-2024", candidateId = "c1")
-
-        val entity = dto.toEntity()!!
-
-        assertEquals("PE-2024", entity.scheduleId)
-        assertEquals("c1", entity.candidateId)
-    }
-
-    @Test
-    fun `assignment dto missing either id returns null`() {
-        assertNull(ScheduleCandidateAssignmentDto(scheduleId = null, candidateId = "c").toEntity())
-        assertNull(ScheduleCandidateAssignmentDto(scheduleId = "s", candidateId = null).toEntity())
+        assertNull(AssessmentCandidateDto(id = null).toDomain())
     }
 }

@@ -2,10 +2,8 @@ package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentCandidateDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ScheduleCandidateAssignmentDto
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateRowProjection
-import ng.com.chprbn.mobile.feature.assessment.data.local.ScheduleCandidateAssignmentEntity
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateRow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
 
@@ -46,21 +44,12 @@ internal fun AssessmentCandidateRowProjection.toDomain(
     syncStatus = syncStatus.toSyncStatus(),
 )
 
-internal fun AssessmentCandidateDto.toEntity(): AssessmentCandidateEntity? {
+internal fun AssessmentCandidateDto.toDomain(): Candidate? {
     val safeId = id?.takeIf { it.isNotBlank() } ?: return null
-    return AssessmentCandidateEntity(
+    return Candidate(
         id = safeId,
         examNumber = examNumber.orEmpty(),
         fullName = fullName.orEmpty(),
         photoUrl = photoUrl,
-    )
-}
-
-internal fun ScheduleCandidateAssignmentDto.toEntity(): ScheduleCandidateAssignmentEntity? {
-    val safeScheduleId = scheduleId?.takeIf { it.isNotBlank() } ?: return null
-    val safeCandidateId = candidateId?.takeIf { it.isNotBlank() } ?: return null
-    return ScheduleCandidateAssignmentEntity(
-        scheduleId = safeScheduleId,
-        candidateId = safeCandidateId,
     )
 }

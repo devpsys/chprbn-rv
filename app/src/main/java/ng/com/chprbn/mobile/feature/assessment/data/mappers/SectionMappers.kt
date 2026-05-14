@@ -41,10 +41,10 @@ internal fun SectionQuestion.toEntity(): SectionQuestionEntity = SectionQuestion
     maxScore = maxScore,
 )
 
-internal fun PracticalSectionDto.toEntity(): PracticalSectionEntity? {
+internal fun PracticalSectionDto.toDomain(): PracticalSection? {
     val safeId = id?.takeIf { it.isNotBlank() } ?: return null
     val safeScheduleId = scheduleId?.takeIf { it.isNotBlank() } ?: return null
-    return PracticalSectionEntity(
+    return PracticalSection(
         id = safeId,
         scheduleId = safeScheduleId,
         title = title.orEmpty(),
@@ -53,10 +53,10 @@ internal fun PracticalSectionDto.toEntity(): PracticalSectionEntity? {
     )
 }
 
-internal fun SectionQuestionDto.toEntity(): SectionQuestionEntity? {
+internal fun SectionQuestionDto.toDomain(): SectionQuestion? {
     val safeId = id?.takeIf { it.isNotBlank() } ?: return null
     val safeSectionId = sectionId?.takeIf { it.isNotBlank() } ?: return null
-    return SectionQuestionEntity(
+    return SectionQuestion(
         id = safeId,
         sectionId = safeSectionId,
         number = number ?: 0,

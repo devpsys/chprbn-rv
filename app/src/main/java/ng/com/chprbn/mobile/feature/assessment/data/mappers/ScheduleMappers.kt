@@ -24,22 +24,22 @@ internal fun AssessmentSchedule.toEntity(): AssessmentScheduleEntity = Assessmen
 )
 
 /**
- * Materialises a server-side schedule row into the local entity. The
+ * Materialises a server-side schedule row into the domain shape. The
  * server doesn't know about local sync state, so `syncStatus` starts at
- * `Synced` — score writes against this schedule later flip it via
- * `AssessmentScheduleDao.updateSyncStatus`.
+ * `Synced` — score writes against this schedule later flip it via the
+ * repository.
  *
- * Returns `null` when [id] is missing; the caller (the repository) should
- * drop unmappable rows rather than persisting placeholders.
+ * Returns `null` when [id] is missing; the caller drops unmappable rows
+ * rather than persisting placeholders.
  */
-internal fun AssessmentScheduleDto.toEntity(): AssessmentScheduleEntity? {
+internal fun AssessmentScheduleDto.toDomain(): AssessmentSchedule? {
     val safeId = id?.takeIf { it.isNotBlank() } ?: return null
-    return AssessmentScheduleEntity(
+    return AssessmentSchedule(
         id = safeId,
         title = title.orEmpty(),
         date = date ?: 0L,
-        paperKind = paperKind.orEmpty().toPaperKind().toDbValue(),
+        paperKind = paperKind.orEmpty().toPaperKind(),
         centerId = centerId.orEmpty(),
-        syncStatus = SyncStatus.Synced.toDbValue(),
+        syncStatus = SyncStatus.Synced,
     )
 }

@@ -27,16 +27,14 @@ internal fun AssessmentPaper.toEntity(): AssessmentPaperEntity = AssessmentPaper
 )
 
 /** Returns `null` when the wire payload omits `schedule_id`. */
-internal fun AssessmentPaperDto.toEntity(): AssessmentPaperEntity? {
+internal fun AssessmentPaperDto.toDomain(): AssessmentPaper? {
     val safeScheduleId = scheduleId?.takeIf { it.isNotBlank() } ?: return null
-    return AssessmentPaperEntity(
+    return AssessmentPaper(
         scheduleId = safeScheduleId,
         title = title.orEmpty(),
         statusLabel = statusLabel.orEmpty(),
-        facilityName = facilityName.orEmpty(),
-        facilityAddress = facilityAddress.orEmpty(),
-        hallName = hallName.orEmpty(),
-        hallAddress = hallAddress.orEmpty(),
+        facility = Facility(name = facilityName.orEmpty(), address = facilityAddress.orEmpty()),
+        hall = Hall(name = hallName.orEmpty(), address = hallAddress.orEmpty()),
         heroImageUrl = heroImageUrl,
     )
 }
