@@ -20,12 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.HorizontalDivider
@@ -129,7 +129,7 @@ private fun ExamPaperTopBar(onBack: () -> Unit) {
                     .clip(RoundedCornerShape(999.dp))
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.exam_paper_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
@@ -272,7 +272,7 @@ private fun PaperSessionCard(uiState: ExamPaperUiState) {
                     color = scheme.primary.copy(alpha = 0.25F)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.MenuBook,
+                        imageVector = Icons.AutoMirrored.Outlined.MenuBook,
                         contentDescription = null,
                         tint = scheme.primary,
                         modifier = Modifier.padding(8.dp)

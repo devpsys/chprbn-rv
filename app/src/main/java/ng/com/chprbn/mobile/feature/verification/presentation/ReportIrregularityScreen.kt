@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -449,7 +450,7 @@ private fun RemarkDropdown(
                 readOnly = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
                 placeholder = {
                     Text(
                         stringResource(R.string.irregularity_field_remark_placeholder),

@@ -53,9 +53,22 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    // Opt in to Kotlin's upcoming default for constructor-parameter
+    // annotations: apply to both the value parameter AND the generated
+    // property/field. Silences ~7 transitional warnings at @Inject /
+    // @TypeConverters sites. Harmless: Hilt only reads param-level @Inject,
+    // and Room's @TypeConverters at a backing field is equivalent to at the
+    // value parameter for our cases. See KT-73255.
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
+        }
     }
 
     testOptions {

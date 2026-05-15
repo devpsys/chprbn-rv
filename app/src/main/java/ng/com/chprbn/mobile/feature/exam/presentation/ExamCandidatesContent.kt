@@ -26,7 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -66,7 +66,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.material.icons.outlined.NoteAdd
+import androidx.compose.material.icons.automirrored.outlined.NoteAdd
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 
@@ -151,7 +151,7 @@ private fun ExamCandidatesTopBar(
         ) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.exam_candidates_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
@@ -384,7 +384,7 @@ private fun ExamCandidateItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.NoteAdd,
+                            imageVector = Icons.AutoMirrored.Outlined.NoteAdd,
                             contentDescription = null,
                             tint = scheme.onSurface,
                             modifier = Modifier.size(18.dp)

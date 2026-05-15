@@ -22,8 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
@@ -205,7 +205,7 @@ private fun ExamStatisticsTopBar(
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.exam_statistics_action_back),
                     tint = scheme.primary,
                     modifier = Modifier.size(24.dp)
@@ -275,7 +275,7 @@ private fun SummaryCardsSection(
                 SummaryMetricCard(
                     icon = {
                         Icon(
-                            Icons.Outlined.Assignment,
+                            Icons.AutoMirrored.Outlined.Assignment,
                             null,
                             tint = scheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -337,7 +337,7 @@ private fun SummaryCardsSection(
                     modifier = Modifier.weight(1f),
                     icon = {
                         Icon(
-                            Icons.Outlined.Assignment,
+                            Icons.AutoMirrored.Outlined.Assignment,
                             null,
                             tint = scheme.primary,
                             modifier = Modifier.size(20.dp)

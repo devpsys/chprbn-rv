@@ -22,7 +22,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Business
@@ -445,7 +445,7 @@ private fun SecurityAndSessionSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Logout,
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = null,
                             tint = Color.Red,
                             modifier = Modifier.size(24.dp)
