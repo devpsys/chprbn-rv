@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
+import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateRowProjection
@@ -13,6 +14,7 @@ import ng.com.chprbn.mobile.feature.assessment.domain.model.ProjectScore
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
 import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -120,6 +122,32 @@ class AssessmentMappersTest {
         )
 
         assertEquals(domain, domain.toEntity().toDomain())
+    }
+
+    @Test
+    fun `candidate round-trips`() {
+        val domain = Candidate(
+            id = "c1",
+            examNumber = "EX-2024-001",
+            fullName = "Jane Mukasa Doe",
+            photoUrl = "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        )
+
+        assertEquals(domain, domain.toAssessmentCandidateEntity().toDomain())
+    }
+
+    @Test
+    fun `candidate round-trips with null photoUrl`() {
+        val domain = Candidate(
+            id = "c1",
+            examNumber = "EX-2024-001",
+            fullName = "Jane Doe",
+            photoUrl = null,
+        )
+
+        val back = domain.toAssessmentCandidateEntity().toDomain()
+        assertEquals(domain, back)
+        assertNull(back.photoUrl)
     }
 
     @Test
