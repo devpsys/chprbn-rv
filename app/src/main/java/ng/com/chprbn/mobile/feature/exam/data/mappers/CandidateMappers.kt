@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.exam.data.mappers
 
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.core.network.normalizeApiPhotoToDataUri
 import ng.com.chprbn.mobile.feature.exam.data.dto.CandidateDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.PaperCandidateAssignmentDto
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateEntity
@@ -61,7 +62,10 @@ internal fun CandidateDto.toDomain(): Candidate? {
         id = safeId,
         examNumber = examNumber.orEmpty(),
         fullName = fullName.orEmpty(),
-        photoUrl = photoUrl,
+        // Photo arrives as a Base64 blob per the mobile API contract;
+        // normalize here so the cached value Coil sees is already a
+        // `data:image/...` URI rather than raw bytes.
+        photoUrl = photoUrl.normalizeApiPhotoToDataUri(),
     )
 }
 

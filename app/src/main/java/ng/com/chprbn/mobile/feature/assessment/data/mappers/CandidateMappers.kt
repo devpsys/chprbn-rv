@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
 import ng.com.chprbn.mobile.core.domain.model.Candidate
+import ng.com.chprbn.mobile.core.network.normalizeApiPhotoToDataUri
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentCandidateDto
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateRowProjection
@@ -50,6 +51,9 @@ internal fun AssessmentCandidateDto.toDomain(): Candidate? {
         id = safeId,
         examNumber = examNumber.orEmpty(),
         fullName = fullName.orEmpty(),
-        photoUrl = photoUrl,
+        // Photo arrives as a Base64 blob per the mobile API contract;
+        // normalize here so the cached value Coil sees is already a
+        // `data:image/...` URI rather than raw bytes.
+        photoUrl = photoUrl.normalizeApiPhotoToDataUri(),
     )
 }

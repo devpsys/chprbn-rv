@@ -147,7 +147,7 @@ class DtoMappersTest {
             id = "c1",
             examNumber = "EX-001",
             fullName = "Jane Doe",
-            photoUrl = "https://x/1.jpg",
+            photoUrl = "/9j/4AAQSkZJRg==",
         )
 
         val domain = dto.toDomain()!!
@@ -155,11 +155,40 @@ class DtoMappersTest {
         assertEquals("c1", domain.id)
         assertEquals("EX-001", domain.examNumber)
         assertEquals("Jane Doe", domain.fullName)
-        assertEquals("https://x/1.jpg", domain.photoUrl)
     }
 
     @Test
     fun `candidate dto missing id returns null`() {
         assertNull(AssessmentCandidateDto(id = null).toDomain())
+    }
+
+    @Test
+    fun `candidate dto Base64 photo is wrapped as data URI`() {
+        val domain = AssessmentCandidateDto(
+            id = "c1",
+            examNumber = "EX-001",
+            fullName = "Jane Doe",
+            photoUrl = "/9j/4AAQSkZJRg==",
+        ).toDomain()!!
+
+        assertEquals("data:image/jpeg;base64,/9j/4AAQSkZJRg==", domain.photoUrl)
+    }
+
+    @Test
+    fun `candidate dto existing data URI photo passes through unchanged`() {
+        val dataUri = "data:image/png;base64,iVBORw0KGgo="
+        val domain = AssessmentCandidateDto(
+            id = "c1",
+            photoUrl = dataUri,
+        ).toDomain()!!
+
+        assertEquals(dataUri, domain.photoUrl)
+    }
+
+    @Test
+    fun `candidate dto null photo stays null`() {
+        val domain = AssessmentCandidateDto(id = "c1", photoUrl = null).toDomain()!!
+
+        assertNull(domain.photoUrl)
     }
 }
