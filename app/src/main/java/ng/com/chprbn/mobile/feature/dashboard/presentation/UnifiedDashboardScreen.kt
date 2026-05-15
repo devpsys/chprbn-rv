@@ -87,7 +87,7 @@ private fun DashboardHeader() {
 }
 
 @Composable
-private fun UnifiedDashboardContent(
+internal fun UnifiedDashboardContent(
     uiState: DashboardUiState,
     onNavigateToScan: () -> Unit,
     onNavigateToExamAttendance: () -> Unit,

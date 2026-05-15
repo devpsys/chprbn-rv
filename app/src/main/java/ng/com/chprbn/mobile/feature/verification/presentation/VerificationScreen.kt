@@ -140,7 +140,7 @@ fun VerificationScreen(
 }
 
 @Composable
-private fun VerificationContent(
+internal fun VerificationContent(
     user: User?,
     featureList: List<VerificationFeature>,
     onFeatureClick: (VerificationFeature) -> Unit,
