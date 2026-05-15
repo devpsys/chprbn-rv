@@ -311,12 +311,12 @@ Migrations exist for each feature DB; destructive migration is a **fallback** sa
 
 A cross-feature **outbox queue** in `sync.db` decouples local writes from remote upload:
 
-1. Each feature repository persists locally and enqueues a `SyncJobEntity` keyed by `(entityType, entityKey)` after every write (e.g. `Attendance`, `Remark`, `PracticalScore`, `ProjectScore`).
+1. Each feature repository persists locally and enqueues a `SyncJobEntity` keyed by `(entityType, entityKey)` after every write (`Attendance`, `Remark`, `PracticalScore`, `ProjectScore`, `VerifiedLicense`).
 2. `SyncWorker` (WorkManager, Hilt-injected) drains the queue via `SyncBatchRunner`, dispatching each row to its `SyncEntityHandler` (Hilt multibinding by `SyncEntityType`).
 3. Successful rows are deleted; failures stay in the queue with `attemptCount + 1`, `lastError`, and `lastAttemptAt`, eligible for the next batch.
 4. Partial-success is the normal case: per-row failures never abort the batch. `SyncBatchResult(attempted, succeeded, failed, errors)` surfaces back to the UI.
 
-The verified-list flow predates the outbox and uses sequential `POST practitioners/verified-sync` calls directly; integrating it behind the same engine is on the migration backlog.
+The verified-list flow used to post each row sequentially. It now rides the same outbox queue — `SyncRepositoryImpl` backfills any pending/failed rows missing from `sync_jobs` (idempotent via the unique index) and delegates to `SyncBatchRunner`; the existing `SyncViewModel` / `SyncAllRecordsUseCase` keep their interfaces unchanged.
 
 ---
 
@@ -405,7 +405,6 @@ Open items from the [Phase 3 hardening plan](docs/exam-assessment-clean-architec
 - **Token refresh** flow + secure storage upgrade (EncryptedSharedPreferences / Keystore for refresh tokens).
 - **Certificate pinning** and stricter TLS for production.
 - **Product flavors** for dev / stage / prod base URLs and toggling the `Fake*RemoteSource` fallbacks.
-- **Verified-list onto the outbox queue** — fold the legacy sequential POST flow behind `SyncBatchRunner` so it shares the per-row retry + backoff with exam + assessment.
 - Optional **remote profile refresh** via `DashboardApiService.getProfile()`; the dashboard repository is still cache-first today.
 
 ---

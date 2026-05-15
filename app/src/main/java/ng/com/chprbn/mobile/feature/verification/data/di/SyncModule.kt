@@ -5,10 +5,15 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoMap
+import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
+import ng.com.chprbn.mobile.core.sync.SyncEntityType
+import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
 import ng.com.chprbn.mobile.feature.verification.data.api.VerifiedSyncApiService
 import ng.com.chprbn.mobile.feature.verification.data.repository.SyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.verification.data.source.ApiVerifiedSyncRemoteSource
 import ng.com.chprbn.mobile.feature.verification.data.source.VerifiedSyncRemoteSource
+import ng.com.chprbn.mobile.feature.verification.data.sync.VerifiedLicenseSyncHandler
 import ng.com.chprbn.mobile.feature.verification.domain.repository.SyncRepository
 import retrofit2.Retrofit
 import javax.inject.Singleton
@@ -26,6 +31,13 @@ abstract class SyncModule {
     abstract fun bindVerifiedSyncRemoteSource(
         impl: ApiVerifiedSyncRemoteSource
     ): VerifiedSyncRemoteSource
+
+    @Binds
+    @IntoMap
+    @SyncEntityTypeKey(SyncEntityType.VerifiedLicense)
+    abstract fun bindVerifiedLicenseSyncHandler(
+        impl: VerifiedLicenseSyncHandler,
+    ): SyncEntityHandler
 
     companion object {
         @Provides

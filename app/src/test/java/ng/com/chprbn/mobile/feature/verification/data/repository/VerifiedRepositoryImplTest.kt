@@ -5,6 +5,10 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.core.sync.Clock
+import ng.com.chprbn.mobile.core.sync.SyncEntityType
+import ng.com.chprbn.mobile.core.sync.SyncJobDao
+import ng.com.chprbn.mobile.core.sync.SyncJobEntity
 import ng.com.chprbn.mobile.feature.verification.data.local.VerifiedLicenseDao
 import ng.com.chprbn.mobile.feature.verification.data.local.VerifiedLicenseEntity
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
@@ -18,12 +22,16 @@ import org.junit.Test
 class VerifiedRepositoryImplTest {
 
     private lateinit var verifiedLicenseDao: VerifiedLicenseDao
+    private lateinit var syncJobDao: SyncJobDao
+    private val now = 1_700_000_000_000L
+    private val clock = Clock { now }
     private lateinit var repository: VerifiedRepositoryImpl
 
     @Before
     fun setUp() {
         verifiedLicenseDao = mockk(relaxed = true)
-        repository = VerifiedRepositoryImpl(verifiedLicenseDao)
+        syncJobDao = mockk(relaxed = true)
+        repository = VerifiedRepositoryImpl(verifiedLicenseDao, syncJobDao, clock)
     }
 
     @Test
@@ -48,7 +56,28 @@ class VerifiedRepositoryImplTest {
     }
 
     @Test
-    fun `saveVerifiedLicense returns Error when DAO throws`() = runTest {
+    fun `saveVerifiedLicense enqueues a sync job keyed by registration number`() = runTest {
+        coEvery { verifiedLicenseDao.insertOrUpdate(any()) } returns 1L
+        val jobSlot = slot<SyncJobEntity>()
+        coEvery { syncJobDao.enqueue(capture(jobSlot)) } returns 1L
+
+        repository.saveVerifiedLicense(
+            licenseRecord = sampleRecord(),
+            remark = "Identity confirmed",
+            verifiedAt = 1L,
+        )
+
+        coVerify(exactly = 1) { syncJobDao.enqueue(any()) }
+        with(jobSlot.captured) {
+            assertEquals(SyncEntityType.VerifiedLicense.name, entityType)
+            assertEquals("REG-123", entityKey)
+            assertEquals(now, enqueuedAt)
+            assertEquals("Pending", status)
+        }
+    }
+
+    @Test
+    fun `saveVerifiedLicense returns Error when DAO throws and does not enqueue`() = runTest {
         coEvery {
             verifiedLicenseDao.insertOrUpdate(any())
         } throws RuntimeException("DB locked")
@@ -61,6 +90,7 @@ class VerifiedRepositoryImplTest {
 
         assertTrue(result is SaveVerifiedLicenseResult.Error)
         assertEquals("DB locked", (result as SaveVerifiedLicenseResult.Error).message)
+        coVerify(exactly = 0) { syncJobDao.enqueue(any()) }
     }
 
     @Test

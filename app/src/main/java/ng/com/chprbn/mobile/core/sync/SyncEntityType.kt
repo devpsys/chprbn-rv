@@ -15,4 +15,5 @@ enum class SyncEntityType {
     Remark,
     PracticalScore,
     ProjectScore,
+    VerifiedLicense,
 }

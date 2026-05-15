@@ -12,6 +12,9 @@ interface VerifiedLicenseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(record: VerifiedLicenseEntity): Long
 
+    @Query("SELECT * FROM verified_licenses WHERE registrationNumber = :registrationNumber LIMIT 1")
+    suspend fun getByRegistrationNumber(registrationNumber: String): VerifiedLicenseEntity?
+
     @Query("SELECT * FROM verified_licenses ORDER BY verifiedAt DESC")
     suspend fun getAll(): List<VerifiedLicenseEntity>
 
