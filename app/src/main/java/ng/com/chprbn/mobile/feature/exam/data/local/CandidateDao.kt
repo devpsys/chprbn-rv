@@ -62,6 +62,9 @@ interface CandidateDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAssignments(assignments: List<PaperCandidateAssignmentEntity>): List<Long>
 
+    @Query("SELECT COUNT(*) FROM paper_candidate_assignments")
+    suspend fun assignmentCount(): Int
+
     @Query("DELETE FROM paper_candidate_assignments")
     suspend fun clearAssignments(): Int
 

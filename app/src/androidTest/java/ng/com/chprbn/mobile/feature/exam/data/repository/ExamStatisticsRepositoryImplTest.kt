@@ -76,11 +76,42 @@ class ExamStatisticsRepositoryImplTest {
     fun getStatisticsReturnsZeroesWhenTableEmpty() = runTest {
         val stats = repository.getStatistics()
 
+        assertEquals(0, stats.recordsDownloaded)
         assertEquals(0, stats.attendanceCaptured)
         assertEquals(0, stats.syncedCount)
         assertEquals(0, stats.pendingCount)
         assertEquals(0, stats.failedCount)
         assertNull(stats.lastUpdatedAt)
+    }
+
+    @Test
+    fun recordsDownloadedReflectsAssignmentCountNotAttendanceCount() = runTest {
+        // Seed 4 assignments (= 4 records downloaded) but only 1 attendance row.
+        // The proxy used to conflate these; the real DAO query keeps them
+        // independent so the dashboard "X of N downloaded records have been
+        // checked in" math stays meaningful before the officer starts marking.
+        db.candidateDao().upsertAll(
+            listOf(
+                CandidateEntity("c1", "EX1", "Ada"),
+                CandidateEntity("c2", "EX2", "Bola"),
+                CandidateEntity("c3", "EX3", "Chika"),
+                CandidateEntity("c4", "EX4", "Dele"),
+            ),
+        )
+        db.candidateDao().upsertAssignments(
+            listOf(
+                PaperCandidateAssignmentEntity("p1", "c1"),
+                PaperCandidateAssignmentEntity("p1", "c2"),
+                PaperCandidateAssignmentEntity("p1", "c3"),
+                PaperCandidateAssignmentEntity("p1", "c4"),
+            ),
+        )
+        db.attendanceDao().upsert(attendance("c1", SyncStatus.Pending))
+
+        val stats = repository.getStatistics()
+
+        assertEquals(4, stats.recordsDownloaded)
+        assertEquals(1, stats.attendanceCaptured)
     }
 
     @Test

@@ -39,8 +39,7 @@ class ExamStatisticsRepositoryImpl @Inject constructor(
         val failedCount = attendanceDao.countBySyncStatus(SyncStatus.Failed.name)
         val syncedCount = attendanceDao.countBySyncStatus(SyncStatus.Synced.name)
         ExamStatistics(
-            recordsDownloaded = attendanceCaptured, // candidate-roster size proxy until
-            // an assignment-count DAO query lands
+            recordsDownloaded = candidateDao.assignmentCount(),
             attendanceCaptured = attendanceCaptured,
             syncedCount = syncedCount,
             cachedCount = attendanceCaptured,
