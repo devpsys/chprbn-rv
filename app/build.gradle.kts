@@ -66,6 +66,19 @@ android {
             isIncludeAndroidResources = true
         }
     }
+
+    packaging {
+        resources {
+            // Robolectric drags in JUnit 5 jars which each ship META-INF/LICENSE.md
+            // / NOTICE.md; the androidTest APK merge fails on the collision.
+            // Excluding the duplicates is the standard fix.
+            excludes += listOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+                "META-INF/NOTICE.md",
+            )
+        }
+    }
 }
 
 // Kover plugin is applied so we can wire up coverage reporting once AGP 9.x is

@@ -51,7 +51,9 @@ This app supports two operational tracks:
 
 ## Architecture
 
-The app follows **Clean Architecture** with clear boundaries per layer, applied progressively — features that own real persistence/network state (`auth`, `profile`, `verification`) carry the full presentation/domain/data stack; features that are still UI-only today (`dashboard`, `scan`, `exam`, `assessment`) are presentation-only and gain data/domain layers when real state lands.
+The app follows **Clean Architecture** with clear boundaries per layer. Features that own real persistence / network state (`auth`, `profile`, `verification`, `exam`, `assessment`) carry the full presentation / domain / data stack; UI-only features (`dashboard`, `scan`) stay presentation-only until they need their own state.
+
+See [`docs/exam-assessment-clean-architecture-plan.md`](docs/exam-assessment-clean-architecture-plan.md) for the canonical layering, sync-engine design, encrypted-Room rollout, and the phased rebuild plan that landed the exam + assessment data/domain layers.
 
 ### Layers
 
@@ -97,9 +99,11 @@ Type-safe Compose Navigation. Routes are declared as `@Serializable` Kotlin obje
 | Async | Kotlin Coroutines |
 | DI | Hilt **2.59.2** |
 | Networking | Retrofit **2.11.0**, OkHttp **4.12.0** (logging), Gson |
-| Persistence | Room **2.6.1** (`scan.db`, `auth.db`) |
+| Persistence | Room **2.6.1** + **SQLCipher 4.x** (encrypted at rest) across five feature DBs: `auth.db`, `scan.db`, `exam.db`, `assessment.db`, `sync.db` |
+| Background work | WorkManager **2.10.1** + Hilt-Work; cross-feature `SyncWorker` runs the queue |
 | Images | Coil for Compose **2.5.0** |
 | Scanning | CameraX, ML Kit Barcode Scanning |
+| Testing | JUnit, MockK, Turbine, Robolectric **4.14.1** + `compose-ui-test` for JVM-side render-snapshot tests |
 | Coverage | Kover **0.9.1** (configured; report generation paused pending AGP 9.x compatibility) |
 
 ### SDK levels
@@ -119,24 +123,32 @@ High-level layout under `app/src/main/java/ng/com/chprbn/mobile/`:
 
 ```text
 ng.com.chprbn.mobile/
-├── ChprbnApplication.kt          # @HiltAndroidApp
+├── ChprbnApplication.kt          # @HiltAndroidApp; loads sqlcipher native lib
 ├── core/
-│   ├── designsystem/             # Theme, Color, Type, Shape, shared Compose components
+│   ├── designsystem/             # Theme + shared Compose components
+│   │                             # (incl. DownloadWarningDialog, ProgressOverlay)
+│   ├── domain/                   # Cross-feature domain types (Candidate, SyncStatus,
+│   │                             # PaperKind, SyncBatchResult)
 │   ├── navigation/               # Routes, AppNavHost
-│   ├── network/                  # Image URL normalization
-│   └── persistence/              # Room converters, DB key provider, migration guard
+│   ├── network/                  # Image URL normalization (Base64 → data: URI)
+│   ├── persistence/encryption/   # SQLCipher key provider, migration guard
+│   └── sync/                     # Cross-feature sync engine: SyncDatabase, SyncJobDao,
+│                                 # SyncBatchRunner, SyncWorker, SyncEntityHandler
 └── feature/
     ├── auth/                     # Splash, login; AuthRepository; auth.db
     ├── dashboard/                # Unified dashboard, feature tiles
     ├── profile/                  # Profile screen + use cases
     ├── scan/                     # Reusable QR scan composable (CameraX + ML Kit)
     ├── verification/             # Manual entry, record detail, verification form,
-    │                             # verified list, sync, sync history, irregularity report
+    │                             # verified list, sync, sync history, irregularity
+    │                             # report; backed by scan.db
     ├── exam/                     # Exam dashboard, papers, paper detail, candidates,
-    │                             # candidate scan result, statistics
+    │                             # candidate scan result, statistics; backed by exam.db
+    │                             # (attendance + remarks + dossier cache)
     └── assessment/               # Examination schedules, paper detail, candidates
                                   # directory, practical sections hub, practical scoring,
-                                  # project assessment
+                                  # project assessment; backed by assessment.db
+                                  # (practical + project scores)
 ```
 
 | Path | Role |
@@ -249,23 +261,23 @@ To use **only** the API in production, replace the binding in `ScanModule.provid
 
 ### Exam attendance
 
-- **ExamDashboard / ExamPapers / ExamPaper / ExamCandidates** — drill-down from exam to paper to candidate roster.
-- **ExamScan** — assessment-style camera flow that lands on **CandidateScanResult** with mark-attendance / cancel actions.
-- **ExamStatistics** — counters and per-status breakdowns.
-- Currently presentation-only with placeholder data; data/domain layers will land alongside the real exam API.
+- **ExamDashboard / ExamPapers / ExamPaper / ExamCandidates** — drill-down from exam to paper to candidate roster, backed by `exam.db`.
+- **ExamScan** — camera flow that lands on **CandidateScanResult** with mark-attendance / cancel actions; attendance writes go through `MarkAttendanceUseCase` and enqueue a `SyncJobEntity`.
+- **ExamStatistics** — counters driven by DAO queries (`recordsDownloaded`, `attendanceCaptured`, `syncedCount`, `pendingCount`, `failedCount`).
+- **Dossier download** — destructive `DownloadExamDossierUseCase` wipes the local cache and pulls papers + candidates + assignments from `ExamDossierApiService`, gated by a warning dialog (see `core/designsystem/components/DownloadWarningDialog`).
+- **Sync Now** — `SyncExamRecordsUseCase` runs one cross-feature batch through `core.sync.SyncBatchRunner`; attendance + remark rows route to their `AttendanceSyncHandler` / `RemarkSyncHandler`.
 
 ### Practical assessment
 
-Reached from the dashboard's **Grade Practical** tile.
+Reached from the dashboard's **Grade Practical** tile. Backed by `assessment.db`.
 
-- **ExaminationSchedulesScreen** — list of scheduled exams with sync-status pills.
-- **AssessmentPaperDetail** — hero card, progress, candidate directory preview, Scan QR FAB. Tap **Scan QR** to enter the assessment-side scan flow.
+- **ExaminationSchedulesScreen** — list of scheduled exams with derived sync-status pills (`Pending` when any underlying score row is `Pending` / `Failed`, else `Synced`).
+- **AssessmentPaperDetail** — hero card, progress, candidate directory preview, Scan QR FAB. The header "More" action opens `DownloadAssessmentPackageUseCase` for this schedule (paper + sections + questions + roster), again gated by the warning dialog.
 - **AssessmentCandidates** — single screen with a list/grid toggle.
-- **AssessmentPracticalSections** — landed by the assessment-side QR scan; shows the candidate summary, three section progress cards (Complete / Incomplete / Not Started), and an "Assess Project" Extended FAB. Tapping the candidate photo morphs it from the avatar's exact on-screen position to a 3× card at screen centre (translation + scale + corner radius driven by a single `Transition`).
-- **AssessmentPracticalScoring** — per-section question cards with image, prompt, status pill, and a clamped score stepper. Single "Save Scores" Extended FAB.
-- **AssessmentProjectAssessment** — candidate profile + a single decimal score input (0..max with one decimal place, partial entries allowed mid-typing) and stacked Cancel / Save Score FABs.
-
-Currently presentation-only with placeholder data.
+- **AssessmentPracticalSections** — landed by the assessment-side QR scan; candidate summary, three section progress cards (Complete / Incomplete / Not Started), and an "Assess Project" Extended FAB. Tapping the candidate photo morphs it from the avatar's exact on-screen position to a 3× card at screen centre (translation + scale + corner radius driven by a single `Transition`).
+- **AssessmentPracticalScoring** — per-section question cards with image, prompt, status pill, and a clamped score stepper. Each stepper tap flushes through `RecordPracticalScoreUseCase` (one row + one sync job per question); "Save Scores" runs `CommitPracticalSectionUseCase` and pops back to the hub.
+- **AssessmentProjectAssessment** — candidate profile + a single decimal score input (0..max with one decimal place, partial entries allowed mid-typing) writing through `RecordProjectScoreUseCase`.
+- **Sync Now** — `SyncAssessmentScoresUseCase` shares the same `SyncBatchRunner` as exam; practical + project score rows route through `PracticalScoreSyncHandler` / `ProjectScoreSyncHandler`.
 
 ### Profile
 
@@ -277,24 +289,34 @@ Currently presentation-only with placeholder data.
 
 ### Room databases
 
+All five DBs are **SQLCipher-encrypted at rest**; keys are derived per-install by `core/persistence/encryption/DatabaseKeyProvider` and stored under Android Keystore. `DatabaseMigrationGuard` wipes orphaned pre-encryption legacy files on first launch.
+
 | Database file | Contents |
 |---------------|----------|
-| **`auth.db`** | Authenticated user / session fields (e.g. token, profile fields). |
-| **`scan.db`** | **`license_records`** (cached lookups), **`verified_licenses`** (verifications + sync metadata). |
+| **`auth.db`** | Authenticated user / session fields (token, profile). |
+| **`scan.db`** | `license_records` (cached lookups), `verified_licenses` (verifications + sync metadata). |
+| **`exam.db`** | `centers`, `papers`, `candidates`, `paper_candidate_assignments`, `attendance`, `remarks` — the day's dossier + attendance writes. |
+| **`assessment.db`** | `assessment_schedules`, `assessment_papers`, `practical_sections`, `section_questions`, `assessment_candidates`, `schedule_candidate_assignments`, `practical_scores`, `project_scores`. |
+| **`sync.db`** | `sync_jobs` — the cross-feature outbox queue. |
 
-Migrations exist for verified-license schema evolution; destructive migration remains as a **fallback** on failure — avoid relying on it in production without backup. `core/persistence/` houses the database key provider and a migration guard that fails fast when the schema diverges from expectations.
+Migrations exist for each feature DB; destructive migration is a **fallback** safety net only — schema changes need explicit migrations. The migration guard fails fast when the schema diverges from expectations.
 
 ### Offline-first aspects
 
 - License rows are **cached** after successful remote fetch for faster repeat access.
-- Verified records are **primarily local** until sync succeeds.
+- Verified records, attendance marks, and assessment scores are **primarily local** until sync succeeds.
 - Auth uses cache for **offline session** continuation when appropriate.
 
 ### Sync mechanism
 
-- Local status: **Pending**, **Synced**, **Failed**.
-- Upload is **sequential POSTs** (no batch endpoint in the client today).
-- Failures do not block other rows; errors are stored per row for retry.
+A cross-feature **outbox queue** in `sync.db` decouples local writes from remote upload:
+
+1. Each feature repository persists locally and enqueues a `SyncJobEntity` keyed by `(entityType, entityKey)` after every write (e.g. `Attendance`, `Remark`, `PracticalScore`, `ProjectScore`).
+2. `SyncWorker` (WorkManager, Hilt-injected) drains the queue via `SyncBatchRunner`, dispatching each row to its `SyncEntityHandler` (Hilt multibinding by `SyncEntityType`).
+3. Successful rows are deleted; failures stay in the queue with `attemptCount + 1`, `lastError`, and `lastAttemptAt`, eligible for the next batch.
+4. Partial-success is the normal case: per-row failures never abort the batch. `SyncBatchResult(attempted, succeeded, failed, errors)` surfaces back to the UI.
+
+The verified-list flow predates the outbox and uses sequential `POST practitioners/verified-sync` calls directly; integrating it behind the same engine is on the migration backlog.
 
 ---
 
@@ -320,19 +342,28 @@ Endpoints are defined as Retrofit interfaces under each feature's `data/api/` pa
 
 ### Unit tests (`app/src/test/`)
 
-~25 tests today covering:
+110+ test files covering:
 
-- **Auth** — `LoginUseCase`, `AuthRepositoryImpl`, `LoginViewModel`, `SplashViewModel`.
-- **Profile** — `GetUserProfileUseCase`, `UpdateUserProfileUseCase`, `LogoutUseCase`, `ProfileRepositoryImpl`, `ProfileViewModel`.
-- **Verification** — `LicenseRepositoryImpl`, `VerifiedRepositoryImpl`, `GetLicenseRecordUseCase`, `SaveVerifiedLicenseUseCase`, `ManualEntryViewModel`, `RecordDetailViewModel`, `VerificationFormViewModel`, `SyncViewModel`.
-- **Exam** — `ExamPapersViewModel`, `ExamPaperViewModel`, `ExamCandidatesViewModel`, `CandidateScanResultViewModel`.
+- **Auth** — login + splash ViewModels, AuthRepository, LoginUseCase.
+- **Profile** — profile ViewModel, repo, and CRUD use cases.
+- **Verification** — license + verified repos, sync VM, manual entry / record detail / form / sync history ViewModels, all use cases.
+- **Exam** — every use case (dashboard, papers, paper detail, candidates, statistics, mark attendance, add remark, sync, clear cache, lookup, download dossier), every ViewModel, every mapper round-trip, every sync handler.
+- **Assessment** — same coverage shape: every use case, ViewModel, mapper, sync handler.
+- **Core sync** — `SyncBatchRunner` (12 cases including partial-failure paths: retry, FIFO ordering, batch-size enforcement, cross-type routing, error aggregation, clock pinning, attempt-count accumulation).
 - **Core persistence** — `DatabaseKeyProvider`, `DatabaseMigrationGuard`.
+- **Cross-feature invariants** — `CandidateInvariantTest` pins `examNumber == indexingNumber` across both feature DTO + Entity mapper chains.
+- **Render-snapshot tests** — Robolectric + `compose-ui-test` "render the real Compose tree, assert on user-visible strings + click handlers" for ~24 screens and the shared dialog / overlay components. JVM-only; no emulator needed. Pixel-snapshot tooling (Roborazzi / AGP `previewScreenshot`) is currently incompatible with AGP 9.2.1 — this is the stand-in until it catches up.
 
-A `MainDispatcherRule` under `core/utils/` swaps `Dispatchers.Main` for tests.
+A `MainDispatcherRule` under `core/utils/` swaps `Dispatchers.Main` for tests; Robolectric tests use `@Config(application = Application::class)` to bypass `ChprbnApplication` (which loads the sqlcipher native lib that isn't available on the unit-test JVM).
 
 ### Instrumentation tests (`app/src/androidTest/`)
 
-Currently a single placeholder `ExampleInstrumentedTest`. Compose UI test deps (`androidx.compose.ui:ui-test-junit4`, `espresso-core`, `androidx.junit`) are wired and ready when we expand coverage to UI.
+Room-backed DAO + repository tests for the encrypted feature DBs:
+
+- `SyncJobDao` — outbox queue indexing + uniqueness invariants.
+- `CenterDao`, `PaperDao`, `CandidateDao`, `AttendanceDao`, `RemarkDao` (exam).
+- `AssessmentCandidateDao`, `PracticalScoreDao` (assessment).
+- `ExamSyncRepositoryImpl`, `ExamStatisticsRepositoryImpl`, `AssessmentScheduleRepositoryImpl` (end-to-end through Room).
 
 ### Coverage
 
@@ -354,8 +385,10 @@ Kover **0.9.1** is configured but report generation is paused while AGP 9.x comp
 - **Do not** leak Room entities or Retrofit DTOs into domain or presentation.
 - Add **repository methods** and **use cases** when introducing new business operations.
 - Register bindings in the appropriate **Hilt `@Module`** for the feature.
-- Don't preemptively add `data/` / `domain/` to UI-only features (`dashboard`, `scan`, `exam`, `assessment`); add them when the corresponding API/persistence work begins.
+- Domain-layer purity is enforced at build time by the `verifyDomainImports` Gradle task — `core/domain/**` and `feature/*/domain/**` must not import Room, Retrofit, Gson, Compose, or Android types. Wired into `check`.
+- Don't preemptively add `data/` / `domain/` to UI-only features (`dashboard`, `scan`); add them when the corresponding API / persistence work begins.
 - The codebase is intentionally **single-module**; do not propose splitting into `:core:*` / `:feature:*` modules.
+- New local writes that need to reach the server **must go through the outbox queue**: persist locally first, then enqueue a `SyncJobEntity` and contribute a `SyncEntityHandler` via Hilt multibinding for your `SyncEntityType`.
 
 ### Branching
 
@@ -365,15 +398,14 @@ Use short-lived feature branches and pull requests; align with your org's Git po
 
 ## Future improvements
 
-Ideas that fit the current architecture without rewriting layers:
+Open items from the [Phase 3 hardening plan](docs/exam-assessment-clean-architecture-plan.md):
 
-- **WorkManager** (or similar) for **background sync** batches and retry backoff.
-- **Token refresh** flow + secure storage (EncryptedSharedPreferences / Keystore).
+- **Backend cutover** (`P3-5`) — flip the Composite remote primaries from `Fake*` to `Api*` once the exam / assessment / attendance / score-sync endpoints sign off (see Action Checklist C1–C3 in the plan).
+- **Pixel snapshot tooling** — adopt Roborazzi or AGP `previewScreenshot` when one of them ships AGP 9 support; the current Robolectric render tests stand in.
+- **Token refresh** flow + secure storage upgrade (EncryptedSharedPreferences / Keystore for refresh tokens).
 - **Certificate pinning** and stricter TLS for production.
-- **DB encryption** (SQLCipher) or field-level encryption for highly sensitive PII on device.
-- **Product flavors** for dev/stage/prod base URLs and toggling `FakeLicenseRecordRemoteSource`.
-- **Compose UI tests** for the `*Content` composables across features (deps already wired).
-- **Real exam + assessment data layer** when those endpoints land — the current presentation-only screens emit placeholder state from their VMs.
+- **Product flavors** for dev / stage / prod base URLs and toggling the `Fake*RemoteSource` fallbacks.
+- **Verified-list onto the outbox queue** — fold the legacy sequential POST flow behind `SyncBatchRunner` so it shares the per-row retry + backoff with exam + assessment.
 - Optional **remote profile refresh** via `DashboardApiService.getProfile()`; the dashboard repository is still cache-first today.
 
 ---
