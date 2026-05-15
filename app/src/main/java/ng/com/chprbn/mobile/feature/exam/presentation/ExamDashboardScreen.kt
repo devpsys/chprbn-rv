@@ -143,7 +143,7 @@ private fun ExamDownloadDossierOverlay(
 }
 
 @Composable
-private fun ExamDashboardScreenContent(
+internal fun ExamDashboardScreenContent(
     uiState: ExamDashboardUiState,
     onNotifications: () -> Unit = {},
     onLogAttendance: () -> Unit = {},

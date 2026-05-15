@@ -57,6 +57,15 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        // Compose UI Test + Robolectric need real Android resources (R.* IDs,
+        // strings, drawables) on the unit-test classpath. Without this,
+        // `stringResource(R.string.…)` blows up at test time.
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 // Kover plugin is applied so we can wire up coverage reporting once AGP 9.x is
@@ -174,6 +183,15 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    // Render-snapshot tests (P3-3): real Compose tree rendering on the JVM
+    // via Robolectric, with semantic assertions from compose-ui-test. Picks
+    // up @Preview-style state and verifies the screen renders without
+    // crashing and surfaces the expected user-visible strings. Stand-in
+    // for pixel-based snapshots until Roborazzi / AGP previewScreenshot
+    // catches up to AGP 9.x.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
