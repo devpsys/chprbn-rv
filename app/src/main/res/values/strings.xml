@@ -327,6 +327,39 @@
     <string name="exam_dashboard_label_code">Code: </string>
     <string name="exam_dashboard_label_location">Location: </string>
 
+    <!-- ============== Exam — download dossier warning + loading ============== -->
+    <string name="exam_download_warning_title">Download Candidate Records</string>
+    <string name="exam_download_warning_message">Warning: This operation will erase all currently cached records on this device. Please ensure any pending attendance data is synced before proceeding.</string>
+    <string name="exam_download_warning_footnote">Once initiated, the local database will be wiped and replaced with the server-side master list. This action is irreversible.</string>
+    <string name="exam_download_warning_confirm">Download &amp; Erase</string>
+    <string name="exam_download_warning_cancel">Cancel</string>
+    <string name="exam_download_loading_title">Downloading Candidate Records…</string>
+    <string name="exam_download_loading_subtitle">Please do not close the app. Fetching data from secure registry.</string>
+    <string name="exam_download_loading_status">Synchronizing…</string>
+    <string name="exam_download_success_title">Dossier Downloaded</string>
+    <string name="exam_download_success_message_format">%1$d papers and %2$d candidates are now cached on this device.</string>
+    <string name="exam_download_error_title">Download Failed</string>
+    <string name="exam_download_error_action_retry">Try Again</string>
+    <string name="exam_download_error_action_close">Close</string>
+    <string name="action_ok">OK</string>
+
+    <!-- ============== Exam / assessment — sync loading ============== -->
+    <string name="sync_loading_title">Syncing Attendance Data…</string>
+    <string name="sync_loading_subtitle">Securely uploading verified records to the central server. This may take a few moments.</string>
+    <string name="sync_loading_encrypted_badge">Encrypted</string>
+    <string name="download_loading_encrypted_badge">End-to-End Encrypted</string>
+
+    <!-- ============== Assessment — download package warning + loading ============== -->
+    <string name="assessment_download_warning_title">Download Schedule Package</string>
+    <string name="assessment_download_warning_message">This will erase the cached records for this schedule and replace them with the latest server-side roster. Sync any pending scores first.</string>
+    <string name="assessment_download_warning_footnote">Only this schedule\'s rows are affected — other schedules\' cached data stays intact.</string>
+    <string name="assessment_download_loading_title">Downloading Schedule Package…</string>
+    <string name="assessment_download_loading_subtitle">Please do not close the app. Fetching paper, sections, and roster.</string>
+    <string name="assessment_download_loading_status">Synchronizing…</string>
+    <string name="assessment_download_success_title">Package Downloaded</string>
+    <string name="assessment_download_success_message_format">%1$d candidates, %2$d sections, %3$d questions cached.</string>
+    <string name="assessment_download_error_title">Download Failed</string>
+
     <!-- ============== Exam — candidates list ============== -->
     <string name="exam_candidates_header_title">Exam Candidates</string>
     <string name="exam_candidates_action_back">Back</string>

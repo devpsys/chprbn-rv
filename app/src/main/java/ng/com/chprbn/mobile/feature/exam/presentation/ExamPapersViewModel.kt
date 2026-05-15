@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPapersUseCase
+import ng.com.chprbn.mobile.feature.exam.domain.usecase.SyncExamRecordsUseCase
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -23,20 +24,41 @@ import javax.inject.Inject
  *
  * When the cache is empty (cold start before dossier download), the VM
  * falls back to the original placeholder content so the screen isn't blank.
+ *
+ * [syncState] toggles while [onSyncNow] runs so the screen renders the
+ * blocking sync overlay during the cross-feature batch.
  */
 @HiltViewModel
 class ExamPapersViewModel @Inject constructor(
     private val getPapers: GetExamPapersUseCase,
+    private val syncExamRecords: SyncExamRecordsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamPapersUiState.placeholder())
     val uiState: StateFlow<ExamPapersUiState> = _uiState.asStateFlow()
 
+    private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
+    val syncState: StateFlow<SyncOperationUiState> = _syncState.asStateFlow()
+
     init {
+        refresh()
+    }
+
+    private fun refresh() {
         viewModelScope.launch {
             val papers = getPapers()
             if (papers.isEmpty()) return@launch
             _uiState.value = papers.toUiState()
+        }
+    }
+
+    fun onSyncNow() {
+        if (_syncState.value is SyncOperationUiState.Syncing) return
+        _syncState.value = SyncOperationUiState.Syncing
+        viewModelScope.launch {
+            syncExamRecords()
+            refresh()
+            _syncState.value = SyncOperationUiState.Idle
         }
     }
 

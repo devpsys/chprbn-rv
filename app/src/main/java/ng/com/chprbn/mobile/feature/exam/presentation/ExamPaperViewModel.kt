@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetail
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetailResult
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPaperDetailUseCase
+import ng.com.chprbn.mobile.feature.exam.domain.usecase.SyncExamRecordsUseCase
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
@@ -23,11 +24,15 @@ import javax.inject.Inject
  *
  * NotFound / Error fall back to the placeholder content so the screen
  * stays usable until the dossier is downloaded.
+ *
+ * [syncState] toggles while [onSyncData] runs so the screen renders the
+ * blocking sync overlay during the cross-feature batch.
  */
 @HiltViewModel
 class ExamPaperViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getPaperDetail: GetExamPaperDetailUseCase,
+    private val syncExamRecords: SyncExamRecordsUseCase,
 ) : ViewModel() {
 
     private val paperId: String = savedStateHandle.get<String>("paperId").orEmpty()
@@ -35,13 +40,30 @@ class ExamPaperViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ExamPaperUiState.placeholder())
     val uiState: StateFlow<ExamPaperUiState> = _uiState.asStateFlow()
 
+    private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
+    val syncState: StateFlow<SyncOperationUiState> = _syncState.asStateFlow()
+
     init {
+        refresh()
+    }
+
+    private fun refresh() {
         viewModelScope.launch {
             when (val result = getPaperDetail(paperId)) {
                 is ExamPaperDetailResult.Success -> _uiState.value = result.detail.toUiState()
                 ExamPaperDetailResult.NotFound,
                 is ExamPaperDetailResult.Error -> Unit
             }
+        }
+    }
+
+    fun onSyncData() {
+        if (_syncState.value is SyncOperationUiState.Syncing) return
+        _syncState.value = SyncOperationUiState.Syncing
+        viewModelScope.launch {
+            syncExamRecords()
+            refresh()
+            _syncState.value = SyncOperationUiState.Idle
         }
     }
 

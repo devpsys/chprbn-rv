@@ -12,15 +12,16 @@ fun ExamPapersScreen(
     viewModel: ExamPapersViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onOpenPaper: (String) -> Unit = {},
-    onSyncNow: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     ExamPapersContent(
         uiState = uiState,
         onBack = onBack,
         onOpenPaper = onOpenPaper,
-        onSyncNow = onSyncNow
+        onSyncNow = viewModel::onSyncNow
     )
+    SyncOverlay(state = syncState)
 }
 
 @Preview(showBackground = true)
@@ -35,4 +36,3 @@ private fun ExamPapersScreenPreview() {
         )
     }
 }
-

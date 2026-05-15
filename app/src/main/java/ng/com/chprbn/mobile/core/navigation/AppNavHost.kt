@@ -107,7 +107,6 @@ fun AppNavHost() {
                     navController.navigate(Routes.ExaminationSchedules)
                 },
                 onPracticalInfo = { /* TODO */ },
-                onDownloadDossier = { /* TODO: export dossier */ },
                 onExamDashboardTab = {},
                 onStatisticsTab = {
                     navController.navigate(Routes.ExamStatistics)
@@ -120,7 +119,6 @@ fun AppNavHost() {
                 onOpenPaper = { paperId ->
                     navController.navigate(Routes.ExamPaper(paperId))
                 },
-                onSyncNow = { /* TODO: sync attendance */ }
             )
         }
         composable<Routes.ExamPaper> {
@@ -129,7 +127,6 @@ fun AppNavHost() {
                 onViewCandidates = {
                     navController.navigate(Routes.ExamCandidates)
                 },
-                onSyncData = { /* TODO: sync paper data */ },
                 onScanQr = {
                     navController.navigate(Routes.ExamScan)
                 }
@@ -145,9 +142,6 @@ fun AppNavHost() {
         composable<Routes.ExamStatistics> {
             ExamStatisticsScreen(
                 onBack = { navController.popBackStack() },
-                onRefresh = { /* TODO: refresh statistics */ },
-                onSyncNow = { /* TODO: sync */ },
-                onClearCached = { /* TODO: clear cache */ },
                 onExamDashboardTab = {
                     navController.popBackStack<Routes.ExamDashboard>(inclusive = false)
                 },
@@ -388,7 +382,6 @@ fun AppNavHost() {
             AssessmentPaperDetailScreen(
                 onBack = { navController.popBackStack() },
                 onShare = { /* TODO: assessment share */ },
-                onMore = { /* TODO: assessment paper-detail overflow */ },
                 onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
                 onViewFullDirectory = {
                     navController.navigate(Routes.AssessmentCandidates(args.scheduleId))

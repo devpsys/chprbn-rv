@@ -99,6 +99,9 @@ class ExamStatisticsViewModelTest {
 
         coVerify(exactly = 1) { syncExamRecords() }
         coVerify(exactly = 2) { getStatistics() }
+        // Coroutine completes synchronously under runTest after dispatching;
+        // state flips back to Idle once the launch block finishes.
+        assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
     }
 
     @Test

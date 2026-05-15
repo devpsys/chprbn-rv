@@ -20,6 +20,9 @@ import javax.inject.Inject
  * Exposes [refresh], [onSyncNow], and [onClearCached] for the screen's
  * action buttons; the FAB callbacks today are still pure navigation
  * stubs in the Screen layer (P3 hardening will wire them through).
+ *
+ * [syncState] toggles to [SyncOperationUiState.Syncing] for the duration
+ * of [onSyncNow] so the screen can render the blocking sync overlay.
  */
 @HiltViewModel
 class ExamStatisticsViewModel @Inject constructor(
@@ -30,6 +33,9 @@ class ExamStatisticsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ExamStatisticsUiState.placeholder())
     val uiState: StateFlow<ExamStatisticsUiState> = _uiState.asStateFlow()
+
+    private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
+    val syncState: StateFlow<SyncOperationUiState> = _syncState.asStateFlow()
 
     init {
         refresh()
@@ -42,9 +48,12 @@ class ExamStatisticsViewModel @Inject constructor(
     }
 
     fun onSyncNow() {
+        if (_syncState.value is SyncOperationUiState.Syncing) return
+        _syncState.value = SyncOperationUiState.Syncing
         viewModelScope.launch {
             syncExamRecords()
             refresh()
+            _syncState.value = SyncOperationUiState.Idle
         }
     }
 
@@ -92,4 +101,14 @@ class ExamStatisticsViewModel @Inject constructor(
             else -> "Updated ${elapsed.toDays()}d ago"
         }
     }
+}
+
+/**
+ * State of a manual sync-now operation. The cross-feature
+ * [SyncBatchResult] from the use case isn't surfaced to the UI today —
+ * the screen just renders Syncing while it runs, then drops back to Idle.
+ */
+sealed interface SyncOperationUiState {
+    data object Idle : SyncOperationUiState
+    data object Syncing : SyncOperationUiState
 }

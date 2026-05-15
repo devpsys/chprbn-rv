@@ -56,6 +56,10 @@ import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.components.AppTopBar
+import ng.com.chprbn.mobile.core.designsystem.components.DownloadWarningDialog
+import ng.com.chprbn.mobile.core.designsystem.components.DownloadingOverlay
+import ng.com.chprbn.mobile.core.designsystem.components.ErrorDialog
+import ng.com.chprbn.mobile.core.designsystem.components.SuccessDialog
 
 @Composable
 fun ExamDashboardScreen(
@@ -65,11 +69,11 @@ fun ExamDashboardScreen(
     onAttendanceMore: () -> Unit = {},
     onGradePractical: () -> Unit = {},
     onPracticalInfo: () -> Unit = {},
-    onDownloadDossier: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
     onStatisticsTab: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     ExamDashboardScreenContent(
         uiState = uiState,
         onNotifications = onNotifications,
@@ -77,10 +81,65 @@ fun ExamDashboardScreen(
         onAttendanceMore = onAttendanceMore,
         onGradePractical = onGradePractical,
         onPracticalInfo = onPracticalInfo,
-        onDownloadDossier = onDownloadDossier,
+        onDownloadDossier = viewModel::onDownloadDossierClicked,
         onExamDashboardTab = onExamDashboardTab,
         onStatisticsTab = onStatisticsTab
     )
+    ExamDownloadDossierOverlay(
+        state = downloadState,
+        onConfirm = viewModel::onDownloadConfirmed,
+        onDismiss = viewModel::onDownloadDismissed,
+    )
+}
+
+@Composable
+private fun ExamDownloadDossierOverlay(
+    state: DownloadDossierUiState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    when (state) {
+        DownloadDossierUiState.Idle -> Unit
+        DownloadDossierUiState.WarningShown -> DownloadWarningDialog(
+            title = stringResource(R.string.exam_download_warning_title),
+            message = stringResource(R.string.exam_download_warning_message),
+            footnote = stringResource(R.string.exam_download_warning_footnote),
+            primaryButtonText = stringResource(R.string.exam_download_warning_confirm),
+            secondaryButtonText = stringResource(R.string.exam_download_warning_cancel),
+            onConfirm = onConfirm,
+            onCancel = onDismiss,
+        )
+        DownloadDossierUiState.Downloading -> DownloadingOverlay(
+            title = stringResource(R.string.exam_download_loading_title),
+            subtitle = stringResource(R.string.exam_download_loading_subtitle),
+            encryptedLabel = stringResource(R.string.download_loading_encrypted_badge),
+            statusLabel = stringResource(R.string.exam_download_loading_status),
+            // The use case currently doesn't surface progress, so we show
+            // an indeterminate-feeling small fraction until completion
+            // flips us to Success or Error.
+            progressFraction = 0.1f,
+        )
+        is DownloadDossierUiState.Success -> SuccessDialog(
+            title = stringResource(R.string.exam_download_success_title),
+            message = stringResource(
+                R.string.exam_download_success_message_format,
+                state.papersCount,
+                state.candidatesCount,
+            ),
+            primaryButtonText = stringResource(R.string.action_ok),
+            onPrimary = onDismiss,
+            onDismiss = onDismiss,
+        )
+        is DownloadDossierUiState.Error -> ErrorDialog(
+            title = stringResource(R.string.exam_download_error_title),
+            message = state.message,
+            primaryButtonText = stringResource(R.string.exam_download_error_action_retry),
+            secondaryButtonText = stringResource(R.string.exam_download_error_action_close),
+            onPrimary = onConfirm,
+            onSecondary = onDismiss,
+            onDismiss = onDismiss,
+        )
+    }
 }
 
 @Composable

@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.assessment.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.domain.model.Candidate
@@ -10,9 +11,11 @@ import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateRow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaperDetailResult
+import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.DownloadAssessmentPackageUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentCandidatesUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentPaperDetailUseCase
 import org.junit.Assert.assertEquals
@@ -27,6 +30,7 @@ class AssessmentPaperDetailViewModelTest {
 
     private val getPaperDetail = mockk<GetAssessmentPaperDetailUseCase>()
     private val getCandidates = mockk<GetAssessmentCandidatesUseCase>()
+    private val downloadPackage = mockk<DownloadAssessmentPackageUseCase>()
     private val savedState = SavedStateHandle(mapOf("scheduleId" to "PE-2024"))
 
     @Test
@@ -48,7 +52,7 @@ class AssessmentPaperDetailViewModelTest {
             candidateRow("c4", "Four", SyncStatus.Synced),
         )
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates)
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
 
         val state = vm.uiState.value
         assertEquals("Paper A", state.paperTitle)
@@ -72,7 +76,7 @@ class AssessmentPaperDetailViewModelTest {
             candidateRow("c1", "Jane Doe", SyncStatus.Synced),
         )
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates)
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
 
         val state = vm.uiState.value
         assertEquals("", state.paperTitle)
@@ -86,7 +90,7 @@ class AssessmentPaperDetailViewModelTest {
         coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Error("boom")
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates)
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
 
         val state = vm.uiState.value
         assertEquals("", state.paperTitle)
@@ -96,16 +100,81 @@ class AssessmentPaperDetailViewModelTest {
 
     @Test
     fun `single-name candidate yields a single-letter initial`() = runTest {
-        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Success(
-            paper(),
-        )
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Success(paper())
         coEvery { getCandidates("PE-2024", "") } returns listOf(
             candidateRow("c1", "Cher", SyncStatus.Synced),
         )
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates)
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
 
         assertEquals("C", vm.uiState.value.candidates.single().initials)
+    }
+
+    @Test
+    fun `download flow Idle to WarningShown on click`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+        coEvery { getCandidates("PE-2024", "") } returns emptyList()
+
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        assertEquals(DownloadPackageUiState.Idle, vm.downloadState.value)
+
+        vm.onDownloadPackageClicked()
+
+        assertEquals(DownloadPackageUiState.WarningShown, vm.downloadState.value)
+    }
+
+    @Test
+    fun `download flow confirms with Success and refreshes screen`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+        coEvery { getCandidates("PE-2024", "") } returns emptyList()
+        coEvery { downloadPackage("PE-2024") } returns DownloadAssessmentPackageResult.Success(
+            scheduleId = "PE-2024",
+            candidatesCount = 42,
+            sectionsCount = 3,
+            questionsCount = 90,
+        )
+
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        vm.onDownloadPackageClicked()
+        vm.onDownloadConfirmed()
+
+        val terminal = vm.downloadState.value
+        assertTrue("expected Success terminal state, was $terminal", terminal is DownloadPackageUiState.Success)
+        val success = terminal as DownloadPackageUiState.Success
+        assertEquals(42, success.candidatesCount)
+        assertEquals(3, success.sectionsCount)
+        assertEquals(90, success.questionsCount)
+        // init + post-download refresh
+        coVerify(exactly = 2) { getPaperDetail("PE-2024") }
+        coVerify(exactly = 2) { getCandidates("PE-2024", "") }
+    }
+
+    @Test
+    fun `download flow Error surfaces the use case message`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+        coEvery { getCandidates("PE-2024", "") } returns emptyList()
+        coEvery { downloadPackage("PE-2024") } returns
+            DownloadAssessmentPackageResult.Error("offline")
+
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        vm.onDownloadPackageClicked()
+        vm.onDownloadConfirmed()
+
+        val terminal = vm.downloadState.value
+        assertTrue("expected Error terminal state, was $terminal", terminal is DownloadPackageUiState.Error)
+        assertEquals("offline", (terminal as DownloadPackageUiState.Error).message)
+    }
+
+    @Test
+    fun `download flow dismiss falls back to Idle from WarningShown`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+        coEvery { getCandidates("PE-2024", "") } returns emptyList()
+
+        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        vm.onDownloadPackageClicked()
+        vm.onDownloadDismissed()
+
+        assertEquals(DownloadPackageUiState.Idle, vm.downloadState.value)
     }
 
     private fun candidateRow(id: String, fullName: String, status: SyncStatus) =
