@@ -26,7 +26,7 @@ class ApiExamSyncRemoteSourceTest {
     private val source = ApiExamSyncRemoteSource(api)
 
     @Test
-    fun `successful attendance batch returns Result success`() = runTest {
+    fun `batch returns per-row Result keyed by clientId`() = runTest {
         coEvery { api.uploadAttendanceBatch(any()) } returns
             Response.success(
                 AttendanceSyncBatchEnvelopeDto(
@@ -37,79 +37,108 @@ class ApiExamSyncRemoteSourceTest {
                                 clientId = "p1:c1",
                                 accepted = true,
                                 serverId = "srv-1",
-                            )
+                            ),
+                            AttendanceSyncResultDto(
+                                clientId = "p1:c2",
+                                accepted = false,
+                                error = "candidate not assigned to paper",
+                            ),
                         )
                     )
                 )
             )
 
-        val result = source.uploadAttendance(attendance())
+        val results = source.uploadAttendanceBatch(
+            listOf(attendance("c1"), attendance("c2")),
+        )
 
-        assertTrue("expected success but was $result", result.isSuccess)
+        assertTrue(results.getValue("p1:c1").isSuccess)
+        assertTrue(results.getValue("p1:c2").isFailure)
+        assertTrue(
+            results.getValue("p1:c2").exceptionOrNull()!!.message!!.contains("candidate not assigned"),
+        )
     }
 
     @Test
-    fun `single-item batch wraps domain row into items of size 1`() = runTest {
+    fun `batch sends a single HTTP call carrying every row's clientId`() = runTest {
         val captured = slot<AttendanceSyncBatchRequestDto>()
         coEvery { api.uploadAttendanceBatch(capture(captured)) } returns
             Response.success(AttendanceSyncBatchEnvelopeDto(success = true))
 
-        source.uploadAttendance(attendance())
+        source.uploadAttendanceBatch(listOf(attendance("c1"), attendance("c2")))
 
-        assertEquals(1, captured.captured.items.size)
-        assertEquals("p1:c1", captured.captured.items.first().clientId)
-        assertEquals("signed_in", captured.captured.items.first().status)
+        assertEquals(2, captured.captured.items.size)
+        assertEquals(listOf("p1:c1", "p1:c2"), captured.captured.items.map { it.clientId })
     }
 
     @Test
-    fun `per-row reject in batch result returns Result failure with error message`() = runTest {
+    fun `non-2xx transport failure maps every input row to Result failure`() = runTest {
+        coEvery { api.uploadAttendanceBatch(any()) } returns
+            Response.error(500, "boom".toResponseBody("text/plain".toMediaTypeOrNull()))
+
+        val results = source.uploadAttendanceBatch(
+            listOf(attendance("c1"), attendance("c2")),
+        )
+
+        assertTrue(results.getValue("p1:c1").isFailure)
+        assertTrue(results.getValue("p1:c2").isFailure)
+        // Same transport exception applied to every row.
+        assertEquals(
+            results.getValue("p1:c1").exceptionOrNull()!!.message,
+            results.getValue("p1:c2").exceptionOrNull()!!.message,
+        )
+        assertTrue(results.getValue("p1:c1").exceptionOrNull()!!.message!!.contains("500"))
+    }
+
+    @Test
+    fun `IOException transport failure maps every input row to Result failure with the cause`() = runTest {
+        coEvery { api.uploadAttendanceBatch(any()) } throws IOException("offline")
+
+        val results = source.uploadAttendanceBatch(
+            listOf(attendance("c1"), attendance("c2")),
+        )
+
+        assertTrue(results.getValue("p1:c1").isFailure)
+        assertTrue(results.getValue("p1:c1").exceptionOrNull() is IOException)
+        assertTrue(results.getValue("p1:c2").exceptionOrNull() is IOException)
+    }
+
+    @Test
+    fun `empty input returns empty map without HTTP call`() = runTest {
+        val results = source.uploadAttendanceBatch(emptyList())
+
+        assertTrue(results.isEmpty())
+    }
+
+    @Test
+    fun `clientId missing from server response surfaces as 'no result' failure`() = runTest {
         coEvery { api.uploadAttendanceBatch(any()) } returns
             Response.success(
                 AttendanceSyncBatchEnvelopeDto(
                     success = true,
                     data = AttendanceSyncBatchResultsDto(
+                        // c1 is acknowledged, c2 is missing from results.
                         results = listOf(
-                            AttendanceSyncResultDto(
-                                clientId = "p1:c1",
-                                accepted = false,
-                                error = "candidate not assigned to paper",
-                            )
+                            AttendanceSyncResultDto(clientId = "p1:c1", accepted = true),
                         )
                     )
                 )
             )
 
-        val result = source.uploadAttendance(attendance())
+        val results = source.uploadAttendanceBatch(
+            listOf(attendance("c1"), attendance("c2")),
+        )
 
-        assertTrue(result.isFailure)
-        val msg = result.exceptionOrNull()?.message.orEmpty()
-        assertTrue("expected per-row error message, was: $msg", msg.contains("candidate not assigned"))
+        assertTrue(results.getValue("p1:c1").isSuccess)
+        assertTrue(results.getValue("p1:c2").isFailure)
+        assertTrue(
+            results.getValue("p1:c2").exceptionOrNull()!!.message!!.contains("no result"),
+        )
     }
 
-    @Test
-    fun `non-2xx response returns Result failure with status code in message`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } returns
-            Response.error(500, "boom".toResponseBody("text/plain".toMediaTypeOrNull()))
-
-        val result = source.uploadAttendance(attendance())
-
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("500"))
-    }
-
-    @Test
-    fun `IOException from Retrofit returns Result failure`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } throws IOException("offline")
-
-        val result = source.uploadAttendance(attendance())
-
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is IOException)
-    }
-
-    private fun attendance() = Attendance(
+    private fun attendance(candidate: String) = Attendance(
         paperId = "p1",
-        candidateId = "c1",
+        candidateId = candidate,
         status = AttendanceStatus.SignedIn,
         markedAt = 1_700_000_000_000L,
         syncStatus = SyncStatus.Pending,

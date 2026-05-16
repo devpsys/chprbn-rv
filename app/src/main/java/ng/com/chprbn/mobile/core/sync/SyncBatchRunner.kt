@@ -9,13 +9,21 @@ import javax.inject.Singleton
  * Pure-Kotlin core of the sync engine, factored out of [SyncWorker] so the
  * dispatch logic is unit-testable without WorkManager.
  *
- * Pulls up to [batchSize] pending/failed rows, dispatches each to the matching
- * [SyncEntityHandler] via the injected multibinding map, and writes the
- * per-row outcome back to the queue. Per-row failures do not abort the batch
- * — partial success is the normal case.
+ * Pulls up to [batchSize] pending/failed rows, **groups them by
+ * [SyncEntityType]**, and dispatches each type's full list of entityKeys
+ * to the matching [SyncEntityHandler] in a single call. The handler is
+ * expected to send one batched HTTP request and return one
+ * [SyncOutcome] per input key; the runner then walks the queue rows in
+ * FIFO order and persists each outcome.
  *
- * [clock] is injectable so tests can pin time. In production it's bound to
- * [Clock.System].
+ * Per-row failures do not abort the batch — partial success is the
+ * normal case. Cross-type ordering of the aggregated `errors` list
+ * follows "all errors from type A in FIFO order, then all errors from
+ * type B in FIFO order, …" (type order = order in which each type's
+ * first job was enqueued).
+ *
+ * [clock] is injectable so tests can pin time. In production it's bound
+ * to [Clock.System].
  */
 @Singleton
 class SyncBatchRunner @Inject constructor(
@@ -32,31 +40,48 @@ class SyncBatchRunner @Inject constructor(
         var failed = 0
         val errors = mutableListOf<String>()
 
-        for (job in jobs) {
-            val type = runCatching { SyncEntityType.valueOf(job.entityType) }.getOrNull()
+        // groupBy preserves insertion order, so each type's bucket is in
+        // FIFO order and the type buckets themselves are ordered by the
+        // enqueuedAt of each type's first job.
+        val jobsByType: Map<SyncEntityType?, List<SyncJobEntity>> = jobs.groupBy { job ->
+            runCatching { SyncEntityType.valueOf(job.entityType) }.getOrNull()
+        }
+
+        for ((type, typeJobs) in jobsByType) {
             val handler = type?.let { handlers[it] }
-            val outcome: SyncOutcome = when {
-                type == null -> SyncOutcome.Failure("Unknown entity type: ${job.entityType}")
-                handler == null -> SyncOutcome.Failure("No handler bound for $type")
-                else -> runCatching { handler.upload(job.entityKey) }
-                    .getOrElse { t -> SyncOutcome.Failure(t.message ?: "Unknown error") }
+            val outcomes: Map<String, SyncOutcome> = when {
+                type == null -> typeJobs.associate {
+                    it.entityKey to SyncOutcome.Failure("Unknown entity type: ${it.entityType}")
+                }
+                handler == null -> typeJobs.associate {
+                    it.entityKey to SyncOutcome.Failure("No handler bound for $type")
+                }
+                else -> runCatching { handler.uploadBatch(typeJobs.map { it.entityKey }) }
+                    .getOrElse { t ->
+                        val message = t.message ?: "Unknown error"
+                        typeJobs.associate { it.entityKey to SyncOutcome.Failure(message) }
+                    }
             }
 
             val attemptedAt = clock.nowMillis()
-            when (outcome) {
-                is SyncOutcome.Success -> {
-                    syncJobDao.delete(job.id)
-                    succeeded++
-                }
-                is SyncOutcome.Failure -> {
-                    syncJobDao.markAttempted(
-                        id = job.id,
-                        status = SyncStatus.Failed.name,
-                        attemptedAt = attemptedAt,
-                        error = outcome.message,
-                    )
-                    failed++
-                    errors.add(outcome.message)
+            for (job in typeJobs) {
+                val outcome = outcomes[job.entityKey]
+                    ?: SyncOutcome.Failure("Handler returned no result for ${job.entityKey}")
+                when (outcome) {
+                    is SyncOutcome.Success -> {
+                        syncJobDao.delete(job.id)
+                        succeeded++
+                    }
+                    is SyncOutcome.Failure -> {
+                        syncJobDao.markAttempted(
+                            id = job.id,
+                            status = SyncStatus.Failed.name,
+                            attemptedAt = attemptedAt,
+                            error = outcome.message,
+                        )
+                        failed++
+                        errors.add(outcome.message)
+                    }
                 }
             }
         }

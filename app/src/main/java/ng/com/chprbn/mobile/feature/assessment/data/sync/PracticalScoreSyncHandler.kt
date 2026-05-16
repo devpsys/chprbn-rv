@@ -4,6 +4,7 @@ import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
+import ng.com.chprbn.mobile.feature.assessment.data.mappers.practicalScoreClientId
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentScheduleSyncStatusUpdater
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
@@ -12,12 +13,10 @@ import javax.inject.Inject
 /**
  * Plugs the practical-score row uploader into the cross-feature
  * `core.sync.SyncWorker` via Hilt multibinding. The runner hands in the
- * row's slash-delimited entity key; the handler resolves the row, uploads
- * it, and flips `score.syncStatus` plus the parent schedule's status to
- * match the result.
- *
- * `SyncOutcome.Success` deletes the queue row; `SyncOutcome.Failure`
- * leaves it for the worker's backoff retry.
+ * batch's slash-delimited entity keys; the handler resolves the rows,
+ * sends a single batched HTTP request, flips per-row score syncStatus,
+ * then refreshes the parent schedule's status once per unique
+ * `scheduleId`.
  */
 class PracticalScoreSyncHandler @Inject constructor(
     private val practicalScoreDao: PracticalScoreDao,
@@ -25,39 +24,80 @@ class PracticalScoreSyncHandler @Inject constructor(
     private val statusUpdater: AssessmentScheduleSyncStatusUpdater,
 ) : SyncEntityHandler {
 
-    override suspend fun upload(entityKey: String): SyncOutcome {
-        val parsed = PracticalScoreKey.decode(entityKey)
-            ?: return SyncOutcome.Failure("Malformed practical-score key: $entityKey")
-        val (scheduleId, candidateId, questionId) = parsed
+    override suspend fun uploadBatch(entityKeys: List<String>): Map<String, SyncOutcome> {
+        val outcomes = LinkedHashMap<String, SyncOutcome>(entityKeys.size)
+        val toUpload = mutableListOf<UploadRow>()
 
-        val entity = practicalScoreDao.getOne(scheduleId, candidateId, questionId)
-            ?: return SyncOutcome.Failure("Practical score not found locally: $entityKey")
+        for (key in entityKeys) {
+            val parsed = PracticalScoreKey.decode(key)
+            if (parsed == null) {
+                outcomes[key] = SyncOutcome.Failure("Malformed practical-score key: $key")
+                continue
+            }
+            val (scheduleId, candidateId, questionId) = parsed
+            val entity = practicalScoreDao.getOne(scheduleId, candidateId, questionId)
+            if (entity == null) {
+                outcomes[key] = SyncOutcome.Failure("Practical score not found locally: $key")
+                continue
+            }
+            val domain = entity.toDomain()
+            toUpload.add(
+                UploadRow(
+                    entityKey = key,
+                    domain = domain,
+                    clientId = practicalScoreClientId(
+                        domain.scheduleId, domain.candidateId, domain.questionId,
+                    ),
+                ),
+            )
+        }
 
-        val result = remoteSource.uploadPracticalScore(entity.toDomain())
-        return result.fold(
-            onSuccess = {
-                practicalScoreDao.updateSyncMetadata(
-                    scheduleId = scheduleId,
-                    candidateId = candidateId,
-                    questionId = questionId,
-                    syncStatus = SyncStatus.Synced.name,
-                    syncError = null,
-                )
-                statusUpdater.refresh(scheduleId)
-                SyncOutcome.Success
-            },
-            onFailure = { t ->
-                val message = t.message ?: "Upload failed."
-                practicalScoreDao.updateSyncMetadata(
-                    scheduleId = scheduleId,
-                    candidateId = candidateId,
-                    questionId = questionId,
-                    syncStatus = SyncStatus.Failed.name,
-                    syncError = message,
-                )
-                statusUpdater.refresh(scheduleId)
-                SyncOutcome.Failure(message)
-            },
-        )
+        if (toUpload.isEmpty()) return outcomes
+
+        val remoteResults = remoteSource.uploadPracticalScoreBatch(toUpload.map { it.domain })
+        val touchedSchedules = mutableSetOf<String>()
+
+        for (row in toUpload) {
+            val result = remoteResults[row.clientId]
+                ?: Result.failure(IllegalStateException("No remote result for ${row.clientId}"))
+            outcomes[row.entityKey] = result.fold(
+                onSuccess = {
+                    practicalScoreDao.updateSyncMetadata(
+                        scheduleId = row.domain.scheduleId,
+                        candidateId = row.domain.candidateId,
+                        questionId = row.domain.questionId,
+                        syncStatus = SyncStatus.Synced.name,
+                        syncError = null,
+                    )
+                    touchedSchedules += row.domain.scheduleId
+                    SyncOutcome.Success
+                },
+                onFailure = { t ->
+                    val message = t.message ?: "Upload failed."
+                    practicalScoreDao.updateSyncMetadata(
+                        scheduleId = row.domain.scheduleId,
+                        candidateId = row.domain.candidateId,
+                        questionId = row.domain.questionId,
+                        syncStatus = SyncStatus.Failed.name,
+                        syncError = message,
+                    )
+                    touchedSchedules += row.domain.scheduleId
+                    SyncOutcome.Failure(message)
+                },
+            )
+        }
+
+        // Refresh once per unique scheduleId — fewer DB writes than per-row.
+        for (scheduleId in touchedSchedules) {
+            statusUpdater.refresh(scheduleId)
+        }
+
+        return outcomes
     }
+
+    private data class UploadRow(
+        val entityKey: String,
+        val domain: ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore,
+        val clientId: String,
+    )
 }

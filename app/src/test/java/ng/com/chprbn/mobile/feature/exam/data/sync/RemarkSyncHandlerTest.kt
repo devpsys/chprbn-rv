@@ -27,32 +27,34 @@ class RemarkSyncHandlerTest {
     private val handler = RemarkSyncHandler(dao, remote, clock)
 
     @Test
-    fun `blank key returns Failure without touching dao or remote`() = runTest {
-        val outcome = handler.upload("")
+    fun `blank key produces per-key Failure without touching dao or remote`() = runTest {
+        val outcomes = handler.uploadBatch(listOf(""))
 
-        assertTrue(outcome is SyncOutcome.Failure)
+        assertTrue(outcomes[""] is SyncOutcome.Failure)
         coVerify(exactly = 0) { dao.getById(any()) }
-        coVerify(exactly = 0) { remote.uploadRemark(any()) }
+        coVerify(exactly = 0) { remote.uploadRemarkBatch(any()) }
     }
 
     @Test
-    fun `missing local row returns Failure`() = runTest {
+    fun `missing local row produces per-key Failure`() = runTest {
         coEvery { dao.getById("r1") } returns null
 
-        val outcome = handler.upload("r1")
+        val outcomes = handler.uploadBatch(listOf("r1"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        coVerify(exactly = 0) { remote.uploadRemark(any()) }
+        assertTrue(outcomes["r1"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadRemarkBatch(any()) }
     }
 
     @Test
     fun `successful upload flips row to Synced with current clock time`() = runTest {
         coEvery { dao.getById("r1") } returns remark()
-        coEvery { remote.uploadRemark(any()) } returns Result.success(Unit)
+        coEvery { remote.uploadRemarkBatch(any()) } returns mapOf(
+            "r1" to Result.success(Unit),
+        )
 
-        val outcome = handler.upload("r1")
+        val outcomes = handler.uploadBatch(listOf("r1"))
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertEquals(SyncOutcome.Success, outcomes["r1"])
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 id = "r1",
@@ -66,12 +68,14 @@ class RemarkSyncHandlerTest {
     @Test
     fun `failed upload flips row to Failed with error message`() = runTest {
         coEvery { dao.getById("r1") } returns remark()
-        coEvery { remote.uploadRemark(any()) } returns Result.failure(IOException("offline"))
+        coEvery { remote.uploadRemarkBatch(any()) } returns mapOf(
+            "r1" to Result.failure(IOException("offline")),
+        )
 
-        val outcome = handler.upload("r1")
+        val outcomes = handler.uploadBatch(listOf("r1"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        assertEquals("offline", (outcome as SyncOutcome.Failure).message)
+        assertTrue(outcomes["r1"] is SyncOutcome.Failure)
+        assertEquals("offline", (outcomes["r1"] as SyncOutcome.Failure).message)
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 id = "r1",

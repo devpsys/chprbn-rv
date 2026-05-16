@@ -25,32 +25,34 @@ class ProjectScoreSyncHandlerTest {
     private val handler = ProjectScoreSyncHandler(dao, remote, statusUpdater)
 
     @Test
-    fun `malformed key returns Failure without touching dao or remote`() = runTest {
-        val outcome = handler.upload("only-one-part")
+    fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
+        val outcomes = handler.uploadBatch(listOf("only-one-part"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
+        assertTrue(outcomes["only-one-part"] is SyncOutcome.Failure)
         coVerify(exactly = 0) { dao.getOne(any(), any()) }
-        coVerify(exactly = 0) { remote.uploadProjectScore(any()) }
+        coVerify(exactly = 0) { remote.uploadProjectScoreBatch(any()) }
     }
 
     @Test
-    fun `missing local row returns Failure`() = runTest {
+    fun `missing local row produces per-key Failure`() = runTest {
         coEvery { dao.getOne("s", "c") } returns null
 
-        val outcome = handler.upload("s/c")
+        val outcomes = handler.uploadBatch(listOf("s/c"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        coVerify(exactly = 0) { remote.uploadProjectScore(any()) }
+        assertTrue(outcomes["s/c"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadProjectScoreBatch(any()) }
     }
 
     @Test
-    fun `successful upload flips score to Synced and refreshes schedule`() = runTest {
+    fun `successful upload flips score to Synced and refreshes schedule once`() = runTest {
         coEvery { dao.getOne("s", "c") } returns scoreEntity()
-        coEvery { remote.uploadProjectScore(any()) } returns Result.success(Unit)
+        coEvery { remote.uploadProjectScoreBatch(any()) } returns mapOf(
+            "s:c" to Result.success(Unit),
+        )
 
-        val outcome = handler.upload("s/c")
+        val outcomes = handler.uploadBatch(listOf("s/c"))
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertEquals(SyncOutcome.Success, outcomes["s/c"])
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 scheduleId = "s",
@@ -65,13 +67,14 @@ class ProjectScoreSyncHandlerTest {
     @Test
     fun `failed upload flips score to Failed with error message and refreshes schedule`() = runTest {
         coEvery { dao.getOne("s", "c") } returns scoreEntity()
-        coEvery { remote.uploadProjectScore(any()) } returns
-            Result.failure(IOException("offline"))
+        coEvery { remote.uploadProjectScoreBatch(any()) } returns mapOf(
+            "s:c" to Result.failure(IOException("offline")),
+        )
 
-        val outcome = handler.upload("s/c")
+        val outcomes = handler.uploadBatch(listOf("s/c"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        assertEquals("offline", (outcome as SyncOutcome.Failure).message)
+        assertTrue(outcomes["s/c"] is SyncOutcome.Failure)
+        assertEquals("offline", (outcomes["s/c"] as SyncOutcome.Failure).message)
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 scheduleId = "s",

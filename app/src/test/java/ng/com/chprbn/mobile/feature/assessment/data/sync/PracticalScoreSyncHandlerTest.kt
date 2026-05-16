@@ -25,32 +25,34 @@ class PracticalScoreSyncHandlerTest {
     private val handler = PracticalScoreSyncHandler(dao, remote, statusUpdater)
 
     @Test
-    fun `malformed key returns Failure without touching dao or remote`() = runTest {
-        val outcome = handler.upload("malformed")
+    fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
+        val outcomes = handler.uploadBatch(listOf("malformed"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
+        assertTrue(outcomes["malformed"] is SyncOutcome.Failure)
         coVerify(exactly = 0) { dao.getOne(any(), any(), any()) }
-        coVerify(exactly = 0) { remote.uploadPracticalScore(any()) }
+        coVerify(exactly = 0) { remote.uploadPracticalScoreBatch(any()) }
     }
 
     @Test
-    fun `missing local row returns Failure`() = runTest {
+    fun `missing local row produces per-key Failure`() = runTest {
         coEvery { dao.getOne("s", "c", "q") } returns null
 
-        val outcome = handler.upload("s/c/q")
+        val outcomes = handler.uploadBatch(listOf("s/c/q"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        coVerify(exactly = 0) { remote.uploadPracticalScore(any()) }
+        assertTrue(outcomes["s/c/q"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadPracticalScoreBatch(any()) }
     }
 
     @Test
-    fun `successful upload flips score to Synced and refreshes schedule`() = runTest {
+    fun `successful upload flips score to Synced and refreshes schedule once`() = runTest {
         coEvery { dao.getOne("s", "c", "q") } returns scoreEntity()
-        coEvery { remote.uploadPracticalScore(any()) } returns Result.success(Unit)
+        coEvery { remote.uploadPracticalScoreBatch(any()) } returns mapOf(
+            "s:c:q" to Result.success(Unit),
+        )
 
-        val outcome = handler.upload("s/c/q")
+        val outcomes = handler.uploadBatch(listOf("s/c/q"))
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertEquals(SyncOutcome.Success, outcomes["s/c/q"])
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 scheduleId = "s",
@@ -66,13 +68,14 @@ class PracticalScoreSyncHandlerTest {
     @Test
     fun `failed upload flips score to Failed with error message and refreshes schedule`() = runTest {
         coEvery { dao.getOne("s", "c", "q") } returns scoreEntity()
-        coEvery { remote.uploadPracticalScore(any()) } returns
-            Result.failure(IOException("offline"))
+        coEvery { remote.uploadPracticalScoreBatch(any()) } returns mapOf(
+            "s:c:q" to Result.failure(IOException("offline")),
+        )
 
-        val outcome = handler.upload("s/c/q")
+        val outcomes = handler.uploadBatch(listOf("s/c/q"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        assertEquals("offline", (outcome as SyncOutcome.Failure).message)
+        assertTrue(outcomes["s/c/q"] is SyncOutcome.Failure)
+        assertEquals("offline", (outcomes["s/c/q"] as SyncOutcome.Failure).message)
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 scheduleId = "s",
@@ -85,10 +88,24 @@ class PracticalScoreSyncHandlerTest {
         coVerify(exactly = 1) { statusUpdater.refresh("s") }
     }
 
-    private fun scoreEntity() = PracticalScoreEntity(
+    @Test
+    fun `batch with two rows from same schedule refreshes status updater exactly once`() = runTest {
+        coEvery { dao.getOne("s", "c", "q1") } returns scoreEntity(questionId = "q1")
+        coEvery { dao.getOne("s", "c", "q2") } returns scoreEntity(questionId = "q2")
+        coEvery { remote.uploadPracticalScoreBatch(any()) } returns mapOf(
+            "s:c:q1" to Result.success(Unit),
+            "s:c:q2" to Result.success(Unit),
+        )
+
+        handler.uploadBatch(listOf("s/c/q1", "s/c/q2"))
+
+        coVerify(exactly = 1) { statusUpdater.refresh("s") }
+    }
+
+    private fun scoreEntity(questionId: String = "q") = PracticalScoreEntity(
         scheduleId = "s",
         candidateId = "c",
-        questionId = "q",
+        questionId = questionId,
         score = 7,
         scoredAt = 0L,
         syncStatus = SyncStatus.Pending.name,

@@ -3,7 +3,6 @@ package ng.com.chprbn.mobile.core.sync
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -37,7 +36,11 @@ class SyncBatchRunnerTest {
         }
         val runner = SyncBatchRunner(
             syncJobDao = dao,
-            handlers = mapOf(SyncEntityType.Attendance to SyncEntityHandler { SyncOutcome.Success }),
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Success }
+                },
+            ),
             clock = clock,
         )
 
@@ -57,13 +60,14 @@ class SyncBatchRunnerTest {
                 attendanceJob(id = 2, key = "p1/c2"),
             )
         }
-        var callIndex = 0
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler {
-                    callIndex++
-                    if (callIndex == 1) SyncOutcome.Failure("network down") else SyncOutcome.Success
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    // First key fails, rest succeed.
+                    keys.mapIndexed { i, key ->
+                        key to if (i == 0) SyncOutcome.Failure("network down") else SyncOutcome.Success
+                    }.toMap()
                 },
             ),
             clock = clock,
@@ -82,8 +86,13 @@ class SyncBatchRunnerTest {
     }
 
     @Test
-    fun `handler that throws is caught as transient failure`() = runTest {
-        val dao = FakeSyncJobDao().apply { seed(attendanceJob(id = 1, key = "p1/c1")) }
+    fun `handler that throws is caught as transient failure for every key in the batch`() = runTest {
+        val dao = FakeSyncJobDao().apply {
+            seed(
+                attendanceJob(id = 1, key = "p1/c1"),
+                attendanceJob(id = 2, key = "p1/c2"),
+            )
+        }
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
@@ -94,8 +103,9 @@ class SyncBatchRunnerTest {
 
         val result = runner.runBatch()
 
-        assertEquals(1, result.failed)
-        assertEquals("boom", result.errors.single())
+        assertEquals(2, result.failed)
+        // Both rows fail with the same transient error message.
+        assertEquals(listOf("boom", "boom"), result.errors)
     }
 
     @Test
@@ -128,14 +138,10 @@ class SyncBatchRunnerTest {
 
         assertEquals(1, result.failed)
         assertEquals("No handler bound for Attendance", result.errors.single())
-        assertNull("attempt should advance", null)
     }
 
     @Test
     fun `previously-failed job is retried and cleared on success`() = runTest {
-        // pendingAndFailed() returns both Pending and Failed rows. A Failed
-        // row that succeeds on retry should be deleted just like a Pending
-        // row that succeeds first try.
         val dao = FakeSyncJobDao().apply {
             seed(
                 SyncJobEntity(
@@ -151,7 +157,11 @@ class SyncBatchRunnerTest {
         }
         val runner = SyncBatchRunner(
             syncJobDao = dao,
-            handlers = mapOf(SyncEntityType.Attendance to SyncEntityHandler { SyncOutcome.Success }),
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Success }
+                },
+            ),
             clock = clock,
         )
 
@@ -164,7 +174,7 @@ class SyncBatchRunnerTest {
     }
 
     @Test
-    fun `all-failure batch aggregates errors in dispatch order`() = runTest {
+    fun `all-failure batch aggregates errors in FIFO order within the type group`() = runTest {
         val dao = FakeSyncJobDao().apply {
             seed(
                 attendanceJob(id = 1, key = "p1/a", enqueuedAt = now - 30),
@@ -180,8 +190,8 @@ class SyncBatchRunnerTest {
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler { key ->
-                    SyncOutcome.Failure(errorByKey.getValue(key))
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { key -> SyncOutcome.Failure(errorByKey.getValue(key)) }
                 },
             ),
             clock = clock,
@@ -192,18 +202,18 @@ class SyncBatchRunnerTest {
         assertEquals(3, result.attempted)
         assertEquals(0, result.succeeded)
         assertEquals(3, result.failed)
-        // Dispatch order is FIFO by enqueuedAt — the errors list must match.
+        // Single-type batch: error order matches FIFO enqueuedAt order.
         assertEquals(
             listOf("first failure", "second failure", "third failure"),
             result.errors,
         )
-        // No row is deleted; every row stays with status Failed.
+        // No row deleted; every row stays with status Failed.
         assertEquals(3, dao.snapshot().size)
         assertTrue(dao.snapshot().all { it.status == SyncStatus.Failed.name })
     }
 
     @Test
-    fun `batch respects size limit and dispatches FIFO by enqueuedAt`() = runTest {
+    fun `batch respects size limit and dispatches FIFO by enqueuedAt within a type`() = runTest {
         val dao = FakeSyncJobDao().apply {
             // Insert out of enqueuedAt order to prove the runner pulls by
             // enqueuedAt ASC, not by insertion order.
@@ -213,13 +223,13 @@ class SyncBatchRunnerTest {
                 attendanceJob(id = 3, key = "middle", enqueuedAt = now),
             )
         }
-        val seenKeys = mutableListOf<String>()
+        var capturedKeys: List<String> = emptyList()
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler { key ->
-                    seenKeys.add(key)
-                    SyncOutcome.Success
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    capturedKeys = keys
+                    keys.associateWith { SyncOutcome.Success }
                 },
             ),
             clock = clock,
@@ -228,13 +238,14 @@ class SyncBatchRunnerTest {
         val result = runner.runBatch(batchSize = 2)
 
         assertEquals("batchSize bounds attempted count", 2, result.attempted)
-        assertEquals(listOf("oldest", "middle"), seenKeys)
+        // Handler receives the FIFO-ordered batch.
+        assertEquals(listOf("oldest", "middle"), capturedKeys)
         // "newest" wasn't included — it should still be in the queue.
         assertEquals(listOf("newest"), dao.snapshot().map { it.entityKey })
     }
 
     @Test
-    fun `cross-type batch routes each row to its own handler`() = runTest {
+    fun `cross-type batch routes each type's keys to its own handler in one call`() = runTest {
         val dao = FakeSyncJobDao().apply {
             seed(
                 attendanceJob(id = 1, key = "p1/c1", enqueuedAt = now - 30),
@@ -254,20 +265,23 @@ class SyncBatchRunnerTest {
                 ),
             )
         }
-        val attendanceKeys = mutableListOf<String>()
-        val remarkKeys = mutableListOf<String>()
-        val practicalScoreKeys = mutableListOf<String>()
+        var attendanceKeys: List<String> = emptyList()
+        var remarkKeys: List<String> = emptyList()
+        var practicalScoreKeys: List<String> = emptyList()
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler { key ->
-                    attendanceKeys.add(key); SyncOutcome.Success
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    attendanceKeys = keys
+                    keys.associateWith { SyncOutcome.Success }
                 },
-                SyncEntityType.Remark to SyncEntityHandler { key ->
-                    remarkKeys.add(key); SyncOutcome.Failure("remark API 500")
+                SyncEntityType.Remark to SyncEntityHandler { keys ->
+                    remarkKeys = keys
+                    keys.associateWith { SyncOutcome.Failure("remark API 500") }
                 },
-                SyncEntityType.PracticalScore to SyncEntityHandler { key ->
-                    practicalScoreKeys.add(key); SyncOutcome.Success
+                SyncEntityType.PracticalScore to SyncEntityHandler { keys ->
+                    practicalScoreKeys = keys
+                    keys.associateWith { SyncOutcome.Success }
                 },
             ),
             clock = clock,
@@ -293,7 +307,9 @@ class SyncBatchRunnerTest {
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler { SyncOutcome.Failure("boom") },
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Failure("boom") }
+                },
             ),
             clock = Clock { pinned },
         )
@@ -309,7 +325,9 @@ class SyncBatchRunnerTest {
         val runner = SyncBatchRunner(
             syncJobDao = dao,
             handlers = mapOf(
-                SyncEntityType.Attendance to SyncEntityHandler { SyncOutcome.Failure("offline") },
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Failure("offline") }
+                },
             ),
             clock = clock,
         )
@@ -320,6 +338,36 @@ class SyncBatchRunnerTest {
 
         assertEquals(3, dao.snapshot().single().attemptCount)
         assertEquals(SyncStatus.Failed.name, dao.snapshot().single().status)
+    }
+
+    @Test
+    fun `handler returning no result for a key produces synthetic Failure`() = runTest {
+        val dao = FakeSyncJobDao().apply {
+            seed(
+                attendanceJob(id = 1, key = "p1/c1"),
+                attendanceJob(id = 2, key = "p1/c2"),
+            )
+        }
+        // Contract-violating handler: returns a result for the first key only.
+        val runner = SyncBatchRunner(
+            syncJobDao = dao,
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    mapOf(keys.first() to SyncOutcome.Success)
+                },
+            ),
+            clock = clock,
+        )
+
+        val result = runner.runBatch()
+
+        assertEquals(2, result.attempted)
+        assertEquals(1, result.succeeded)
+        assertEquals(1, result.failed)
+        assertTrue(
+            "expected synthetic 'no result' error",
+            result.errors.single().contains("no result"),
+        )
     }
 
     private fun attendanceJob(

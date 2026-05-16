@@ -16,35 +16,62 @@ class RemarkSyncHandler @Inject constructor(
     private val clock: Clock,
 ) : SyncEntityHandler {
 
-    override suspend fun upload(entityKey: String): SyncOutcome {
-        val id = RemarkKey.decode(entityKey)
-            ?: return SyncOutcome.Failure("Malformed remark key: $entityKey")
+    override suspend fun uploadBatch(entityKeys: List<String>): Map<String, SyncOutcome> {
+        val outcomes = LinkedHashMap<String, SyncOutcome>(entityKeys.size)
+        val toUpload = mutableListOf<UploadRow>()
 
-        val entity = remarkDao.getById(id)
-            ?: return SyncOutcome.Failure("Remark not found locally: $entityKey")
+        for (key in entityKeys) {
+            val id = RemarkKey.decode(key)
+            if (id == null) {
+                outcomes[key] = SyncOutcome.Failure("Malformed remark key: $key")
+                continue
+            }
+            val entity = remarkDao.getById(id)
+            if (entity == null) {
+                outcomes[key] = SyncOutcome.Failure("Remark not found locally: $key")
+                continue
+            }
+            // Remark's clientId is the row id itself (matches SyncPayloadMappers).
+            toUpload.add(UploadRow(entityKey = key, id = id, domain = entity.toDomain()))
+        }
 
-        val result = remoteSource.uploadRemark(entity.toDomain())
+        if (toUpload.isEmpty()) return outcomes
+
+        val remoteResults = remoteSource.uploadRemarkBatch(toUpload.map { it.domain })
         val now = clock.nowMillis()
-        return result.fold(
-            onSuccess = {
-                remarkDao.updateSyncMetadata(
-                    id = id,
-                    syncStatus = SyncStatus.Synced.name,
-                    syncError = null,
-                    lastSyncAttemptAt = now,
-                )
-                SyncOutcome.Success
-            },
-            onFailure = { t ->
-                val message = t.message ?: "Upload failed."
-                remarkDao.updateSyncMetadata(
-                    id = id,
-                    syncStatus = SyncStatus.Failed.name,
-                    syncError = message,
-                    lastSyncAttemptAt = now,
-                )
-                SyncOutcome.Failure(message)
-            },
-        )
+
+        for (row in toUpload) {
+            val result = remoteResults[row.id]
+                ?: Result.failure(IllegalStateException("No remote result for ${row.id}"))
+            outcomes[row.entityKey] = result.fold(
+                onSuccess = {
+                    remarkDao.updateSyncMetadata(
+                        id = row.id,
+                        syncStatus = SyncStatus.Synced.name,
+                        syncError = null,
+                        lastSyncAttemptAt = now,
+                    )
+                    SyncOutcome.Success
+                },
+                onFailure = { t ->
+                    val message = t.message ?: "Upload failed."
+                    remarkDao.updateSyncMetadata(
+                        id = row.id,
+                        syncStatus = SyncStatus.Failed.name,
+                        syncError = message,
+                        lastSyncAttemptAt = now,
+                    )
+                    SyncOutcome.Failure(message)
+                },
+            )
+        }
+
+        return outcomes
     }
+
+    private data class UploadRow(
+        val entityKey: String,
+        val id: String,
+        val domain: ng.com.chprbn.mobile.feature.exam.domain.model.Remark,
+    )
 }

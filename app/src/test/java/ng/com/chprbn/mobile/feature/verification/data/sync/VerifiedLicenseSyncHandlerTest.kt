@@ -25,24 +25,26 @@ class VerifiedLicenseSyncHandlerTest {
     private val handler = VerifiedLicenseSyncHandler(dao, remote, clock)
 
     @Test
-    fun `missing local row returns Failure without touching remote`() = runTest {
+    fun `missing local row produces per-key Failure without touching remote`() = runTest {
         coEvery { dao.getByRegistrationNumber("MED-1") } returns null
 
-        val outcome = handler.upload("MED-1")
+        val outcomes = handler.uploadBatch(listOf("MED-1"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        coVerify(exactly = 0) { remote.uploadVerifiedRecord(any()) }
+        assertTrue(outcomes["MED-1"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadVerifiedBatch(any()) }
         coVerify(exactly = 0) { dao.updateSyncMetadata(any(), any(), any(), any()) }
     }
 
     @Test
     fun `successful upload flips row to Synced with current clock time`() = runTest {
         coEvery { dao.getByRegistrationNumber("MED-1") } returns verified("MED-1")
-        coEvery { remote.uploadVerifiedRecord(any()) } returns Result.success(Unit)
+        coEvery { remote.uploadVerifiedBatch(any()) } returns mapOf(
+            "MED-1" to Result.success(Unit),
+        )
 
-        val outcome = handler.upload("MED-1")
+        val outcomes = handler.uploadBatch(listOf("MED-1"))
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertEquals(SyncOutcome.Success, outcomes["MED-1"])
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 registrationNumber = "MED-1",
@@ -56,12 +58,14 @@ class VerifiedLicenseSyncHandlerTest {
     @Test
     fun `failed upload flips row to Failed with error message`() = runTest {
         coEvery { dao.getByRegistrationNumber("MED-1") } returns verified("MED-1")
-        coEvery { remote.uploadVerifiedRecord(any()) } returns Result.failure(IOException("offline"))
+        coEvery { remote.uploadVerifiedBatch(any()) } returns mapOf(
+            "MED-1" to Result.failure(IOException("offline")),
+        )
 
-        val outcome = handler.upload("MED-1")
+        val outcomes = handler.uploadBatch(listOf("MED-1"))
 
-        assertTrue(outcome is SyncOutcome.Failure)
-        assertEquals("offline", (outcome as SyncOutcome.Failure).message)
+        assertTrue(outcomes["MED-1"] is SyncOutcome.Failure)
+        assertEquals("offline", (outcomes["MED-1"] as SyncOutcome.Failure).message)
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 registrationNumber = "MED-1",
@@ -75,11 +79,13 @@ class VerifiedLicenseSyncHandlerTest {
     @Test
     fun `blank failure message degrades to 'Sync failed'`() = runTest {
         coEvery { dao.getByRegistrationNumber("MED-1") } returns verified("MED-1")
-        coEvery { remote.uploadVerifiedRecord(any()) } returns Result.failure(IOException(""))
+        coEvery { remote.uploadVerifiedBatch(any()) } returns mapOf(
+            "MED-1" to Result.failure(IOException("")),
+        )
 
-        val outcome = handler.upload("MED-1")
+        val outcomes = handler.uploadBatch(listOf("MED-1"))
 
-        assertEquals("Sync failed", (outcome as SyncOutcome.Failure).message)
+        assertEquals("Sync failed", (outcomes["MED-1"] as SyncOutcome.Failure).message)
         coVerify(exactly = 1) {
             dao.updateSyncMetadata(
                 registrationNumber = "MED-1",
@@ -88,6 +94,20 @@ class VerifiedLicenseSyncHandlerTest {
                 syncError = "Sync failed",
             )
         }
+    }
+
+    @Test
+    fun `batch with two rows sends a single uploadVerifiedBatch call`() = runTest {
+        coEvery { dao.getByRegistrationNumber("MED-1") } returns verified("MED-1")
+        coEvery { dao.getByRegistrationNumber("MED-2") } returns verified("MED-2")
+        coEvery { remote.uploadVerifiedBatch(any()) } returns mapOf(
+            "MED-1" to Result.success(Unit),
+            "MED-2" to Result.success(Unit),
+        )
+
+        handler.uploadBatch(listOf("MED-1", "MED-2"))
+
+        coVerify(exactly = 1) { remote.uploadVerifiedBatch(any()) }
     }
 
     private fun verified(registration: String) = VerifiedLicenseEntity(

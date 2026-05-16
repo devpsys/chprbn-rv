@@ -25,7 +25,7 @@ class ApiAssessmentSyncRemoteSourceTest {
     private val source = ApiAssessmentSyncRemoteSource(api)
 
     @Test
-    fun `successful practical-score batch returns Result success`() = runTest {
+    fun `batch returns per-row Result keyed by clientId`() = runTest {
         coEvery { api.uploadPracticalScoreBatch(any()) } returns
             Response.success(
                 PracticalScoreSyncBatchEnvelopeDto(
@@ -36,80 +36,84 @@ class ApiAssessmentSyncRemoteSourceTest {
                                 clientId = "PE-2024:c1:q1",
                                 accepted = true,
                                 serverId = "srv-1",
-                            )
+                            ),
+                            PracticalScoreSyncResultDto(
+                                clientId = "PE-2024:c1:q2",
+                                accepted = false,
+                                error = "score exceeds max_score",
+                            ),
                         )
                     )
                 )
             )
 
-        val result = source.uploadPracticalScore(score())
+        val results = source.uploadPracticalScoreBatch(
+            listOf(score(questionId = "q1"), score(questionId = "q2")),
+        )
 
-        assertTrue("expected success but was $result", result.isSuccess)
+        assertTrue(results.getValue("PE-2024:c1:q1").isSuccess)
+        assertTrue(results.getValue("PE-2024:c1:q2").isFailure)
+        assertTrue(
+            results.getValue("PE-2024:c1:q2").exceptionOrNull()!!.message!!.contains("exceeds max_score"),
+        )
     }
 
     @Test
-    fun `single-item batch wraps domain row into items of size 1`() = runTest {
+    fun `batch sends a single HTTP call carrying every row's clientId`() = runTest {
         val captured = slot<PracticalScoreSyncBatchRequestDto>()
         coEvery { api.uploadPracticalScoreBatch(capture(captured)) } returns
             Response.success(PracticalScoreSyncBatchEnvelopeDto(success = true))
 
-        source.uploadPracticalScore(score())
+        source.uploadPracticalScoreBatch(
+            listOf(score(questionId = "q1"), score(questionId = "q2")),
+        )
 
-        assertEquals(1, captured.captured.items.size)
-        assertEquals("PE-2024:c1:q1", captured.captured.items.first().clientId)
+        assertEquals(2, captured.captured.items.size)
+        assertEquals(
+            listOf("PE-2024:c1:q1", "PE-2024:c1:q2"),
+            captured.captured.items.map { it.clientId },
+        )
     }
 
     @Test
-    fun `per-row reject returns Result failure with error message`() = runTest {
-        coEvery { api.uploadPracticalScoreBatch(any()) } returns
-            Response.success(
-                PracticalScoreSyncBatchEnvelopeDto(
-                    success = true,
-                    data = PracticalScoreSyncBatchResultsDto(
-                        results = listOf(
-                            PracticalScoreSyncResultDto(
-                                clientId = "PE-2024:c1:q1",
-                                accepted = false,
-                                error = "score exceeds max_score",
-                            )
-                        )
-                    )
-                )
-            )
-
-        val result = source.uploadPracticalScore(score())
-
-        assertTrue(result.isFailure)
-        val msg = result.exceptionOrNull()?.message.orEmpty()
-        assertTrue("expected per-row error in message, was: $msg", msg.contains("exceeds max_score"))
-    }
-
-    @Test
-    fun `non-2xx response returns Result failure with status detail`() = runTest {
+    fun `non-2xx transport failure maps every input row to Result failure`() = runTest {
         coEvery { api.uploadPracticalScoreBatch(any()) } returns
             Response.error(500, "boom".toResponseBody("text/plain".toMediaTypeOrNull()))
 
-        val result = source.uploadPracticalScore(score())
+        val results = source.uploadPracticalScoreBatch(
+            listOf(score(questionId = "q1"), score(questionId = "q2")),
+        )
 
-        assertTrue(result.isFailure)
-        val msg = result.exceptionOrNull()?.message.orEmpty()
-        assertTrue("expected HTTP 500 in error message, was: $msg", msg.contains("500"))
+        assertTrue(results.getValue("PE-2024:c1:q1").isFailure)
+        assertTrue(results.getValue("PE-2024:c1:q2").isFailure)
+        assertTrue(
+            results.getValue("PE-2024:c1:q1").exceptionOrNull()!!.message!!.contains("500"),
+        )
     }
 
     @Test
-    fun `IOException from Retrofit returns Result failure`() = runTest {
+    fun `IOException transport failure maps every input row to Result failure with the cause`() = runTest {
         coEvery { api.uploadPracticalScoreBatch(any()) } throws IOException("offline")
 
-        val result = source.uploadPracticalScore(score())
+        val results = source.uploadPracticalScoreBatch(
+            listOf(score(questionId = "q1"), score(questionId = "q2")),
+        )
 
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is IOException)
+        assertTrue(results.getValue("PE-2024:c1:q1").exceptionOrNull() is IOException)
+        assertTrue(results.getValue("PE-2024:c1:q2").exceptionOrNull() is IOException)
     }
 
-    private fun score() = PracticalScore(
+    @Test
+    fun `empty input returns empty map without HTTP call`() = runTest {
+        val results = source.uploadPracticalScoreBatch(emptyList())
+
+        assertTrue(results.isEmpty())
+    }
+
+    private fun score(questionId: String) = PracticalScore(
         scheduleId = "PE-2024",
         candidateId = "c1",
-        questionId = "q1",
+        questionId = questionId,
         score = 8,
         scoredAt = 1_700_000_000_000L,
         syncStatus = SyncStatus.Pending,
