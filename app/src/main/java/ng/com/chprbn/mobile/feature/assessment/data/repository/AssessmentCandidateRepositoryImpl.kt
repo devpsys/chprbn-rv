@@ -16,9 +16,10 @@ class AssessmentCandidateRepositoryImpl @Inject constructor(
     override suspend fun getCandidates(
         scheduleId: String,
         query: String,
+        lowScoreThreshold: Int,
     ): List<AssessmentCandidateRow> = withContext(Dispatchers.IO) {
         val likeArg = if (query.isBlank()) "" else "%${escapeLike(query.trim())}%"
-        candidateDao.rowsForSchedule(scheduleId, likeArg).map { it.toDomain() }
+        candidateDao.rowsForSchedule(scheduleId, likeArg).map { it.toDomain(lowScoreThreshold) }
     }
 
     override suspend fun getCandidate(

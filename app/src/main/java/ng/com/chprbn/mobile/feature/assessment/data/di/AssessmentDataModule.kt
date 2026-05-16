@@ -22,6 +22,8 @@ import ng.com.chprbn.mobile.feature.assessment.data.source.CompositeAssessmentPa
 import ng.com.chprbn.mobile.feature.assessment.data.source.FakeAssessmentPackageRemoteSource
 import ng.com.chprbn.mobile.feature.assessment.data.sync.PracticalScoreSyncHandler
 import ng.com.chprbn.mobile.feature.assessment.data.sync.ProjectScoreSyncHandler
+import ng.com.chprbn.mobile.feature.assessment.domain.model.LowScoreThreshold
+import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentCandidateRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentScheduleRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentSyncRepository
@@ -105,5 +107,15 @@ abstract class AssessmentDataModule {
             api: ApiAssessmentPackageRemoteSource,
             fake: FakeAssessmentPackageRemoteSource,
         ): AssessmentPackageRemoteSource = CompositeAssessmentPackageRemoteSource(api, fake)
+
+        /**
+         * Cohort-level "below this aggregate score = Low" threshold. Defaulted
+         * to [ScoreLevel.DEFAULT_LOW_THRESHOLD] (50). A future per-cohort /
+         * per-schedule override swaps this one binding without touching the
+         * use case or mapper layer.
+         */
+        @Provides
+        @LowScoreThreshold
+        fun provideLowScoreThreshold(): Int = ScoreLevel.DEFAULT_LOW_THRESHOLD
     }
 }

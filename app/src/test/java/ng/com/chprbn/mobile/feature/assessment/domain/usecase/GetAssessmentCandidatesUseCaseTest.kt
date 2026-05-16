@@ -16,14 +16,17 @@ import org.junit.Test
 class GetAssessmentCandidatesUseCaseTest {
 
     private val repository = mockk<AssessmentCandidateRepository>()
-    private val useCase = GetAssessmentCandidatesUseCase(repository)
+    private val useCase = GetAssessmentCandidatesUseCase(
+        repository = repository,
+        lowScoreThreshold = ScoreLevel.DEFAULT_LOW_THRESHOLD,
+    )
 
     @Test
     fun `blank schedule returns empty list without hitting repository`() = runTest {
         val result = useCase(scheduleId = "  ")
 
         assertTrue(result.isEmpty())
-        coVerify(exactly = 0) { repository.getCandidates(any(), any()) }
+        coVerify(exactly = 0) { repository.getCandidates(any(), any(), any()) }
     }
 
     @Test
@@ -37,7 +40,7 @@ class GetAssessmentCandidatesUseCaseTest {
             syncStatus = SyncStatus.Pending,
         )
         coEvery {
-            repository.getCandidates("PE-2024", "jane")
+            repository.getCandidates("PE-2024", "jane", ScoreLevel.DEFAULT_LOW_THRESHOLD)
         } returns listOf(row)
 
         val result = useCase(
@@ -46,15 +49,34 @@ class GetAssessmentCandidatesUseCaseTest {
         )
 
         assertEquals(listOf(row), result)
-        coVerify(exactly = 1) { repository.getCandidates("PE-2024", "jane") }
+        coVerify(exactly = 1) {
+            repository.getCandidates("PE-2024", "jane", ScoreLevel.DEFAULT_LOW_THRESHOLD)
+        }
     }
 
     @Test
     fun `default empty query returns full cohort`() = runTest {
-        coEvery { repository.getCandidates("PE-2024", "") } returns emptyList()
+        coEvery {
+            repository.getCandidates("PE-2024", "", ScoreLevel.DEFAULT_LOW_THRESHOLD)
+        } returns emptyList()
 
         useCase(scheduleId = "PE-2024")
 
-        coVerify(exactly = 1) { repository.getCandidates("PE-2024", "") }
+        coVerify(exactly = 1) {
+            repository.getCandidates("PE-2024", "", ScoreLevel.DEFAULT_LOW_THRESHOLD)
+        }
+    }
+
+    @Test
+    fun `non-default threshold is forwarded to repository`() = runTest {
+        val customUseCase = GetAssessmentCandidatesUseCase(
+            repository = repository,
+            lowScoreThreshold = 70,
+        )
+        coEvery { repository.getCandidates("PE-2024", "", 70) } returns emptyList()
+
+        customUseCase(scheduleId = "PE-2024")
+
+        coVerify(exactly = 1) { repository.getCandidates("PE-2024", "", 70) }
     }
 }
