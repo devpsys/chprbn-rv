@@ -603,7 +603,7 @@ No query, path, or body parameters.
 | `data.username` | string | No | Login handle (typically the license number). |
 | `data.email` | string | No | Login email. |
 | `data.phone` | string | Yes | E.164 phone. |
-| `data.permissions` | string[] | No | Permission codes; `[]` if none. |
+| `data.permissions` | string[] | Yes | Permission codes (see §12.4). Backend SHOULD always emit the array (possibly empty); when omitted, mobile maps to `emptyList()`. |
 | `data.role` | string | Yes | Role label. |
 | `data.unit` | string | Yes | Unit / hospital. |
 | `data.lastLoginAt` | string | Yes | ISO-8601 timestamp. |

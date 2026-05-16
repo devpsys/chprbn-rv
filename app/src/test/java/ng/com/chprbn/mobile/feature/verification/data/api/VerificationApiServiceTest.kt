@@ -89,16 +89,14 @@ class VerificationApiServiceTest {
     }
 
     @Test
-    fun `getProfile leaves permissions null when JSON omits the field (Gson gotcha)`() = runTest {
-        // Regression-pin: ProfileDataDto declares `permissions: List<String> = emptyList()`
-        // but Gson's reflective deserialization does NOT honor Kotlin
-        // constructor defaults. When the server omits the field, `permissions`
-        // ends up as a null reference despite the non-null declared type.
-        // Any caller that dereferences it (e.g. `.size`, `.isEmpty()`) will NPE.
-        // Latent bug — flag for a follow-up that either makes the field nullable
-        // (`List<String>? = null`) and `.orEmpty()`s at the consumer, or wires
-        // a Kotlin-aware Gson adapter. Until then, backend MUST always return
-        // a `permissions` array (possibly empty).
+    fun `getProfile leaves permissions null when JSON omits the field`() = runTest {
+        // `permissions` is declared `List<String>? = null` on `ProfileDataDto`
+        // by design: Gson's reflective deserialization does NOT honor Kotlin
+        // constructor defaults, so a non-null `List<String> = emptyList()`
+        // declaration would land as null at runtime when the server omits the
+        // field and any consumer would NPE. The mapper `.orEmpty()`s the
+        // nullable field on the way to the domain `User`, so callers always
+        // see a non-null list. Mirror change applied on `AdhocProfileDataDto.permissions`.
         server.enqueue(
             jsonOk(
                 """
@@ -109,9 +107,7 @@ class VerificationApiServiceTest {
 
         val response = api.getProfile()
 
-        @Suppress("UNCHECKED_CAST")
-        val permissions = response.body()!!.data!!.permissions as List<String>?
-        assertNull("Gson leaves omitted list-typed fields null", permissions)
+        assertNull(response.body()!!.data!!.permissions)
     }
 
     private fun jsonOk(body: String): MockResponse =

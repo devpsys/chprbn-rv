@@ -59,6 +59,13 @@ data class ProfileEnvelopeDto(
 /**
  * Matches mobile API v1 `data` object for practitioner profile.
  * [photo] is raw Base64 image bytes (no data: prefix) when present.
+ *
+ * [permissions] is intentionally nullable for the same reason as
+ * [AdhocProfileDataDto.permissions]: Gson's reflective deserialization
+ * does NOT honor Kotlin constructor defaults, so an omitted field on the
+ * wire would land as a null reference despite a `List<String>`-typed
+ * declaration with a default — and any consumer dereferencing it would
+ * NPE. Mapper layer `.orEmpty()`s it on the way to the domain `User`.
  */
 data class ProfileDataDto(
     val photo: String? = null,
@@ -67,7 +74,7 @@ data class ProfileDataDto(
     val username: String,
     val email: String,
     val phone: String? = null,
-    val permissions: List<String> = emptyList(),
+    val permissions: List<String>? = null,
     val id: String,
     val role: String? = null,
     val unit: String? = null,
