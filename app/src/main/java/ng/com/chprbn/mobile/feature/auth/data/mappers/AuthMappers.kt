@@ -16,7 +16,7 @@ fun AdhocProfileDataDto.toDomain(accessToken: String): User {
         email = email,
         fullName = name,
         accessToken = accessToken,
-        permissions = emptyList(),
+        permissions = permissions.orEmpty(),
         userPhoto = null,
         role = role,
         staffId = null,

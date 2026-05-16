@@ -532,7 +532,8 @@ No query, path, or body parameters.
     "username": "field.officer",
     "status": 1,
     "role": "Senior Field Officer",
-    "department": "Lagos North"
+    "department": "Lagos North",
+    "permissions": ["verify_practitioner", "mark_attendance"]
   }
 }
 ```
@@ -547,6 +548,7 @@ No query, path, or body parameters.
 | `data.status` | int | Yes | `1` = active, `0` = disabled. Mobile rejects login if `0`. |
 | `data.role` | string | Yes | Free-text role label for display. |
 | `data.department` | string | Yes | Free-text unit/department. |
+| `data.permissions` | string[] | Yes | Permission codes (see §12.4). Backend SHOULD always emit the array — when omitted, mobile maps to `emptyList()`. |
 
 #### Error Responses
 

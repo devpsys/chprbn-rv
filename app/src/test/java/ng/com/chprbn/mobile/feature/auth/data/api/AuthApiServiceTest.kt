@@ -115,7 +115,8 @@ class AuthApiServiceTest {
                     "username": "field.officer",
                     "status": 1,
                     "role": "Senior Field Officer",
-                    "department": "Lagos North"
+                    "department": "Lagos North",
+                    "permissions": ["verify_practitioner", "mark_attendance"]
                   }
                 }
                 """.trimIndent(),
@@ -138,6 +139,10 @@ class AuthApiServiceTest {
         assertEquals(1, data.status)
         assertEquals("Senior Field Officer", data.role)
         assertEquals("Lagos North", data.department)
+        assertEquals(
+            listOf("verify_practitioner", "mark_attendance"),
+            data.permissions,
+        )
     }
 
     @Test
@@ -162,6 +167,10 @@ class AuthApiServiceTest {
         assertNull(data.role)
         assertNull(data.department)
         assertNull(data.id)
+        // `permissions` is declared nullable on the DTO precisely to dodge the
+        // Gson + Kotlin-defaults gotcha — when omitted on the wire it lands as
+        // null, and the mapper `.orEmpty()`s it before the domain `User` sees it.
+        assertNull(data.permissions)
     }
 
     // endregion

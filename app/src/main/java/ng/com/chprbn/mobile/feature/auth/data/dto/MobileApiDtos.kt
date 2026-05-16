@@ -25,6 +25,14 @@ data class AdhocProfileEnvelopeDto(
 /**
  * Mobile API v1 adhoc user profile (`data` from GET /adhoc/profile).
  * Numeric [id] may be serialized as JSON number.
+ *
+ * [permissions] is intentionally nullable (not `= emptyList()`): Gson's
+ * reflective deserialization does NOT honor Kotlin constructor defaults,
+ * so an omitted field on the wire would land as a null reference despite
+ * a non-null declared type — and any consumer dereferencing it would
+ * NPE. Mapper layer `.orEmpty()`s it on the way to the domain `User`.
+ * See `VerificationApiServiceTest` for the regression-pin of the same
+ * Gson gotcha on the tutor side.
  */
 data class AdhocProfileDataDto(
     val id: Double? = null,
@@ -34,7 +42,8 @@ data class AdhocProfileDataDto(
     val username: String,
     val status: Int? = null,
     val role: String? = null,
-    val department: String? = null
+    val department: String? = null,
+    val permissions: List<String>? = null
 )
 
 // endregion
