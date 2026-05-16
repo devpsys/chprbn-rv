@@ -1,10 +1,13 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
@@ -27,12 +30,18 @@ class ExamPaperViewModelTest {
     private val getPaperDetail = mockk<GetExamPaperDetailUseCase>()
     private val syncExamRecords = mockk<SyncExamRecordsUseCase>()
     private val savedState = SavedStateHandle(mapOf("paperId" to "p1"))
+    private val context = mockk<Context> {
+        every { getString(R.string.exam_paper_institution_code_label) } returns "Institution Code"
+        every { getString(R.string.exam_paper_sync_status_cloud_synced) } returns "Cloud Synced"
+        every { getString(R.string.exam_paper_info_title_verification_ongoing) } returns "Verification ongoing"
+        every { getString(R.string.exam_paper_no_data_yet) } returns "No data yet"
+    }
 
     @Test
     fun `NotFound keeps the placeholder state`() = runTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
 
-        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords)
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
         assertEquals(ExamPaperUiState.placeholder(), viewModel.uiState.value)
     }
@@ -41,7 +50,7 @@ class ExamPaperViewModelTest {
     fun `Error keeps the placeholder state`() = runTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.Error("boom")
 
-        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords)
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
         assertEquals(ExamPaperUiState.placeholder(), viewModel.uiState.value)
     }
@@ -75,7 +84,7 @@ class ExamPaperViewModelTest {
             ),
         )
 
-        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords)
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
         val state = viewModel.uiState.value
         assertEquals("Mathematics — Paper II", state.paperTitle)
@@ -93,7 +102,7 @@ class ExamPaperViewModelTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
         coEvery { syncExamRecords() } returns SyncBatchResult.Empty
 
-        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords)
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
         viewModel.onSyncData()
 

@@ -1,8 +1,10 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -12,12 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.verification.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SyncRecord
+import ng.com.chprbn.mobile.feature.verification.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetSyncRecordsUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.RetryFailedSyncUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SyncAllRecordsUseCase
-import ng.com.chprbn.mobile.feature.verification.domain.model.SyncStatus
 
 data class SyncUiState(
     val records: List<SyncRecord> = emptyList(),
@@ -46,7 +49,8 @@ data class SyncUiState(
 class SyncViewModel @Inject constructor(
     private val getSyncRecordsUseCase: GetSyncRecordsUseCase,
     private val syncAllRecordsUseCase: SyncAllRecordsUseCase,
-    private val retryFailedSyncUseCase: RetryFailedSyncUseCase
+    private val retryFailedSyncUseCase: RetryFailedSyncUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SyncUiState())
@@ -71,12 +75,13 @@ class SyncViewModel @Inject constructor(
             _uiState.update {
                 it.copy(isSyncing = true, error = null, lastBatchSummary = null)
             }
+            val actionLabel = context.getString(R.string.sync_action_label_sync_all)
             runCatching { syncAllRecordsUseCase() }
                 .onSuccess { result ->
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
-                            lastBatchSummary = formatBatchSummary("Sync all", result)
+                            lastBatchSummary = formatBatchSummary(actionLabel, result)
                         )
                     }
                     reloadFromDb()
@@ -85,7 +90,7 @@ class SyncViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
-                            error = t.message ?: "Sync failed."
+                            error = t.message ?: context.getString(R.string.sync_error_sync_failed),
                         )
                     }
                     reloadFromDb()
@@ -98,12 +103,13 @@ class SyncViewModel @Inject constructor(
             _uiState.update {
                 it.copy(isSyncing = true, error = null, lastBatchSummary = null)
             }
+            val actionLabel = context.getString(R.string.sync_action_label_retry_failed)
             runCatching { retryFailedSyncUseCase() }
                 .onSuccess { result ->
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
-                            lastBatchSummary = formatBatchSummary("Retry failed", result)
+                            lastBatchSummary = formatBatchSummary(actionLabel, result)
                         )
                     }
                     reloadFromDb()
@@ -112,7 +118,7 @@ class SyncViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
-                            error = t.message ?: "Retry failed."
+                            error = t.message ?: context.getString(R.string.sync_error_retry_failed),
                         )
                     }
                     reloadFromDb()
@@ -143,21 +149,28 @@ class SyncViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = t.message ?: "Unable to load records."
+                        error = t.message ?: context.getString(R.string.sync_error_unable_to_load),
                     )
                 }
             }
     }
 
     private fun formatBatchSummary(title: String, result: SyncBatchResult): String {
-        if (result.attempted == 0) {
-            return "$title: nothing to upload."
+        return if (result.attempted == 0) {
+            context.getString(R.string.sync_summary_nothing_to_upload, title)
+        } else {
+            context.getString(
+                R.string.sync_summary_format,
+                title,
+                result.succeeded,
+                result.failed,
+                result.attempted,
+            )
         }
-        return "$title: ${result.succeeded} ok, ${result.failed} failed (${result.attempted} attempted)"
     }
 
     fun formatRelativeLastSync(millis: Long?): String {
-        if (millis == null) return "No successful sync yet"
-        return "Last success: ${timeFormat.format(Date(millis))}"
+        if (millis == null) return context.getString(R.string.sync_no_successful_yet)
+        return context.getString(R.string.sync_last_success_format, timeFormat.format(Date(millis)))
     }
 }

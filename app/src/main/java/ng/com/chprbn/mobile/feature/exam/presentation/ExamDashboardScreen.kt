@@ -325,7 +325,7 @@ private fun ExamSessionTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notifications",
+                        contentDescription = stringResource(R.string.exam_dashboard_notifications_cd),
                         tint = scheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
@@ -690,12 +690,12 @@ private fun ExamQuickStatsRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         ExamStatTile(
-            label = "Attendance Rate",
+            label = stringResource(R.string.exam_dashboard_stat_attendance_rate),
             value = attendanceRate,
             modifier = Modifier.weight(1f)
         )
         ExamStatTile(
-            label = "Current GPA",
+            label = stringResource(R.string.exam_dashboard_stat_current_gpa),
             value = gpa,
             modifier = Modifier.weight(1f)
         )

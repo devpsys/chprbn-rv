@@ -324,21 +324,21 @@ private fun QuickActionsSection(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.History,
-                        contentDescription = "Recent Logs",
+                        contentDescription = stringResource(R.string.dashboard_recent_logs_cd),
                         modifier = Modifier.size(24.dp),
                         tint = PrimaryGreen
                     )
                 }
                 Column {
                     Text(
-                        text = "QUICK ACTIONS",
+                        text = stringResource(R.string.dashboard_quick_actions_section),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "View Recent Logs",
+                        text = stringResource(R.string.dashboard_action_view_recent_logs),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

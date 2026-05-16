@@ -62,9 +62,14 @@
     <string name="dashboard_feature_exams_subtitle">Exam attendance &amp; practical assessment</string>
     <string name="dashboard_feature_accreditation_title">ACCREDITATION</string>
     <string name="dashboard_feature_accreditation_subtitle">Accreditation</string>
+    <string name="dashboard_recent_logs_cd">Recent Logs</string>
+    <string name="dashboard_quick_actions_section">QUICK ACTIONS</string>
+    <string name="dashboard_action_view_recent_logs">View Recent Logs</string>
 
     <!-- ============== Verification ============== -->
     <string name="verification_retry_action">Retry</string>
+    <!-- VM-side error fallback when use-case fails with no message. -->
+    <string name="verification_error_unknown">Unknown error</string>
     <!-- Feature grid titles + subtitles, keyed by domain.model.FeatureType. -->
     <string name="verification_feature_scan_qr_title">Scan License QR</string>
     <string name="verification_feature_scan_qr_subtitle">Validate practitioner credentials</string>
@@ -82,6 +87,10 @@
     <string name="verification_status_db_capacity">LOCAL DATABASE 75% CAPACITY</string>
 
     <!-- ============== Profile ============== -->
+    <!-- VM-side error states surfaced from ProfileViewModel. -->
+    <string name="profile_error_not_logged_in">Not logged in</string>
+    <string name="profile_error_unknown">Unknown error</string>
+    <string name="profile_error_logout_failed">Logout failed</string>
     <string name="profile_header_title">Profile</string>
     <string name="profile_action_back">Back</string>
     <string name="profile_action_more">More</string>
@@ -230,6 +239,17 @@
     <string name="irregularity_error_attach_image">Attach an image</string>
 
     <!-- ============== Sync hub ============== -->
+    <!-- VM-side labels + error fallbacks for SyncViewModel. -->
+    <string name="sync_action_label_sync_all">Sync all</string>
+    <string name="sync_action_label_retry_failed">Retry failed</string>
+    <!-- Batch-summary formats: %1$s = action label, %2$d/%3$d/%4$d = counts. -->
+    <string name="sync_summary_nothing_to_upload">%1$s: nothing to upload.</string>
+    <string name="sync_summary_format">%1$s: %2$d ok, %3$d failed (%4$d attempted)</string>
+    <string name="sync_error_sync_failed">Sync failed.</string>
+    <string name="sync_error_retry_failed">Retry failed.</string>
+    <string name="sync_error_unable_to_load">Unable to load records.</string>
+    <string name="sync_no_successful_yet">No successful sync yet</string>
+    <string name="sync_last_success_format">Last success: %1$s</string>
     <string name="sync_header_title">Sync Records</string>
     <string name="sync_action_back">Back</string>
     <string name="sync_action_refresh">Refresh</string>
@@ -297,6 +317,10 @@
     <string name="candidate_scan_default_testing_center">Hall B - Room 12</string>
 
     <!-- ============== Exam — papers list ============== -->
+    <!-- VM-side labels surfaced from ExamPapersViewModel. -->
+    <string name="exam_papers_daily_overview_title">Daily Overview</string>
+    <string name="exam_papers_status_pill_in_progress">In Progress</string>
+    <string name="exam_papers_action_mark_attendance">Mark Attendance</string>
     <string name="exam_papers_header_title">Exam Attendance</string>
     <string name="exam_papers_action_back">Back</string>
     <string name="exam_papers_action_sync">Sync</string>
@@ -309,6 +333,12 @@
     <string name="exam_papers_status_upcoming">UPCOMING</string>
 
     <!-- ============== Exam — single paper detail ============== -->
+    <!-- VM-side labels surfaced from ExamPaperViewModel. -->
+    <string name="exam_paper_institution_code_label">Institution Code</string>
+    <string name="exam_paper_sync_status_cloud_synced">Cloud Synced</string>
+    <string name="exam_paper_info_title_verification_ongoing">Verification ongoing</string>
+    <!-- Empty-state for any "last updated" caption that has no real timestamp yet. -->
+    <string name="exam_paper_no_data_yet">No data yet</string>
     <string name="exam_paper_header_title">Paper Details</string>
     <string name="exam_paper_action_back">Back</string>
     <string name="exam_paper_stat_total_candidates">Total Candidates</string>
@@ -326,6 +356,9 @@
     <string name="exam_dashboard_institution_banner_cd">Institution banner</string>
     <string name="exam_dashboard_label_code">Code: </string>
     <string name="exam_dashboard_label_location">Location: </string>
+    <string name="exam_dashboard_notifications_cd">Notifications</string>
+    <string name="exam_dashboard_stat_attendance_rate">Attendance Rate</string>
+    <string name="exam_dashboard_stat_current_gpa">Current GPA</string>
 
     <!-- ============== Exam — download dossier warning + loading ============== -->
     <string name="exam_download_warning_title">Download Candidate Records</string>
@@ -371,6 +404,11 @@
     <string name="exam_candidates_nav_settings">Settings</string>
 
     <!-- ============== Exam — statistics ============== -->
+    <!-- VM-side relative-time labels for ExamStatisticsViewModel. -->
+    <string name="exam_statistics_updated_just_now">Updated just now</string>
+    <string name="exam_statistics_updated_minutes_ago_format">Updated %1$dm ago</string>
+    <string name="exam_statistics_updated_hours_ago_format">Updated %1$dh ago</string>
+    <string name="exam_statistics_updated_days_ago_format">Updated %1$dd ago</string>
     <string name="exam_statistics_header_title">Exam Statistics</string>
     <string name="exam_statistics_action_back">Back</string>
     <string name="exam_statistics_action_refresh">Refresh</string>

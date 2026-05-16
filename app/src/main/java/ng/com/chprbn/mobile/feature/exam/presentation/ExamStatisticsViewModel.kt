@@ -1,12 +1,15 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamStatistics
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.ClearExamCacheUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamStatisticsUseCase
@@ -29,6 +32,7 @@ class ExamStatisticsViewModel @Inject constructor(
     private val getStatistics: GetExamStatisticsUseCase,
     private val syncExamRecords: SyncExamRecordsUseCase,
     private val clearExamCache: ClearExamCacheUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamStatisticsUiState.placeholder())
@@ -92,13 +96,22 @@ class ExamStatisticsViewModel @Inject constructor(
     }
 
     private fun formatLastUpdated(at: Long?): String {
-        if (at == null || at == 0L) return "No data yet"
+        if (at == null || at == 0L) return context.getString(R.string.exam_paper_no_data_yet)
         val elapsed = Duration.between(Instant.ofEpochMilli(at), Instant.now())
         return when {
-            elapsed.toMinutes() < 1 -> "Updated just now"
-            elapsed.toMinutes() < 60 -> "Updated ${elapsed.toMinutes()}m ago"
-            elapsed.toHours() < 24 -> "Updated ${elapsed.toHours()}h ago"
-            else -> "Updated ${elapsed.toDays()}d ago"
+            elapsed.toMinutes() < 1 -> context.getString(R.string.exam_statistics_updated_just_now)
+            elapsed.toMinutes() < 60 -> context.getString(
+                R.string.exam_statistics_updated_minutes_ago_format,
+                elapsed.toMinutes().toInt(),
+            )
+            elapsed.toHours() < 24 -> context.getString(
+                R.string.exam_statistics_updated_hours_ago_format,
+                elapsed.toHours().toInt(),
+            )
+            else -> context.getString(
+                R.string.exam_statistics_updated_days_ago_format,
+                elapsed.toDays().toInt(),
+            )
         }
     }
 }

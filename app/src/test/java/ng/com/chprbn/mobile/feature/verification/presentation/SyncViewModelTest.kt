@@ -1,10 +1,13 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.verification.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SyncStatus
@@ -27,6 +30,7 @@ class SyncViewModelTest {
     private lateinit var getSyncRecordsUseCase: GetSyncRecordsUseCase
     private lateinit var syncAllRecordsUseCase: SyncAllRecordsUseCase
     private lateinit var retryFailedSyncUseCase: RetryFailedSyncUseCase
+    private lateinit var context: Context
 
     @Before
     fun setUp() {
@@ -36,6 +40,39 @@ class SyncViewModelTest {
         // Default: empty list so init/refresh always succeeds. Tests that need a
         // different behaviour override this stub before constructing the ViewModel.
         coEvery { getSyncRecordsUseCase() } returns emptyList()
+        // Real Android Context.getString would format the resource via printf —
+        // we stub each call to produce the exact same string so assertions pin
+        // the migrated copy verbatim.
+        context = mockk {
+            every { getString(R.string.sync_action_label_sync_all) } returns "Sync all"
+            every { getString(R.string.sync_action_label_retry_failed) } returns "Retry failed"
+            every { getString(R.string.sync_error_sync_failed) } returns "Sync failed."
+            every { getString(R.string.sync_error_retry_failed) } returns "Retry failed."
+            every { getString(R.string.sync_error_unable_to_load) } returns "Unable to load records."
+            every { getString(R.string.sync_no_successful_yet) } returns "No successful sync yet"
+            // Android Context.getString(int, vararg Any?) — mockk sees the
+            // varargs as a single Array<Any?>, so we match with *anyVararg()
+            // and read invocation.args[1] for the formatted output.
+            every {
+                getString(R.string.sync_summary_nothing_to_upload, *anyVararg())
+            } answers {
+                @Suppress("UNCHECKED_CAST")
+                val varargs = invocation.args[1] as Array<Any?>
+                "${varargs[0]}: nothing to upload."
+            }
+            every {
+                getString(R.string.sync_summary_format, *anyVararg())
+            } answers {
+                @Suppress("UNCHECKED_CAST")
+                val v = invocation.args[1] as Array<Any?>
+                "${v[0]}: ${v[1]} ok, ${v[2]} failed (${v[3]} attempted)"
+            }
+            every { getString(R.string.sync_last_success_format, *anyVararg()) } answers {
+                @Suppress("UNCHECKED_CAST")
+                val v = invocation.args[1] as Array<Any?>
+                "Last success: ${v[0]}"
+            }
+        }
     }
 
     @Test
@@ -73,7 +110,6 @@ class SyncViewModelTest {
         )
         val viewModel = makeViewModel()
 
-        // After syncAll, getSyncRecordsUseCase is called again — bump the stub.
         coEvery { getSyncRecordsUseCase() } returns listOf(
             verified("REG-1", SyncStatus.Synced),
             verified("REG-2", SyncStatus.Synced),
@@ -145,9 +181,6 @@ class SyncViewModelTest {
 
     @Test
     fun `sync error survives the implicit reloadFromDb that follows a failure`() = runTest {
-        // Regression test for the bug fixed in SyncViewModel#reloadFromDb:
-        // previously, onSuccess of the post-failure reload cleared `error`,
-        // so the user never saw the failure message. This test pins the fix.
         coEvery { syncAllRecordsUseCase() } throws RuntimeException("Server 502")
         val viewModel = makeViewModel()
 
@@ -164,7 +197,6 @@ class SyncViewModelTest {
     fun `consumeError clears the error field`() = runTest {
         coEvery { getSyncRecordsUseCase() } throws RuntimeException("DB locked")
         val viewModel = makeViewModel()
-        // sanity
         assertEquals("DB locked", viewModel.uiState.value.error)
 
         viewModel.consumeError()
@@ -202,7 +234,6 @@ class SyncViewModelTest {
 
         val viewModel = makeViewModel()
 
-        // Failed records are ignored even with a more recent attempt timestamp.
         assertEquals(1_800_000_000_000L, viewModel.uiState.value.lastSuccessfulSyncMillis)
     }
 
@@ -225,7 +256,8 @@ class SyncViewModelTest {
     private fun makeViewModel() = SyncViewModel(
         getSyncRecordsUseCase,
         syncAllRecordsUseCase,
-        retryFailedSyncUseCase
+        retryFailedSyncUseCase,
+        context,
     )
 
     private fun verified(

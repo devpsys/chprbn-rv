@@ -1,12 +1,15 @@
 package ng.com.chprbn.mobile.feature.verification.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetVerificationDataUseCase
 import javax.inject.Inject
 
@@ -16,7 +19,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class VerificationViewModel @Inject constructor(
-    private val getVerificationDataUseCase: GetVerificationDataUseCase
+    private val getVerificationDataUseCase: GetVerificationDataUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<VerificationUiState>(VerificationUiState.Loading)
@@ -37,7 +41,9 @@ class VerificationViewModel @Inject constructor(
                     )
                 }
                 .onFailure { e ->
-                    _state.value = VerificationUiState.Error(e.message ?: "Unknown error")
+                    _state.value = VerificationUiState.Error(
+                        e.message ?: context.getString(R.string.verification_error_unknown),
+                    )
                 }
         }
     }

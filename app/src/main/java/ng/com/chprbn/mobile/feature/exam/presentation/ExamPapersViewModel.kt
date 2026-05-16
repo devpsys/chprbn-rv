@@ -1,12 +1,15 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPapersUseCase
@@ -32,6 +35,7 @@ import javax.inject.Inject
 class ExamPapersViewModel @Inject constructor(
     private val getPapers: GetExamPapersUseCase,
     private val syncExamRecords: SyncExamRecordsUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamPapersUiState.placeholder())
@@ -74,13 +78,13 @@ class ExamPapersViewModel @Inject constructor(
             paper.toCardUiState(status)
         }
         return ExamPapersUiState(
-            dailyOverviewTitle = "Daily Overview",
+            dailyOverviewTitle = context.getString(R.string.exam_papers_daily_overview_title),
             dailyDateLabel = DATE_FORMATTER.format(
                 Instant.ofEpochMilli(firstOrNull()?.startAt ?: 0L),
             ),
             totalPapersLabel = size.toString().padStart(2, '0'),
             studentsLabel = sumOf { it.totalCandidates }.toString(),
-            statusPillLabel = "In Progress",
+            statusPillLabel = context.getString(R.string.exam_papers_status_pill_in_progress),
             papers = cards,
         )
     }
@@ -98,7 +102,9 @@ class ExamPapersViewModel @Inject constructor(
                 PaperKind.Theory -> ExamPaperIconKind.Description
                 PaperKind.Project -> ExamPaperIconKind.EditNote
             },
-            primaryActionLabel = if (status == ExamPaperAttendanceStatus.Active) "Mark Attendance" else null,
+            primaryActionLabel = if (status == ExamPaperAttendanceStatus.Active) {
+                context.getString(R.string.exam_papers_action_mark_attendance)
+            } else null,
         )
 
     private fun formatTimeRange(start: Long, end: Long): String =

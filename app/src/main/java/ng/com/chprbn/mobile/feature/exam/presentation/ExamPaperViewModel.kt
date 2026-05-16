@@ -1,13 +1,16 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetail
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetailResult
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPaperDetailUseCase
@@ -33,6 +36,7 @@ class ExamPaperViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getPaperDetail: GetExamPaperDetailUseCase,
     private val syncExamRecords: SyncExamRecordsUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val paperId: String = savedStateHandle.get<String>("paperId").orEmpty()
@@ -73,7 +77,7 @@ class ExamPaperViewModel @Inject constructor(
         return ExamPaperUiState(
             institutionHeroImageUrl = center.heroImageUrl ?: EXAM_PAPER_HERO_IMAGE_URL,
             institutionShortCode = center.code,
-            institutionCodeLabel = "Institution Code",
+            institutionCodeLabel = context.getString(R.string.exam_paper_institution_code_label),
             institutionName = center.name,
             institutionLocation = center.location,
             sessionLabel = "Today's Session",
@@ -87,15 +91,15 @@ class ExamPaperViewModel @Inject constructor(
             syncStatusLabel = if (pendingSyncCount > 0) {
                 "Pending Sync ($pendingSyncCount)"
             } else {
-                "Cloud Synced"
+                context.getString(R.string.exam_paper_sync_status_cloud_synced)
             },
-            infoTitle = "Verification ongoing",
+            infoTitle = context.getString(R.string.exam_paper_info_title_verification_ongoing),
             infoMessage = "Please ensure all biometric data and QR codes are scanned before the session start time.",
         )
     }
 
     private fun formatLastUpdated(at: Long?): String {
-        if (at == null || at == 0L) return "No data yet"
+        if (at == null || at == 0L) return context.getString(R.string.exam_paper_no_data_yet)
         val elapsed = Duration.between(Instant.ofEpochMilli(at), Instant.now())
         return when {
             elapsed.toMinutes() < 1 -> "Last updated: just now"

@@ -1,9 +1,12 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
@@ -22,12 +25,17 @@ class ExamPapersViewModelTest {
 
     private val getPapers = mockk<GetExamPapersUseCase>()
     private val syncExamRecords = mockk<SyncExamRecordsUseCase>()
+    private val context = mockk<Context> {
+        every { getString(R.string.exam_papers_daily_overview_title) } returns "Daily Overview"
+        every { getString(R.string.exam_papers_status_pill_in_progress) } returns "In Progress"
+        every { getString(R.string.exam_papers_action_mark_attendance) } returns "Mark Attendance"
+    }
 
     @Test
     fun `empty use case result keeps the placeholder state`() = runTest {
         coEvery { getPapers() } returns emptyList()
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
 
         assertEquals(ExamPapersUiState.placeholder(), viewModel.uiState.value)
     }
@@ -39,7 +47,7 @@ class ExamPapersViewModelTest {
             paper("p2", "Paper II", PaperKind.Practical),
         )
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
 
         val cards = viewModel.uiState.value.papers
         assertEquals(2, cards.size)
@@ -57,7 +65,7 @@ class ExamPapersViewModelTest {
             paper("p3", "Project", PaperKind.Project),
         )
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
 
         val byId = viewModel.uiState.value.papers.associateBy { it.id }
         assertEquals(ExamPaperIconKind.Description, byId.getValue("p1").iconKind)
@@ -70,14 +78,12 @@ class ExamPapersViewModelTest {
         coEvery { getPapers() } returns emptyList()
         coEvery { syncExamRecords() } returns SyncBatchResult.Empty
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
 
         assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
 
         viewModel.onSyncNow()
 
-        // Coroutine completes synchronously under runTest after dispatching;
-        // state flips back to Idle once the launch block finishes.
         assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
         coVerify(exactly = 1) { syncExamRecords() }
         coVerify(exactly = 2) { getPapers() }

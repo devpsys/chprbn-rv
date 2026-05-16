@@ -1,9 +1,12 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamStatistics
@@ -24,6 +27,24 @@ class ExamStatisticsViewModelTest {
     private val getStatistics = mockk<GetExamStatisticsUseCase>()
     private val syncExamRecords = mockk<SyncExamRecordsUseCase>()
     private val clearExamCache = mockk<ClearExamCacheUseCase>()
+    private val context = mockk<Context> {
+        every { getString(R.string.exam_paper_no_data_yet) } returns "No data yet"
+        every { getString(R.string.exam_statistics_updated_just_now) } returns "Updated just now"
+        // Context.getString(int, vararg Any?) — see SyncViewModelTest for the
+        // vararg-matching rationale.
+        every { getString(R.string.exam_statistics_updated_minutes_ago_format, *anyVararg()) } answers {
+            @Suppress("UNCHECKED_CAST")
+            "Updated ${(invocation.args[1] as Array<Any?>)[0]}m ago"
+        }
+        every { getString(R.string.exam_statistics_updated_hours_ago_format, *anyVararg()) } answers {
+            @Suppress("UNCHECKED_CAST")
+            "Updated ${(invocation.args[1] as Array<Any?>)[0]}h ago"
+        }
+        every { getString(R.string.exam_statistics_updated_days_ago_format, *anyVararg()) } answers {
+            @Suppress("UNCHECKED_CAST")
+            "Updated ${(invocation.args[1] as Array<Any?>)[0]}d ago"
+        }
+    }
 
     @Test
     fun `init loads statistics into ui state`() = runTest {
@@ -37,7 +58,7 @@ class ExamStatisticsViewModelTest {
             lastUpdatedAt = null,
         )
 
-        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache)
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
 
         val state = viewModel.uiState.value
         assertEquals("100", state.recordsDownloaded)
@@ -62,7 +83,7 @@ class ExamStatisticsViewModelTest {
             lastUpdatedAt = null,
         )
 
-        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache)
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
 
         assertEquals("* 3 records failed to sync.", viewModel.uiState.value.footnote)
     }
@@ -79,7 +100,7 @@ class ExamStatisticsViewModelTest {
             lastUpdatedAt = null,
         )
 
-        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache)
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
 
         val state = viewModel.uiState.value
         assertEquals("—", state.attendanceSubtitle)
@@ -89,18 +110,16 @@ class ExamStatisticsViewModelTest {
     @Test
     fun `onSyncNow invokes sync then refresh`() = runTest {
         coEvery { getStatistics() } returnsMany listOf(
-            stats(), // init load
+            stats(),
             stats(syncedCount = 1),
         )
         coEvery { syncExamRecords() } returns SyncBatchResult.Empty
 
-        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache)
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
         viewModel.onSyncNow()
 
         coVerify(exactly = 1) { syncExamRecords() }
         coVerify(exactly = 2) { getStatistics() }
-        // Coroutine completes synchronously under runTest after dispatching;
-        // state flips back to Idle once the launch block finishes.
         assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
     }
 
@@ -109,7 +128,7 @@ class ExamStatisticsViewModelTest {
         coEvery { getStatistics() } returnsMany listOf(stats(), stats())
         coEvery { clearExamCache() } returns SaveResult.Success
 
-        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache)
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
         viewModel.onClearCached()
 
         coVerify(exactly = 1) { clearExamCache() }
