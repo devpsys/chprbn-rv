@@ -248,6 +248,12 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    // MockWebServer — JSON-wire integration tests for Retrofit interfaces.
+    // Covers what the in-memory mocks of *ApiService can't: real Gson
+    // serialization of request bodies, real Retrofit annotation handling,
+    // real JSON parsing of envelope DTOs. Pins the snake_case field names
+    // on the wire so a future @SerializedName drift fails CI loudly.
+    testImplementation(libs.okhttp.mockwebserver)
     // Render-snapshot tests (P3-3): real Compose tree rendering on the JVM
     // via Robolectric, with semantic assertions from compose-ui-test. Picks
     // up @Preview-style state and verifies the screen renders without
