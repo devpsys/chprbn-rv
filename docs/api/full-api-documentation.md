@@ -905,6 +905,67 @@ See §10.3 for the shared batch-result schema.
 
 ---
 
+### 7.5 Get Officer Remark Options
+
+| Property | Value |
+|---|---|
+| **Module** | Verification |
+| **Feature** | Officer-remark dropdown choices for the verification form |
+| **Purpose** | Serve the canonical list of free-text remarks an officer can pick from when filing a verification. Replaces the previously-hardcoded `R.array.officer_remark_options` string-array on the client. |
+| **Authentication required** | Yes |
+| **HTTP method** | `GET` |
+| **URL path** | `/practitioners/officer-remark-options` |
+| **API version** | v1 |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `OfficerRemarkOptionsApiService.getOfficerRemarkOptions` |
+
+#### Headers
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `Authorization` | string | Yes | `Bearer <token>` |
+| `Accept` | string | Yes | `application/json` |
+
+#### Request
+
+No query, path, or body parameters.
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "options": [
+      "Documents verified; identity matches register",
+      "Practitioner present; credentials checked",
+      "Routine verification completed",
+      "License confirmed valid for practice"
+    ]
+  }
+}
+```
+
+| Field | Type | Nullable | Description |
+|---|---|---|---|
+| `data.options` | string[] | Yes | Ordered list of selectable remark labels. Order is the display order in the dropdown. Backend SHOULD always emit the array (possibly empty); when omitted, mobile falls back to bundled defaults. |
+
+#### Error Responses
+
+| Code | Cause |
+|---|---|
+| `401` | Invalid token. Mobile keeps bundled defaults visible. |
+| `5xx` | Server error. Mobile silently falls back to bundled defaults; the form remains usable. |
+
+#### Business Rules
+
+- **Strings are the contract.** Mobile persists the selected string verbatim into the verified-license remark column and sends it through `verified-sync`. Renaming an option breaks searches over historical remarks.
+- **Mobile fallback.** A bundled `R.array.officer_remark_options` ships with the APK (4 entries today). Used on cold start, offline, or any non-2xx; the bundled list is always replaced when the API succeeds with a non-empty array.
+- **No client-side caching across launches** today — the fetch runs once per `VerificationFormViewModel` `init`. A persistent cache + revalidation strategy is future work.
+
+---
+
 ## 8. Examination Module
 
 > **Status: To Be Implemented.** None of the endpoints below exist server-side yet. All three are wired in the mobile client against speculative paths (`ExamDossierApiService`, `ExamSyncApiService`). See `docs/BACKEND_CONTRACT_AND_CERT_PINNING.md` §2.5 for the backend-team sign-off matrix.
@@ -1831,6 +1892,7 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Verification | `POST` | `/practitioners/verified-sync` | Existing — Deprecated by §7.4 | `VerifiedSyncApiService.syncVerifiedLicense` | §7.2 |
 | Verification | `POST` | `/practitioners/license-irregularity-reports` | Existing | `IrregularityReportApiService.submitIrregularityReport` | §7.3 |
 | Verification | `POST` | `/practitioners/verified-sync/batch` | To Be Implemented | — (TBI) | §7.4 |
+| Verification | `GET` | `/practitioners/officer-remark-options` | To Be Implemented | `OfficerRemarkOptionsApiService.getOfficerRemarkOptions` | §7.5 |
 | Examination | `GET` | `/exam/dossier` | To Be Implemented | `ExamDossierApiService.fetchDossier` | §8.1 |
 | Examination | `POST` | `/exam/attendance/batch` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
 | Examination | `POST` | `/exam/remarks/batch` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |

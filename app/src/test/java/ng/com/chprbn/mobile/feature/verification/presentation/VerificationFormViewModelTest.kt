@@ -17,6 +17,7 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SaveVerifiedLicenseResult
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetLicenseRecordUseCase
+import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetOfficerRemarkOptionsUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SaveVerifiedLicenseUseCase
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -34,12 +35,17 @@ class VerificationFormViewModelTest {
 
     private lateinit var getLicenseRecordUseCase: GetLicenseRecordUseCase
     private lateinit var saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase
+    private lateinit var getOfficerRemarkOptionsUseCase: GetOfficerRemarkOptionsUseCase
     private lateinit var context: Context
 
     @Before
     fun setUp() {
         getLicenseRecordUseCase = mockk()
         saveVerifiedLicenseUseCase = mockk()
+        getOfficerRemarkOptionsUseCase = mockk()
+        // Default: remote returns empty so bundled defaults stay. Tests that
+        // exercise the replace path override this stub.
+        coEvery { getOfficerRemarkOptionsUseCase() } returns emptyList()
         val resources = mockk<android.content.res.Resources> {
             every { getStringArray(R.array.officer_remark_options) } returns sampleOfficerRemarkOptions
         }
@@ -193,7 +199,8 @@ class VerificationFormViewModelTest {
     }
 
     @Test
-    fun `officerRemarkOptions are loaded from the string-array resource into uiState`() = runTest {
+    fun `bundled string-array options populate uiState when remote returns empty`() = runTest {
+        // Default coEvery already returns emptyList() → bundled defaults stay.
         val viewModel = makeViewModel(SavedStateHandle())
 
         val options = viewModel.uiState.value.officerRemarkOptions
@@ -201,8 +208,27 @@ class VerificationFormViewModelTest {
         assertTrue(options.all { it.isNotBlank() })
     }
 
+    @Test
+    fun `remote options replace bundled defaults when the use case returns a non-empty list`() = runTest {
+        val remoteOptions = listOf(
+            "Remote-served option A",
+            "Remote-served option B",
+        )
+        coEvery { getOfficerRemarkOptionsUseCase() } returns remoteOptions
+
+        val viewModel = makeViewModel(SavedStateHandle())
+
+        assertEquals(remoteOptions, viewModel.uiState.value.officerRemarkOptions)
+    }
+
     private fun makeViewModel(savedStateHandle: SavedStateHandle) =
-        VerificationFormViewModel(savedStateHandle, getLicenseRecordUseCase, saveVerifiedLicenseUseCase, context)
+        VerificationFormViewModel(
+            savedStateHandle,
+            getLicenseRecordUseCase,
+            saveVerifiedLicenseUseCase,
+            getOfficerRemarkOptionsUseCase,
+            context,
+        )
 
     private fun savedStateWith(registrationNumber: String) =
         SavedStateHandle(mapOf("registrationNumber" to registrationNumber))

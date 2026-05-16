@@ -13,4 +13,11 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.VerificationFeatur
 interface VerificationRepository {
     /** Verification feature grid items (static or from remote later). */
     suspend fun getFeatures(): List<VerificationFeature>
+
+    /**
+     * Canonical officer-remark choices for the verification form
+     * dropdown. Returns an empty list on any remote failure; callers
+     * fall back to bundled defaults.
+     */
+    suspend fun getOfficerRemarkOptions(): List<String>
 }

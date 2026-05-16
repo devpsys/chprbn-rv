@@ -17,6 +17,7 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecord
 import ng.com.chprbn.mobile.feature.verification.domain.model.LicenseRecordResult
 import ng.com.chprbn.mobile.feature.verification.domain.model.SaveVerifiedLicenseResult
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetLicenseRecordUseCase
+import ng.com.chprbn.mobile.feature.verification.domain.usecase.GetOfficerRemarkOptionsUseCase
 import ng.com.chprbn.mobile.feature.verification.domain.usecase.SaveVerifiedLicenseUseCase
 import javax.inject.Inject
 
@@ -47,9 +48,14 @@ class VerificationFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getLicenseRecordUseCase: GetLicenseRecordUseCase,
     private val saveVerifiedLicenseUseCase: SaveVerifiedLicenseUseCase,
+    private val getOfficerRemarkOptionsUseCase: GetOfficerRemarkOptionsUseCase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    // Bundled defaults populate the initial state so the form is usable
+    // before the remote fetch returns (and stay in place if the fetch
+    // fails). `GET /practitioners/officer-remark-options` is the source
+    // of truth when reachable — see API doc §7.5.
     private val _uiState = MutableStateFlow(
         VerificationFormUiState(
             officerRemarkOptions = context.resources
@@ -82,6 +88,13 @@ class VerificationFormViewModel @Inject constructor(
                         )
                     }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            val remoteOptions = getOfficerRemarkOptionsUseCase()
+            if (remoteOptions.isNotEmpty()) {
+                _uiState.update { it.copy(officerRemarkOptions = remoteOptions) }
             }
         }
     }
