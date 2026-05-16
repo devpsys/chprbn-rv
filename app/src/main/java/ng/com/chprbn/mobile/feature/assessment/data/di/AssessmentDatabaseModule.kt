@@ -23,11 +23,11 @@ import javax.inject.Singleton
  * `SupportOpenHelperFactory` from `core.persistence.encryption.EncryptionModule`,
  * and exposes every DAO as a singleton.
  *
- * Schema version 1; no migrations registered. Future schema bumps must add
+ * Schema version 1; no migrations registered. Future schema bumps MUST add
  * explicit `Migration(n, n+1)` objects to [AssessmentDatabase] and pass them
- * to `addMigrations(...)`. `fallbackToDestructiveMigration()` is the safety
- * net only — losing pending score writes to a missed migration is
- * unacceptable.
+ * to `addMigrations(...)`. The destructive fallback was deliberately removed —
+ * losing pending score writes to a missed migration is unacceptable, so a
+ * missing migration now fails loudly at startup instead of silently wiping.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -41,7 +41,6 @@ object AssessmentDatabaseModule {
     ): AssessmentDatabase =
         Room.databaseBuilder(context, AssessmentDatabase::class.java, "assessment.db")
             .openHelperFactory(supportFactory)
-            .fallbackToDestructiveMigration()
             .build()
 
     @Provides

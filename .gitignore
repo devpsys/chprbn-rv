@@ -15,3 +15,9 @@
 local.properties
 /ui-designs/
 .idea
+
+# Release-signing secrets — keystore + properties stay on the developer's
+# machine. `keystore.properties.example` documents the expected keys.
+/keystore.properties
+*.jks
+*.keystore

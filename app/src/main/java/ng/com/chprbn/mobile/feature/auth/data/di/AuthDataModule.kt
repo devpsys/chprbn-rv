@@ -89,7 +89,6 @@ object AuthDataModule {
             AuthDatabase::class.java,
             "auth.db"
         ).openHelperFactory(supportFactory)
-            .fallbackToDestructiveMigration()
             .addCallback(AuthSeedCallback())
             .build()
 

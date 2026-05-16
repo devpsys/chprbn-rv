@@ -48,7 +48,6 @@ abstract class SyncModule {
         ): SyncDatabase =
             Room.databaseBuilder(context, SyncDatabase::class.java, "sync.db")
                 .openHelperFactory(supportFactory)
-                .fallbackToDestructiveMigration()
                 .build()
 
         @Provides

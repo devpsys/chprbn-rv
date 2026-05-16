@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,20 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kover)
     id("com.google.dagger.hilt.android")
+}
+
+// Release-signing config is loaded lazily from `keystore.properties` at the
+// project root (gitignored). When the file is absent — fresh clone, CI without
+// secrets, dev who only builds debug — the release build type is left
+// unsigned: `:assembleRelease` still produces an APK at
+// `app/build/outputs/apk/release/app-release-unsigned.apk`, suitable for an
+// `adb install -t` smoke test. Play uploads require the signed variant, which
+// only succeeds when the keystore is present. See `keystore.properties.example`.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) {
+        keystorePropsFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -23,6 +39,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (keystorePropsFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -47,6 +74,9 @@ android {
                 "BASE_URL",
                 "\"https://app.chprbn.gov.ng/api/v1/mobile/\""
             )
+            if (keystorePropsFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -92,6 +122,15 @@ android {
             )
         }
     }
+}
+
+// Room schema export — required for MigrationTestHelper-based migration tests.
+// Schemas are committed under `app/schemas/<DatabaseFqn>/<version>.json` and act
+// as the immutable historical record each `Migration(n, n+1)` is validated
+// against. Without this directive Room cannot reconstruct the prior version
+// during tests.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 // Kover plugin is applied so we can wire up coverage reporting once AGP 9.x is

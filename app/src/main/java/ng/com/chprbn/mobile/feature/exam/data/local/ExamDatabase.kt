@@ -29,7 +29,7 @@ import androidx.room.RoomDatabase
         RemarkEntity::class,
     ],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class ExamDatabase : RoomDatabase() {
     abstract fun centerDao(): CenterDao

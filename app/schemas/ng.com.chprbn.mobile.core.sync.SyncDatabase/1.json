@@ -1,0 +1,105 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "431864cee1573da053c9b539b19ca8fe",
+    "entities": [
+      {
+        "tableName": "sync_jobs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entityType` TEXT NOT NULL, `entityKey` TEXT NOT NULL, `enqueuedAt` INTEGER NOT NULL, `status` TEXT NOT NULL, `attemptCount` INTEGER NOT NULL, `lastAttemptAt` INTEGER, `lastError` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityKey",
+            "columnName": "entityKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enqueuedAt",
+            "columnName": "enqueuedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attemptCount",
+            "columnName": "attemptCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAttemptAt",
+            "columnName": "lastAttemptAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "lastError",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sync_jobs_entityType",
+            "unique": false,
+            "columnNames": [
+              "entityType"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_jobs_entityType` ON `${TABLE_NAME}` (`entityType`)"
+          },
+          {
+            "name": "index_sync_jobs_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_jobs_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_sync_jobs_entityType_entityKey",
+            "unique": true,
+            "columnNames": [
+              "entityType",
+              "entityKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_jobs_entityType_entityKey` ON `${TABLE_NAME}` (`entityType`, `entityKey`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '431864cee1573da053c9b539b19ca8fe')"
+    ]
+  }
+}

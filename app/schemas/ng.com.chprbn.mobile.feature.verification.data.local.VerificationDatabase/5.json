@@ -1,0 +1,252 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "fcb1ae1448f1a23ca2bac46ec6565836",
+    "entities": [
+      {
+        "tableName": "license_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`registrationNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `photoUrl` TEXT, `profession` TEXT NOT NULL, `certificateNo` TEXT NOT NULL, `email` TEXT NOT NULL, `phone` TEXT NOT NULL, `licenseStatus` TEXT NOT NULL, `expiryDate` TEXT NOT NULL, `subtitle` TEXT, `issueDate` TEXT NOT NULL, `gender` TEXT NOT NULL, `graduationDate` TEXT NOT NULL, `institutionAttendedName` TEXT, PRIMARY KEY(`registrationNumber`))",
+        "fields": [
+          {
+            "fieldPath": "registrationNumber",
+            "columnName": "registrationNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoUrl",
+            "columnName": "photoUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "profession",
+            "columnName": "profession",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "certificateNo",
+            "columnName": "certificateNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "licenseStatus",
+            "columnName": "licenseStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiryDate",
+            "columnName": "expiryDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "issueDate",
+            "columnName": "issueDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "graduationDate",
+            "columnName": "graduationDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institutionAttendedName",
+            "columnName": "institutionAttendedName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "registrationNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "verified_licenses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`registrationNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `photoUrl` TEXT, `profession` TEXT NOT NULL, `certificateNo` TEXT NOT NULL, `email` TEXT NOT NULL, `phone` TEXT NOT NULL, `licenseStatus` TEXT NOT NULL, `expiryDate` TEXT NOT NULL, `subtitle` TEXT, `issueDate` TEXT NOT NULL, `gender` TEXT NOT NULL, `graduationDate` TEXT NOT NULL, `institutionAttendedName` TEXT, `verificationLocation` TEXT NOT NULL, `practitionerPresent` INTEGER NOT NULL, `remark` TEXT NOT NULL, `verifiedAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `lastSyncAttempt` INTEGER, `syncError` TEXT, PRIMARY KEY(`registrationNumber`))",
+        "fields": [
+          {
+            "fieldPath": "registrationNumber",
+            "columnName": "registrationNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoUrl",
+            "columnName": "photoUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "profession",
+            "columnName": "profession",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "certificateNo",
+            "columnName": "certificateNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "licenseStatus",
+            "columnName": "licenseStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiryDate",
+            "columnName": "expiryDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "issueDate",
+            "columnName": "issueDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "graduationDate",
+            "columnName": "graduationDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institutionAttendedName",
+            "columnName": "institutionAttendedName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "verificationLocation",
+            "columnName": "verificationLocation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "practitionerPresent",
+            "columnName": "practitionerPresent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remark",
+            "columnName": "remark",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verifiedAt",
+            "columnName": "verifiedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSyncAttempt",
+            "columnName": "lastSyncAttempt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "syncError",
+            "columnName": "syncError",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "registrationNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fcb1ae1448f1a23ca2bac46ec6565836')"
+    ]
+  }
+}

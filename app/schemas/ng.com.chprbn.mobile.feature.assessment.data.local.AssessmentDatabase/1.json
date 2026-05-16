@@ -1,0 +1,479 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "7cd2cd0f0a7aa54d4fe57f47933136ee",
+    "entities": [
+      {
+        "tableName": "assessment_schedules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `date` INTEGER NOT NULL, `paperKind` TEXT NOT NULL, `centerId` TEXT NOT NULL, `syncStatus` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paperKind",
+            "columnName": "paperKind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centerId",
+            "columnName": "centerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "assessment_papers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scheduleId` TEXT NOT NULL, `title` TEXT NOT NULL, `statusLabel` TEXT NOT NULL, `facilityName` TEXT NOT NULL, `facilityAddress` TEXT NOT NULL, `hallName` TEXT NOT NULL, `hallAddress` TEXT NOT NULL, `heroImageUrl` TEXT, PRIMARY KEY(`scheduleId`))",
+        "fields": [
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statusLabel",
+            "columnName": "statusLabel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "facilityName",
+            "columnName": "facilityName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "facilityAddress",
+            "columnName": "facilityAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hallName",
+            "columnName": "hallName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hallAddress",
+            "columnName": "hallAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heroImageUrl",
+            "columnName": "heroImageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "scheduleId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "practical_sections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `scheduleId` TEXT NOT NULL, `title` TEXT NOT NULL, `subtitle` TEXT NOT NULL, `ordering` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ordering",
+            "columnName": "ordering",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_practical_sections_scheduleId",
+            "unique": false,
+            "columnNames": [
+              "scheduleId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_practical_sections_scheduleId` ON `${TABLE_NAME}` (`scheduleId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "section_questions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sectionId` TEXT NOT NULL, `number` INTEGER NOT NULL, `prompt` TEXT NOT NULL, `imageUrl` TEXT, `maxScore` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sectionId",
+            "columnName": "sectionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "number",
+            "columnName": "number",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prompt",
+            "columnName": "prompt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "maxScore",
+            "columnName": "maxScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_section_questions_sectionId",
+            "unique": false,
+            "columnNames": [
+              "sectionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_section_questions_sectionId` ON `${TABLE_NAME}` (`sectionId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "assessment_candidates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `examNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `photoUrl` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "examNumber",
+            "columnName": "examNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoUrl",
+            "columnName": "photoUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_assessment_candidates_examNumber",
+            "unique": false,
+            "columnNames": [
+              "examNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_assessment_candidates_examNumber` ON `${TABLE_NAME}` (`examNumber`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "schedule_candidate_assignments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scheduleId` TEXT NOT NULL, `candidateId` TEXT NOT NULL, PRIMARY KEY(`scheduleId`, `candidateId`))",
+        "fields": [
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "scheduleId",
+            "candidateId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_schedule_candidate_assignments_scheduleId",
+            "unique": false,
+            "columnNames": [
+              "scheduleId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_schedule_candidate_assignments_scheduleId` ON `${TABLE_NAME}` (`scheduleId`)"
+          },
+          {
+            "name": "index_schedule_candidate_assignments_candidateId",
+            "unique": false,
+            "columnNames": [
+              "candidateId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_schedule_candidate_assignments_candidateId` ON `${TABLE_NAME}` (`candidateId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "practical_scores",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scheduleId` TEXT NOT NULL, `candidateId` TEXT NOT NULL, `questionId` TEXT NOT NULL, `score` INTEGER NOT NULL, `scoredAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `syncError` TEXT, PRIMARY KEY(`scheduleId`, `candidateId`, `questionId`))",
+        "fields": [
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "questionId",
+            "columnName": "questionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "score",
+            "columnName": "score",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scoredAt",
+            "columnName": "scoredAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncError",
+            "columnName": "syncError",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "scheduleId",
+            "candidateId",
+            "questionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_practical_scores_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_practical_scores_syncStatus` ON `${TABLE_NAME}` (`syncStatus`)"
+          },
+          {
+            "name": "index_practical_scores_scheduleId_candidateId",
+            "unique": false,
+            "columnNames": [
+              "scheduleId",
+              "candidateId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_practical_scores_scheduleId_candidateId` ON `${TABLE_NAME}` (`scheduleId`, `candidateId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "project_scores",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scheduleId` TEXT NOT NULL, `candidateId` TEXT NOT NULL, `score` REAL NOT NULL, `maxScore` INTEGER NOT NULL, `scoredAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `syncError` TEXT, PRIMARY KEY(`scheduleId`, `candidateId`))",
+        "fields": [
+          {
+            "fieldPath": "scheduleId",
+            "columnName": "scheduleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "score",
+            "columnName": "score",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxScore",
+            "columnName": "maxScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scoredAt",
+            "columnName": "scoredAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncError",
+            "columnName": "syncError",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "scheduleId",
+            "candidateId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_project_scores_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_scores_syncStatus` ON `${TABLE_NAME}` (`syncStatus`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7cd2cd0f0a7aa54d4fe57f47933136ee')"
+    ]
+  }
+}

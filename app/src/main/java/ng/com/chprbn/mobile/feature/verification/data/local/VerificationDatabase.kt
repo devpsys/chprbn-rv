@@ -10,7 +10,7 @@ import ng.com.chprbn.mobile.feature.verification.data.local.VerifiedLicenseDao
 @Database(
     entities = [LicenseRecordEntity::class, VerifiedLicenseEntity::class],
     version = 5,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class VerificationDatabase : RoomDatabase() {
     abstract fun licenseRecordDao(): LicenseRecordDao

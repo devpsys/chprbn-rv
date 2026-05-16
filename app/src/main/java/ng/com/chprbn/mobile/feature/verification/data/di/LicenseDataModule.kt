@@ -42,7 +42,6 @@ abstract class LicenseDataModule {
                     VerificationDatabase.MIGRATION_3_4,
                     VerificationDatabase.MIGRATION_4_5
                 )
-                .fallbackToDestructiveMigration()
                 .build()
 
         @Provides

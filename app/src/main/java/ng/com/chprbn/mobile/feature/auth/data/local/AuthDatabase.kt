@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [UserEntity::class],
     version = 7,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(JsonStringListTypeConverter::class)
 abstract class AuthDatabase : RoomDatabase() {

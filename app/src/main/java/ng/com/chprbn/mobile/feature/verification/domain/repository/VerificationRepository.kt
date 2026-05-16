@@ -1,15 +1,16 @@
 package ng.com.chprbn.mobile.feature.verification.domain.repository
 
-import ng.com.chprbn.mobile.feature.auth.domain.model.User
 import ng.com.chprbn.mobile.feature.verification.domain.model.VerificationFeature
 
 /**
  * Domain contract for Verification data. Data layer implements this.
- * Single source of truth: local cache; remote can refresh.
+ *
+ * User-profile retrieval is intentionally NOT on this contract: the
+ * profile path is owned by `feature/profile` and applies
+ * `SessionTokenPolicy` at its data boundary. Use
+ * `GetUserProfileUseCase` from `feature/profile` instead.
  */
 interface VerificationRepository {
-    /** Current user profile from local cache (set by auth login). */
-    suspend fun getUserProfile(): User?
     /** Verification feature grid items (static or from remote later). */
     suspend fun getFeatures(): List<VerificationFeature>
 }

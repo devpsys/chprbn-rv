@@ -1,0 +1,393 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "1a9fc167668ee43382305970017f7866",
+    "entities": [
+      {
+        "tableName": "centers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `code` TEXT NOT NULL, `location` TEXT NOT NULL, `heroImageUrl` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heroImageUrl",
+            "columnName": "heroImageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "papers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `centerId` TEXT NOT NULL, `title` TEXT NOT NULL, `subtitle` TEXT NOT NULL, `paperKind` TEXT NOT NULL, `startAt` INTEGER NOT NULL, `endAt` INTEGER NOT NULL, `hall` TEXT NOT NULL, `totalCandidates` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centerId",
+            "columnName": "centerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paperKind",
+            "columnName": "paperKind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startAt",
+            "columnName": "startAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endAt",
+            "columnName": "endAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hall",
+            "columnName": "hall",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalCandidates",
+            "columnName": "totalCandidates",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_papers_centerId",
+            "unique": false,
+            "columnNames": [
+              "centerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_papers_centerId` ON `${TABLE_NAME}` (`centerId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "candidates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `examNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `photoUrl` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "examNumber",
+            "columnName": "examNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoUrl",
+            "columnName": "photoUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_candidates_examNumber",
+            "unique": false,
+            "columnNames": [
+              "examNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_candidates_examNumber` ON `${TABLE_NAME}` (`examNumber`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "paper_candidate_assignments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`paperId` TEXT NOT NULL, `candidateId` TEXT NOT NULL, PRIMARY KEY(`paperId`, `candidateId`))",
+        "fields": [
+          {
+            "fieldPath": "paperId",
+            "columnName": "paperId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "paperId",
+            "candidateId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_paper_candidate_assignments_paperId",
+            "unique": false,
+            "columnNames": [
+              "paperId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_paper_candidate_assignments_paperId` ON `${TABLE_NAME}` (`paperId`)"
+          },
+          {
+            "name": "index_paper_candidate_assignments_candidateId",
+            "unique": false,
+            "columnNames": [
+              "candidateId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_paper_candidate_assignments_candidateId` ON `${TABLE_NAME}` (`candidateId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "attendance",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`paperId` TEXT NOT NULL, `candidateId` TEXT NOT NULL, `status` TEXT NOT NULL, `markedAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `syncError` TEXT, `lastSyncAttemptAt` INTEGER, PRIMARY KEY(`paperId`, `candidateId`))",
+        "fields": [
+          {
+            "fieldPath": "paperId",
+            "columnName": "paperId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "markedAt",
+            "columnName": "markedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncError",
+            "columnName": "syncError",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastSyncAttemptAt",
+            "columnName": "lastSyncAttemptAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "paperId",
+            "candidateId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_attendance_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_attendance_syncStatus` ON `${TABLE_NAME}` (`syncStatus`)"
+          },
+          {
+            "name": "index_attendance_paperId",
+            "unique": false,
+            "columnNames": [
+              "paperId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_attendance_paperId` ON `${TABLE_NAME}` (`paperId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "remarks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `candidateId` TEXT NOT NULL, `paperId` TEXT, `body` TEXT NOT NULL, `severity` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `syncError` TEXT, `lastSyncAttemptAt` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateId",
+            "columnName": "candidateId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paperId",
+            "columnName": "paperId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "severity",
+            "columnName": "severity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncError",
+            "columnName": "syncError",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastSyncAttemptAt",
+            "columnName": "lastSyncAttemptAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_remarks_candidateId",
+            "unique": false,
+            "columnNames": [
+              "candidateId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_remarks_candidateId` ON `${TABLE_NAME}` (`candidateId`)"
+          },
+          {
+            "name": "index_remarks_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_remarks_syncStatus` ON `${TABLE_NAME}` (`syncStatus`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1a9fc167668ee43382305970017f7866')"
+    ]
+  }
+}

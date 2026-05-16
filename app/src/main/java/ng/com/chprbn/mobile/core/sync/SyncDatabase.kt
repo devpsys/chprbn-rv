@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [SyncJobEntity::class],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class SyncDatabase : RoomDatabase() {
     abstract fun syncJobDao(): SyncJobDao

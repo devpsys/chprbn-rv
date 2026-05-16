@@ -31,7 +31,7 @@ import androidx.room.RoomDatabase
         ProjectScoreEntity::class,
     ],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class AssessmentDatabase : RoomDatabase() {
     abstract fun scheduleDao(): AssessmentScheduleDao
