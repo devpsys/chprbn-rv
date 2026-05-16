@@ -1028,7 +1028,7 @@ No query, path, or body parameters. Server resolves "which dossier" from `(token
         "id": "can_001",
         "exam_number": "EX-2026-00001",
         "full_name": "John Adebayo",
-        "photo_url": "https://app.chprbn.gov.ng/media/candidates/can_001.jpg"
+        "photo_url": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYE…"
       }
     ],
     "assignments": [
@@ -1354,7 +1354,7 @@ Empty list returns `200` with `data: []`.
       { "id": "qst_001", "section_id": "sec_001", "number": 1, "prompt": "Greets the patient appropriately.", "image_url": null, "max_score": 5 }
     ],
     "candidates": [
-      { "id": "can_001", "exam_number": "EX-2026-00001", "full_name": "John Adebayo", "photo_url": "https://app.chprbn.gov.ng/media/candidates/can_001.jpg" }
+      { "id": "can_001", "exam_number": "EX-2026-00001", "full_name": "John Adebayo", "photo_url": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYE…" }
     ],
     "assignments": [
       { "schedule_id": "sch_001", "candidate_id": "can_001" }
@@ -1573,7 +1573,7 @@ Cross-feature candidate identity. The exam dossier and the assessment package us
 | `id` | string | No | Opaque candidate id. Stable across features. |
 | `exam_number` | string | No | User-visible identifier ("indexing number" in assessment UI). What QR scans resolve to. |
 | `full_name` | string | No | Display name. |
-| `photo_url` | string | Yes | Absolute HTTPS URL OR a `data:` URI. Mobile normalises both via `core/network/ImageUrlNormalization`. |
+| `photo_url` | string | Yes | **Raw Base64 image bytes (no `data:` prefix).** Despite the field name, the dossier and assessment-package endpoints embed the photo inline rather than serving a URL — backend keeps the dossier self-contained for offline use after a single download. Mobile routes the value through `core/network/ImageUrlNormalization.normalizeApiPhotoToDataUri` which wraps it as `data:image/jpeg;base64,…` for Compose `AsyncImage`. Values that already begin with `data:image` pass through unchanged. |
 
 **Invariant:** for any candidate served by both `/exam/dossier` and `/assessments/schedules/{id}/package`, the `id`, `exam_number`, and `full_name` MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
 
