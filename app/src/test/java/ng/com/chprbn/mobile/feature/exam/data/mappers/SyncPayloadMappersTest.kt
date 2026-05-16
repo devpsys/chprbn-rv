@@ -11,7 +11,7 @@ import org.junit.Test
 class SyncPayloadMappersTest {
 
     @Test
-    fun `attendance maps to sync request with lowercase wire status`() {
+    fun `attendance maps to sync item with lowercase wire status`() {
         val pairs = mapOf(
             AttendanceStatus.SignedIn to "signed_in",
             AttendanceStatus.SignedOut to "signed_out",
@@ -25,7 +25,7 @@ class SyncPayloadMappersTest {
                 status = status,
                 markedAt = 1_700_000_000_000L,
                 syncStatus = SyncStatus.Pending,
-            ).toSyncRequestDto()
+            ).toSyncItemDto()
 
             assertEquals(wireString, dto.status)
             assertEquals("p1", dto.paperId)
@@ -35,7 +35,19 @@ class SyncPayloadMappersTest {
     }
 
     @Test
-    fun `remark maps to sync request with lowercase wire severity`() {
+    fun `attendance clientId is composite paperId+candidateId`() {
+        val dto = Attendance(
+            paperId = "p1",
+            candidateId = "c1",
+            status = AttendanceStatus.SignedIn,
+            markedAt = 0L,
+        ).toSyncItemDto()
+
+        assertEquals("p1:c1", dto.clientId)
+    }
+
+    @Test
+    fun `remark maps to sync item with lowercase wire severity`() {
         val pairs = mapOf(
             RemarkSeverity.Info to "info",
             RemarkSeverity.Warning to "warning",
@@ -51,14 +63,29 @@ class SyncPayloadMappersTest {
                 severity = severity,
                 createdAt = 1_700_000_000_000L,
                 syncStatus = SyncStatus.Pending,
-            ).toSyncRequestDto()
+            ).toSyncItemDto()
 
             assertEquals(wireString, dto.severity)
         }
     }
 
     @Test
-    fun `remark sync request preserves null paperId`() {
+    fun `remark clientId mirrors the entity id`() {
+        val dto = Remark(
+            id = "r1",
+            candidateId = "c1",
+            paperId = "p1",
+            body = "x",
+            severity = RemarkSeverity.Info,
+            createdAt = 0L,
+        ).toSyncItemDto()
+
+        assertEquals("r1", dto.clientId)
+        assertEquals("r1", dto.id)
+    }
+
+    @Test
+    fun `remark sync item preserves null paperId`() {
         val dto = Remark(
             id = "r1",
             candidateId = "c1",
@@ -66,7 +93,7 @@ class SyncPayloadMappersTest {
             body = "centre-wide",
             severity = RemarkSeverity.Info,
             createdAt = 0L,
-        ).toSyncRequestDto()
+        ).toSyncItemDto()
 
         assertEquals(null, dto.paperId)
     }

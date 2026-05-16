@@ -1,28 +1,29 @@
 package ng.com.chprbn.mobile.feature.assessment.data.api
 
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncEnvelopeDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncRequestDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncEnvelopeDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchEnvelopeDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchEnvelopeDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 
 /**
- * **SPECULATIVE.** Per-row upload, one HTTP request per row, mirroring the
- * existing `POST /practitioners/verified-sync` template. When the backend
- * eventually offers a batch endpoint, the worker swaps to it without
- * touching `SyncJobDao`.
+ * **SPECULATIVE.** Batched score upload. One HTTP request carries up to
+ * N rows; the server returns per-row results so a partial-success batch
+ * can be reconciled by the client. Per-row dedup is on the row's
+ * composite identity, not [client_id] — the latter is purely a response
+ * correlation key.
  */
 interface AssessmentSyncApiService {
 
-    @POST("assessments/practical-scores")
-    suspend fun uploadPracticalScore(
-        @Body body: PracticalScoreSyncRequestDto,
-    ): Response<PracticalScoreSyncEnvelopeDto>
+    @POST("assessments/practical-scores/batch")
+    suspend fun uploadPracticalScoreBatch(
+        @Body body: PracticalScoreSyncBatchRequestDto,
+    ): Response<PracticalScoreSyncBatchEnvelopeDto>
 
-    @POST("assessments/project-scores")
-    suspend fun uploadProjectScore(
-        @Body body: ProjectScoreSyncRequestDto,
-    ): Response<ProjectScoreSyncEnvelopeDto>
+    @POST("assessments/project-scores/batch")
+    suspend fun uploadProjectScoreBatch(
+        @Body body: ProjectScoreSyncBatchRequestDto,
+    ): Response<ProjectScoreSyncBatchEnvelopeDto>
 }

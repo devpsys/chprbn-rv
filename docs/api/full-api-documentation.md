@@ -692,18 +692,20 @@ No query, path, or body parameters.
 
 ---
 
-### 7.2 Submit Verified License (Sync)
+### 7.2 Submit Verified License — per-row (legacy)
+
+> **Deprecated:** this is the per-row template. The replacement is §7.4 (batched). The per-row endpoint stays live during the migration window described in §14.2. New backend deployments SHOULD ship the batched endpoint alongside; mobile will cut over as soon as §7.4 returns 2xx.
 
 | Property | Value |
 |---|---|
 | **Module** | Verification |
-| **Feature** | Verified-license upload |
+| **Feature** | Verified-license upload (legacy per-row) |
 | **Purpose** | Push a locally-recorded verification (officer-confirmed) to the central registry. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
 | **URL path** | `/practitioners/verified-sync` (alias for adhoc officer: `/adhoc/verified-sync`) |
 | **API version** | v1 |
-| **Status** | **Existing** |
+| **Status** | **Existing — Deprecated by §7.4** |
 | **Mobile source** | `VerifiedSyncApiService.syncVerifiedLicense` |
 
 #### Request Body Schema
@@ -766,7 +768,7 @@ Authorization: Bearer 1|aBcDeFg...
 #### Business Rules
 
 - **Idempotency** on `(license_number, verified_at)` is recommended. A second POST with the same tuple should not create a duplicate row.
-- Per-row uploads, not batched — mobile sends N sequential POSTs from `SyncBatchRunner`.
+- Per-row uploads, not batched — mobile sends N sequential POSTs from `SyncBatchRunner`. **This is the load-failure mode** that motivates the batched §7.4 replacement: real campaign sync hits tens of thousands of rows from many devices in a narrow window; the per-row template cannot sustain it.
 - On any non-2xx, the row is marked `Failed` locally with `syncError = <message>` and surfaced on the Sync screen for retry.
 
 ---
@@ -826,6 +828,78 @@ Same set as §7.2. 413 (Payload Too Large) is additionally possible if the snaps
 
 - The snapshot is store-of-record evidence; backend MUST NOT delete it independently of the report row.
 - Subsequent reports for the same `license_number` from the same officer should not be deduplicated server-side — each represents an independent observation.
+
+---
+
+### 7.4 Submit Verified Licenses — batch
+
+| Property | Value |
+|---|---|
+| **Module** | Verification |
+| **Feature** | Verified-license upload (batch — replaces §7.2) |
+| **Purpose** | Upload N verifications in one HTTP request. One auth check, one DB transaction, per-row results. |
+| **Authentication required** | Yes |
+| **HTTP method** | `POST` |
+| **URL path** | `/practitioners/verified-sync/batch` |
+| **API version** | v1 |
+| **Status** | **To Be Implemented** |
+
+#### Request Body Schema
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `items` | `VerifiedSyncItem[]` | Yes | No | 1 ≤ length ≤ 500. |
+
+##### `VerifiedSyncItem`
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `client_id` | string | Yes | No | Stable client-side correlation key (e.g. `"<license_number>:<verified_at>"`). Echoed in the response. **Not** the dedup key. |
+| `license_number` | string | Yes | No | Must match an existing license record. |
+| `verification_location` | string | Yes | No | Max 200 chars. |
+| `practitioner_present` | boolean | Yes | No | |
+| `remark` | string | Yes | No | Max 500 chars. |
+| `verified_at` | int64 | Yes | No | Epoch millis (UTC). |
+
+#### Request Example
+
+```json
+{
+  "items": [
+    {
+      "client_id": "MD-99201-B:1768515600000",
+      "license_number": "MD-99201-B",
+      "verification_location": "Lagos University Teaching Hospital — Ward 4",
+      "practitioner_present": true,
+      "remark": "ID matched; license card presented.",
+      "verified_at": 1768515600000
+    }
+  ]
+}
+```
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Batch processed.",
+  "data": {
+    "results": [
+      { "client_id": "MD-99201-B:1768515600000", "accepted": true, "server_id": "vrf_7421" }
+    ]
+  }
+}
+```
+
+See §10.3 for the shared batch-result schema.
+
+#### Business Rules
+
+- **Per-row idempotency** on `(license_number, verified_at)` — unchanged from §7.2. The server upserts per row inside the batch's transaction.
+- **HTTP 200 even on partial failure.** Only malformed envelopes return 4xx.
+- **Atomic batch is NOT required** — one bad row must not poison the other 499. Server commits each accepted row.
+- **Max batch size 500.** Mobile chunks larger queues client-side.
 
 ---
 
@@ -957,23 +1031,30 @@ See §10.1.
 
 ---
 
-### 8.2 Submit Attendance Mark
+### 8.2 Submit Attendance — batch
 
 | Property | Value |
 |---|---|
 | **Module** | Examination |
-| **Feature** | Attendance sync |
-| **Purpose** | Mark one candidate as signed-in / signed-out / flagged for one paper. |
+| **Feature** | Attendance sync (batch) |
+| **Purpose** | Upload N attendance rows in one HTTP request. One auth check + one DB transaction per batch. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/exam/attendance` |
+| **URL path** | `/exam/attendance/batch` |
 | **Status** | **To Be Implemented** |
-| **Mobile source** | `ExamSyncApiService.uploadAttendance` |
+| **Mobile source** | `ExamSyncApiService.uploadAttendanceBatch` |
 
 #### Request Body Schema
 
 | Field | Type | Required | Nullable | Validation |
 |---|---|---|---|---|
+| `items` | `AttendanceSyncItem[]` | Yes | No | 1 ≤ length ≤ 500. |
+
+##### `AttendanceSyncItem`
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `client_id` | string | Yes | No | Stable client-side correlation key — mobile sends `"<paper_id>:<candidate_id>"`. Echoed in the response. **Not** the dedup key. |
 | `paper_id` | string | Yes | No | Must match a paper the officer's centre owns. |
 | `candidate_id` | string | Yes | No | Must be assigned to `paper_id`. |
 | `status` | enum string | Yes | No | One of `signed_in`, `signed_out`, `flagged`. |
@@ -983,10 +1064,22 @@ See §10.1.
 
 ```json
 {
-  "paper_id": "pap_001",
-  "candidate_id": "can_001",
-  "status": "signed_in",
-  "marked_at": 1768502400000
+  "items": [
+    {
+      "client_id": "pap_001:can_001",
+      "paper_id": "pap_001",
+      "candidate_id": "can_001",
+      "status": "signed_in",
+      "marked_at": 1768502400000
+    },
+    {
+      "client_id": "pap_001:can_002",
+      "paper_id": "pap_001",
+      "candidate_id": "can_002",
+      "status": "signed_in",
+      "marked_at": 1768502420000
+    }
+  ]
 }
 ```
 
@@ -995,52 +1088,61 @@ See §10.1.
 ```json
 {
   "success": true,
-  "message": "Attendance recorded.",
-  "data": { "accepted": true, "server_id": "att_aaaa1111" }
+  "message": "Batch processed.",
+  "data": {
+    "results": [
+      { "client_id": "pap_001:can_001", "accepted": true,  "server_id": "att_aaaa1111" },
+      { "client_id": "pap_001:can_002", "accepted": false, "error": "candidate not assigned to paper" }
+    ]
+  }
 }
 ```
 
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| `data.accepted` | boolean | No | Always `true` on 2xx. |
-| `data.server_id` | string | Yes | Opaque server-side row id. |
+See §10.3 for the shared batch-result schema.
 
 #### Error Responses
 
 | Code | Cause |
 |---|---|
+| `400` / `422` | Malformed envelope, empty `items`, batch too large. |
 | `401` | Invalid token. |
-| `403` | `(paper_id, candidate_id)` not in officer's scope. |
-| `404` | Paper or candidate not found. |
-| `409` | Already marked with a different status earlier in the same minute — backend chooses idempotent replace. |
-| `422` | Bad enum value, missing field, etc. |
+| `403` | Officer's scope mismatch on the *whole batch* (e.g. wrong centre). Per-row scope errors return HTTP 200 with `accepted: false` for that row. |
 
 #### Business Rules
 
-- **Idempotency on `(paper_id, candidate_id)`**: a second POST replaces the previous status, **does not** create a duplicate.
+- **Per-row idempotency on `(paper_id, candidate_id)`** — a duplicate row inside or across batches REPLACES.
+- **HTTP 200 even on partial failure.** One bad row must not poison the other 499.
+- **`client_id` is correlation-only.** Server MUST NOT dedup on it; composite identity is the dedup key.
 - The latest `marked_at` wins on conflicting concurrent writes.
-- Backend MUST validate that `marked_at` is within ±24 hours of "now" — clients with skewed clocks should be rejected loudly.
+- Backend MUST validate `marked_at` is within ±24 hours of "now"; bad rows return `accepted: false` per row, never poison the batch.
 
 ---
 
-### 8.3 Submit Candidate Remark
+### 8.3 Submit Candidate Remarks — batch
 
 | Property | Value |
 |---|---|
 | **Module** | Examination |
-| **Feature** | Officer remarks on candidates |
-| **Purpose** | Attach a free-text remark with severity to a candidate (optionally pinned to a paper). |
+| **Feature** | Officer remarks on candidates (batch) |
+| **Purpose** | Upload N remarks in one HTTP request. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/exam/remarks` |
+| **URL path** | `/exam/remarks/batch` |
 | **Status** | **To Be Implemented** |
-| **Mobile source** | `ExamSyncApiService.uploadRemark` |
+| **Mobile source** | `ExamSyncApiService.uploadRemarkBatch` |
 
 #### Request Body Schema
 
 | Field | Type | Required | Nullable | Validation |
 |---|---|---|---|---|
-| `id` | string | Yes | No | Client-generated UUID. Used for idempotency. |
+| `items` | `RemarkSyncItem[]` | Yes | No | 1 ≤ length ≤ 500. |
+
+##### `RemarkSyncItem`
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `client_id` | string | Yes | No | Mobile sends the remark's `id` (already a client-generated UUID) verbatim — no separate correlation key needed. |
+| `id` | string | Yes | No | Client-generated UUID v4. Used for **server-side idempotency**. |
 | `candidate_id` | string | Yes | No | Must be in officer's scope. |
 | `paper_id` | string | No | Yes | Pin remark to a specific paper. Null = "general." |
 | `body` | string | Yes | No | Max 1000 chars. |
@@ -1051,18 +1153,23 @@ See §10.1.
 
 ```json
 {
-  "id": "3b1e4f02-9c7a-4a01-9d3a-1aef0c00b6f4",
-  "candidate_id": "can_001",
-  "paper_id": "pap_001",
-  "body": "Arrived 20 minutes late; no documents.",
-  "severity": "warning",
-  "created_at": 1768502600000
+  "items": [
+    {
+      "client_id": "3b1e4f02-9c7a-4a01-9d3a-1aef0c00b6f4",
+      "id": "3b1e4f02-9c7a-4a01-9d3a-1aef0c00b6f4",
+      "candidate_id": "can_001",
+      "paper_id": "pap_001",
+      "body": "Arrived 20 minutes late; no documents.",
+      "severity": "warning",
+      "created_at": 1768502600000
+    }
+  ]
 }
 ```
 
 #### Success Response — `200 OK`
 
-Same shape as §8.2.
+Same shape as §8.2 — `{ data: { results: [{ client_id, accepted, server_id?, error? }] } }`. See §10.3.
 
 #### Error Responses
 
@@ -1070,7 +1177,8 @@ Same as §8.2.
 
 #### Business Rules
 
-- **Idempotency on `id` (client UUID)**: a re-send REPLACES the existing remark with the new body/severity. Clients re-send when the original POST failed or timed out.
+- **Idempotency on `id` (client UUID)** — re-send REPLACES the existing remark with the new body/severity.
+- **HTTP 200 even on partial failure.** Per-row results in the response.
 - Remarks are **not** soft-deletable from mobile.
 
 ---
@@ -1253,23 +1361,30 @@ See §10.1.
 
 ---
 
-### 9.3 Submit Practical Score
+### 9.3 Submit Practical Scores — batch
 
 | Property | Value |
 |---|---|
 | **Module** | Assessment |
-| **Feature** | Per-question practical scoring |
-| **Purpose** | Upload one (candidate × question) score. |
+| **Feature** | Per-question practical scoring (batch) |
+| **Purpose** | Upload N `(candidate × question)` scores in one HTTP request. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/assessments/practical-scores` |
+| **URL path** | `/assessments/practical-scores/batch` |
 | **Status** | **To Be Implemented** |
-| **Mobile source** | `AssessmentSyncApiService.uploadPracticalScore` |
+| **Mobile source** | `AssessmentSyncApiService.uploadPracticalScoreBatch` |
 
 #### Request Body Schema
 
 | Field | Type | Required | Nullable | Validation |
 |---|---|---|---|---|
+| `items` | `PracticalScoreSyncItem[]` | Yes | No | 1 ≤ length ≤ 500. |
+
+##### `PracticalScoreSyncItem`
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `client_id` | string | Yes | No | Mobile sends `"<schedule_id>:<candidate_id>:<question_id>"`. Echoed in response; not a dedup key. |
 | `schedule_id` | string | Yes | No | Must be in officer's scope. |
 | `candidate_id` | string | Yes | No | Must be assigned to `schedule_id`. |
 | `question_id` | string | Yes | No | Must belong to a section under `schedule_id`. |
@@ -1280,11 +1395,16 @@ See §10.1.
 
 ```json
 {
-  "schedule_id": "sch_001",
-  "candidate_id": "can_001",
-  "question_id": "qst_001",
-  "score": 4,
-  "scored_at": 1768503000000
+  "items": [
+    {
+      "client_id": "sch_001:can_001:qst_001",
+      "schedule_id": "sch_001",
+      "candidate_id": "can_001",
+      "question_id": "qst_001",
+      "score": 4,
+      "scored_at": 1768503000000
+    }
+  ]
 }
 ```
 
@@ -1293,45 +1413,53 @@ See §10.1.
 ```json
 {
   "success": true,
-  "message": "Score recorded.",
-  "data": { "accepted": true, "server_id": "psc_aaaa1111" }
+  "message": "Batch processed.",
+  "data": {
+    "results": [
+      { "client_id": "sch_001:can_001:qst_001", "accepted": true, "server_id": "psc_aaaa1111" }
+    ]
+  }
 }
 ```
 
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| `data.accepted` | boolean | No | Always `true` on 2xx. |
-| `data.server_id` | string | Yes | Opaque row id. |
+See §10.3 for the shared batch-result schema.
 
 #### Error Responses
 
-Same set as §7.2 + a 422 when `score > max_score`.
+Same set as §8.2. A `score > question.max_score` returns HTTP 200 with `accepted: false` and `error: "score exceeds max_score"` for that row.
 
 #### Business Rules
 
-- **Idempotency on `(schedule_id, candidate_id, question_id)`**: second POST REPLACES.
+- **Per-row idempotency on `(schedule_id, candidate_id, question_id)`** — duplicate row REPLACES.
 - Score storage must be integer; never float.
-- Backend SHOULD reject a `score` whose value exceeds `question.max_score` even if the client sends it.
+- **HTTP 200 even on partial failure.**
 
 ---
 
-### 9.4 Submit Project Score
+### 9.4 Submit Project Scores — batch
 
 | Property | Value |
 |---|---|
 | **Module** | Assessment |
-| **Feature** | Per-candidate project scoring |
-| **Purpose** | Upload one (candidate × project paper) score with a denominator. |
+| **Feature** | Per-candidate project scoring (batch) |
+| **Purpose** | Upload N `(candidate × project paper)` scores in one HTTP request. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/assessments/project-scores` |
+| **URL path** | `/assessments/project-scores/batch` |
 | **Status** | **To Be Implemented** |
-| **Mobile source** | `AssessmentSyncApiService.uploadProjectScore` |
+| **Mobile source** | `AssessmentSyncApiService.uploadProjectScoreBatch` |
 
 #### Request Body Schema
 
 | Field | Type | Required | Nullable | Validation |
 |---|---|---|---|---|
+| `items` | `ProjectScoreSyncItem[]` | Yes | No | 1 ≤ length ≤ 500. |
+
+##### `ProjectScoreSyncItem`
+
+| Field | Type | Required | Nullable | Validation |
+|---|---|---|---|---|
+| `client_id` | string | Yes | No | Mobile sends `"<schedule_id>:<candidate_id>"`. Echoed in response; not a dedup key. |
 | `schedule_id` | string | Yes | No | |
 | `candidate_id` | string | Yes | No | |
 | `score` | number (double) | Yes | No | `0 ≤ score ≤ max_score`. Max 2 decimal places. |
@@ -1342,11 +1470,16 @@ Same set as §7.2 + a 422 when `score > max_score`.
 
 ```json
 {
-  "schedule_id": "sch_002",
-  "candidate_id": "can_001",
-  "score": 78.50,
-  "max_score": 100,
-  "scored_at": 1768589000000
+  "items": [
+    {
+      "client_id": "sch_002:can_001",
+      "schedule_id": "sch_002",
+      "candidate_id": "can_001",
+      "score": 78.50,
+      "max_score": 100,
+      "scored_at": 1768589000000
+    }
+  ]
 }
 ```
 
@@ -1360,8 +1493,9 @@ Same set as §9.3.
 
 #### Business Rules
 
-- **Idempotency on `(schedule_id, candidate_id)`**: second POST REPLACES.
-- Backend MUST round-trip the score with full precision; mobile already formats display via `String.format("%.2f", …)`.
+- **Per-row idempotency on `(schedule_id, candidate_id)`** — duplicate row REPLACES.
+- Backend MUST round-trip `score` with full precision; mobile formats display via `String.format("%.2f", …)`.
+- **HTTP 200 even on partial failure.**
 
 ---
 
@@ -1391,19 +1525,39 @@ See §2.7 for the canonical wire-value table. Repeated here for visibility:
 | `RemarkSeverity` | `info`, `warning`, `critical` |
 | `SyncStatus` (mobile-only) | `pending`, `synced`, `failed` |
 
-### 10.3 Sync-write response shape
+### 10.3 Sync-write batch response shape
 
-Every write endpoint in the exam + assessment modules returns the same minimal envelope:
+Every write endpoint in the verification (§7.4) + exam (§8.2, §8.3) + assessment (§9.3, §9.4) modules returns the same shape:
 
 ```json
 {
   "success": true,
-  "message": "Accepted.",
-  "data": { "accepted": true, "server_id": "<opaque>" }
+  "message": "Batch processed.",
+  "data": {
+    "results": [
+      { "client_id": "<echoed>", "accepted": true,  "server_id": "<opaque>" },
+      { "client_id": "<echoed>", "accepted": false, "error": "<reason>" }
+    ]
+  }
 }
 ```
 
-This uniformity keeps `SyncBatchRunner.handle` per-handler logic to a single contract.
+| Field | Type | Nullable | Description |
+|---|---|---|---|
+| `data.results` | array | No | One entry per submitted item. Ordering is **not** guaranteed to match the request order — clients MUST match on `client_id`. |
+| `data.results[].client_id` | string | Yes | Echo of the `client_id` the client sent. Used by the mobile worker to map results back to local outbox rows. |
+| `data.results[].accepted` | boolean | No | `true` if the server persisted the row, `false` otherwise. |
+| `data.results[].server_id` | string | Yes | Opaque server-side row id. Present when `accepted: true`. |
+| `data.results[].error` | string | Yes | Human-readable rejection reason. Present when `accepted: false`. |
+
+Rules:
+
+- **HTTP 200** even when individual rows fail. The batch was *processed*; per-row outcomes are reported in the body. Only malformed envelopes / batch-size violations return 4xx.
+- **`client_id` is correlation-only.** Server MUST NOT use it as a dedup key — dedup is per-row composite identity (e.g. `(paper_id, candidate_id)`).
+- **No partial-batch rollback.** Accepted rows commit; rejected rows do not affect them.
+- **Result coverage is N rows = N results.** Server returns one result per request item, even if multiple share a composite key (last-write-wins on the server).
+
+This uniformity keeps the `SyncEntityHandler` contract narrow: every handler can rely on the same envelope.
 
 ### 10.4 Error payload
 
@@ -1437,10 +1591,10 @@ POST /login           ──▶ data.token ──┤
 GET /practitioners/license?license_number=X
             │
             ▼  (officer reviews + verifies)
-POST /practitioners/verified-sync          (one per local verification)
+POST /practitioners/verified-sync/batch          (N verifications per request — §7.4)
             │
             └─► (if officer flags irregularity)
-POST /practitioners/license-irregularity-reports  (one per report)
+POST /practitioners/license-irregularity-reports  (one per report — multipart, per-row)
 ```
 
 ### 11.3 Examination module
@@ -1456,8 +1610,8 @@ GET  /exam/dossier
             ├─▶ data.candidates[]         │  (officer marks attendance, adds remarks)
             └─▶ data.assignments[]        │
                                           ▼
-POST /exam/attendance       (one per (paper, candidate))
-POST /exam/remarks          (one per remark — client-generated id)
+POST /exam/attendance/batch  (items: N attendance rows per request)
+POST /exam/remarks/batch     (items: N remark rows per request)
 ```
 
 ### 11.4 Assessment module
@@ -1477,8 +1631,8 @@ GET  /assessments/schedules/{schedule_id}/package
             ├─▶ data.candidates[]  │
             └─▶ data.assignments[] │
                                    ▼
-POST /assessments/practical-scores  (one per (candidate, question))
-POST /assessments/project-scores    (one per candidate for project papers)
+POST /assessments/practical-scores/batch  (items: N (candidate, question) scores per request)
+POST /assessments/project-scores/batch    (items: N project scores per request)
 ```
 
 ### 11.5 State transitions
@@ -1631,9 +1785,10 @@ Logout is local-only — token remains valid server-side until natural expiry. *
 
 ### 14.2 New-endpoint rollout order
 
-1. **First:** `/exam/dossier` + `/exam/attendance` + `/exam/remarks` — exam day blocks on these.
+1. **First:** `/exam/dossier` + `/exam/attendance/batch` + `/exam/remarks/batch` — exam day blocks on these.
 2. **Second:** `/assessments/schedules` + `/assessments/schedules/{id}/package` — assessment day needs reference data.
-3. **Third:** `/assessments/practical-scores` + `/assessments/project-scores` — scoring is the write half of the assessment flow.
+3. **Third:** `/assessments/practical-scores/batch` + `/assessments/project-scores/batch` — scoring is the write half of the assessment flow.
+4. **Fourth (verification cutover):** `/practitioners/verified-sync/batch` — replaces the legacy per-row endpoint (§7.2). Both run side-by-side during the cutover window so existing client builds keep working.
 
 The mobile client already wires Composite remote sources that prefer the live API and fall back to in-memory fakes (`Fake*RemoteSource`) so the UI keeps working through the backend rollout. Once an endpoint returns real data with a `200 + non-null data`, the Fake silently stops serving — no client redeploy required.
 
@@ -1642,11 +1797,12 @@ The mobile client already wires Composite remote sources that prefer the live AP
 1. PR #1 — `success` envelope alongside `status`; doc + tests only, no behaviour change.
 2. PR #2 — `POST /logout` token revocation.
 3. PR #3 — `GET /exam/dossier` (read-only; simplest to land first).
-4. PR #4 — `POST /exam/attendance` + `POST /exam/remarks` (idempotent writes).
+4. PR #4 — `POST /exam/attendance/batch` + `POST /exam/remarks/batch` (batched idempotent writes; per-row results).
 5. PR #5 — `GET /assessments/schedules`.
 6. PR #6 — `GET /assessments/schedules/{id}/package`.
-7. PR #7 — `POST /assessments/practical-scores` + `POST /assessments/project-scores`.
-8. PR #8 — Drop legacy `status` field; bump to `v1.1`.
+7. PR #7 — `POST /assessments/practical-scores/batch` + `POST /assessments/project-scores/batch` (batched idempotent writes).
+8. PR #8 — `POST /practitioners/verified-sync/batch` (legacy verified-sync replacement).
+9. PR #9 — Drop legacy `status` field + remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`.
 
 ### 14.4 Contract tests
 
@@ -1670,15 +1826,16 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Profile | `GET` | `/adhoc/profile` | Existing | `AuthApiService.getAdhocProfile` | §6.1 |
 | Profile | `GET` | `/dashboard/profile` | Existing | `VerificationApiService.getProfile` | §6.2 |
 | Verification | `GET` | `/practitioners/license` | Existing | `LicenseApiService.getLicenseRecord` | §7.1 |
-| Verification | `POST` | `/practitioners/verified-sync` | Existing | `VerifiedSyncApiService.syncVerifiedLicense` | §7.2 |
+| Verification | `POST` | `/practitioners/verified-sync` | Existing — Deprecated by §7.4 | `VerifiedSyncApiService.syncVerifiedLicense` | §7.2 |
 | Verification | `POST` | `/practitioners/license-irregularity-reports` | Existing | `IrregularityReportApiService.submitIrregularityReport` | §7.3 |
+| Verification | `POST` | `/practitioners/verified-sync/batch` | To Be Implemented | — (TBI) | §7.4 |
 | Examination | `GET` | `/exam/dossier` | To Be Implemented | `ExamDossierApiService.fetchDossier` | §8.1 |
-| Examination | `POST` | `/exam/attendance` | To Be Implemented | `ExamSyncApiService.uploadAttendance` | §8.2 |
-| Examination | `POST` | `/exam/remarks` | To Be Implemented | `ExamSyncApiService.uploadRemark` | §8.3 |
+| Examination | `POST` | `/exam/attendance/batch` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
+| Examination | `POST` | `/exam/remarks/batch` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |
 | Assessment | `GET` | `/assessments/schedules` | To Be Implemented | `AssessmentPackageApiService.fetchSchedules` | §9.1 |
 | Assessment | `GET` | `/assessments/schedules/{schedule_id}/package` | To Be Implemented | `AssessmentPackageApiService.fetchPackage` | §9.2 |
-| Assessment | `POST` | `/assessments/practical-scores` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScore` | §9.3 |
-| Assessment | `POST` | `/assessments/project-scores` | To Be Implemented | `AssessmentSyncApiService.uploadProjectScore` | §9.4 |
+| Assessment | `POST` | `/assessments/practical-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScoreBatch` | §9.3 |
+| Assessment | `POST` | `/assessments/project-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadProjectScoreBatch` | §9.4 |
 
 ---
 
@@ -1687,3 +1844,4 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Version | Date | Author | Notes |
 |---|---|---|---|
 | 1.0 | 2026-05-16 | Mobile team | Initial consolidation of every Retrofit interface + DTO in the codebase. Standardises envelope to `{success, message, data, meta}` going forward; documents 7 To-Be-Implemented endpoints for the Examination + Assessment modules. |
+| 1.1 | 2026-05-16 | Mobile team | Reshape all sync write endpoints (§7.4, §8.2, §8.3, §9.3, §9.4) to batched `items[]` request + per-row `results[]` response. Reason: legacy per-row uploads cannot sustain CHPRBN's real campaign-day load (tens of thousands of records, multiple devices, narrow window). Legacy per-row `/practitioners/verified-sync` (§7.2) marked deprecated; batch replacement (§7.4) added as To Be Implemented. |

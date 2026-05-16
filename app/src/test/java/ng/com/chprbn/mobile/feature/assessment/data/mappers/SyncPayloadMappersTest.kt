@@ -9,7 +9,7 @@ import org.junit.Test
 class SyncPayloadMappersTest {
 
     @Test
-    fun `practical score maps to sync request without sync metadata`() {
+    fun `practical score maps to sync item without sync metadata`() {
         val domain = PracticalScore(
             scheduleId = "PE-2024",
             candidateId = "c1",
@@ -20,7 +20,7 @@ class SyncPayloadMappersTest {
             syncError = "timeout",
         )
 
-        val dto = domain.toSyncRequestDto()
+        val dto = domain.toSyncItemDto()
 
         assertEquals("PE-2024", dto.scheduleId)
         assertEquals("c1", dto.candidateId)
@@ -31,7 +31,20 @@ class SyncPayloadMappersTest {
     }
 
     @Test
-    fun `project score maps to sync request`() {
+    fun `practical score clientId is composite scheduleId+candidateId+questionId`() {
+        val dto = PracticalScore(
+            scheduleId = "PE-2024",
+            candidateId = "c1",
+            questionId = "q1",
+            score = 0,
+            scoredAt = 0L,
+        ).toSyncItemDto()
+
+        assertEquals("PE-2024:c1:q1", dto.clientId)
+    }
+
+    @Test
+    fun `project score maps to sync item`() {
         val domain = ProjectScore(
             scheduleId = "PE-2024",
             candidateId = "c1",
@@ -41,12 +54,25 @@ class SyncPayloadMappersTest {
             syncStatus = SyncStatus.Pending,
         )
 
-        val dto = domain.toSyncRequestDto()
+        val dto = domain.toSyncItemDto()
 
         assertEquals("PE-2024", dto.scheduleId)
         assertEquals("c1", dto.candidateId)
         assertEquals(8.75, dto.score, 0.0)
         assertEquals(10, dto.maxScore)
         assertEquals(1_700_000_000_000L, dto.scoredAt)
+    }
+
+    @Test
+    fun `project score clientId is composite scheduleId+candidateId`() {
+        val dto = ProjectScore(
+            scheduleId = "PE-2024",
+            candidateId = "c1",
+            score = 0.0,
+            maxScore = 10,
+            scoredAt = 0L,
+        ).toSyncItemDto()
+
+        assertEquals("PE-2024:c1", dto.clientId)
     }
 }

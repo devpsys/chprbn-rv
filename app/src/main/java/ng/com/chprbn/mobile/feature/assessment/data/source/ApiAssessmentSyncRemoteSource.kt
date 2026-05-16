@@ -1,21 +1,19 @@
 package ng.com.chprbn.mobile.feature.assessment.data.source
 
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentSyncApiService
-import ng.com.chprbn.mobile.feature.assessment.data.mappers.toSyncRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.mappers.toSyncItemDto
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ProjectScore
 import retrofit2.Response
 import javax.inject.Inject
 
 /**
- * Retrofit-backed sync source. Wraps each upload in `runCatching` so the
- * sync handler never sees a thrown exception — failures arrive as
- * `Result.failure(IOException(...))` or similar with a human-readable
- * message.
- *
- * Acceptance is `response.isSuccessful` (any 2xx) — matches verification's
- * deliberate flexibility on whether the server returns an enveloped body
- * or 204 No Content.
+ * Retrofit-backed sync source. Wire format is batch
+ * (`POST /assessments/.../batch`) — see `ApiExamSyncRemoteSource` for the
+ * same rationale + per-row → batch-of-one bridge until the handler
+ * contract (#3) catches up.
  */
 class ApiAssessmentSyncRemoteSource @Inject constructor(
     private val api: AssessmentSyncApiService,
@@ -23,14 +21,30 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
 
     override suspend fun uploadPracticalScore(score: PracticalScore): Result<Unit> =
         runCatching {
-            val response = api.uploadPracticalScore(score.toSyncRequestDto())
+            val item = score.toSyncItemDto()
+            val response = api.uploadPracticalScoreBatch(
+                PracticalScoreSyncBatchRequestDto(items = listOf(item)),
+            )
             response.requireSuccess()
+            val resultForRow = response.body()?.data?.results?.firstOrNull { it.clientId == item.clientId }
+                ?: response.body()?.data?.results?.firstOrNull()
+            if (resultForRow != null && !resultForRow.accepted) {
+                error(resultForRow.error ?: "Server rejected practical-score row.")
+            }
         }
 
     override suspend fun uploadProjectScore(score: ProjectScore): Result<Unit> =
         runCatching {
-            val response = api.uploadProjectScore(score.toSyncRequestDto())
+            val item = score.toSyncItemDto()
+            val response = api.uploadProjectScoreBatch(
+                ProjectScoreSyncBatchRequestDto(items = listOf(item)),
+            )
             response.requireSuccess()
+            val resultForRow = response.body()?.data?.results?.firstOrNull { it.clientId == item.clientId }
+                ?: response.body()?.data?.results?.firstOrNull()
+            if (resultForRow != null && !resultForRow.accepted) {
+                error(resultForRow.error ?: "Server rejected project-score row.")
+            }
         }
 
     private fun Response<*>.requireSuccess() {
