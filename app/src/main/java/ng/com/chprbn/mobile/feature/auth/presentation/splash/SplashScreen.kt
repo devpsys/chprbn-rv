@@ -1,5 +1,8 @@
 package ng.com.chprbn.mobile.feature.auth.presentation.splash
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -154,8 +158,27 @@ fun SplashContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                // Determinate fill from 0→1 over the splash's nominal hold
+                // window (matches `SplashViewModel`'s ~2.5s pre-navigation
+                // delay). LinearEasing — a time-based progress bar should
+                // not lie about elapsed time. If auth resolves earlier the
+                // screen navigates away mid-animation; if it takes longer
+                // the bar parks at 100% which still reads as "still
+                // working." `LaunchedEffect(Unit)` ties the animation to
+                // the composition, not to a state key, so it runs exactly
+                // once per splash visit.
+                val progress = remember { Animatable(0f) }
+                LaunchedEffect(Unit) {
+                    progress.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = 2500,
+                            easing = LinearEasing,
+                        ),
+                    )
+                }
                 LinearProgressIndicator(
-                    progress = { 1f / 3f },
+                    progress = { progress.value },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
