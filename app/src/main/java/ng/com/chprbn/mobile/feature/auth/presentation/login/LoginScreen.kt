@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.auth.presentation.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -122,7 +123,7 @@ fun LoginContent(
     onRecovery: () -> Unit = {},
     onRequestAccess: () -> Unit = {},
 ) {
-    var username by rememberSaveable { mutableStateOf("OFFLINE-DEMO") }
+    var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -147,9 +148,8 @@ fun LoginContent(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface,
-                border = null
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp)
@@ -423,7 +423,7 @@ private fun IllustrationIcon(icon: ImageVector) {
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Icon(
             imageVector = icon,

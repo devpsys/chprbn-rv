@@ -22,10 +22,10 @@
     <!-- ============== Auth — Login ============== -->
     <string name="login_header_subtitle">Portal</string>
     <string name="login_secure_node_label">Secure Node</string>
-    <string name="login_title">Verification Login</string>
+    <string name="login_title">Login</string>
     <string name="login_subtitle">Access the centralized registry with your secure credentials.</string>
     <string name="login_username_label">Username</string>
-    <string name="login_username_placeholder">Adhoc account username</string>
+    <string name="login_username_placeholder">Enter your username</string>
     <string name="login_access_key_label">Access Key</string>
     <string name="login_recovery_action">Recovery</string>
     <string name="login_password_show">Show password</string>
