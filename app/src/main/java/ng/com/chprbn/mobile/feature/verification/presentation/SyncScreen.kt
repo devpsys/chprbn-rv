@@ -205,7 +205,8 @@ private fun SyncHeader(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
-        shadowElevation = 0.dp
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier

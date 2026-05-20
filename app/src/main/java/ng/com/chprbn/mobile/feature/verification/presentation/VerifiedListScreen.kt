@@ -133,6 +133,7 @@ fun VerifiedListContent(
             modifier = Modifier.fillMaxSize()
         ) {
             VerifiedHeader(onBack = onBack, onMenu = onMenu)
+            Spacer(modifier = Modifier.height(16.dp))
             SearchBar(
                 query = uiState.query,
                 onQueryChange = onQueryChange
@@ -340,7 +341,8 @@ private fun VerifiedHeader(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
-        shadowElevation = 0.dp
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier
