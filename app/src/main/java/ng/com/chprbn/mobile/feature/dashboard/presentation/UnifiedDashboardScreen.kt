@@ -43,6 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
@@ -105,7 +109,8 @@ internal fun UnifiedDashboardContent(
         DashboardWelcomeCard(
             userName = uiState.userName,
             userEmail = uiState.userEmail,
-            userStatus = uiState.userStatus
+            userStatus = uiState.userStatus,
+            profileImageUrl = uiState.profileImageUrl
         )
         Spacer(modifier = Modifier.height(24.dp))
         DashboardFeatureGridSection(
@@ -126,7 +131,8 @@ internal fun UnifiedDashboardContent(
 private fun DashboardWelcomeCard(
     userName: String,
     userEmail: String,
-    userStatus: String
+    userStatus: String,
+    profileImageUrl: String? = null
 ) {
     val displayName = userName.ifBlank { stringResource(R.string.welcome_card_default_name) }
     val role = userStatus.ifBlank { stringResource(R.string.welcome_card_default_role) }
@@ -151,12 +157,26 @@ private fun DashboardWelcomeCard(
                         .border(2.dp, PrimaryGreen.copy(alpha = 0.2f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = PrimaryGreen
-                    )
+                    if (!profileImageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(profileImageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.AccountCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = PrimaryGreen
+                        )
+                    }
                 }
                 Box(
                     modifier = Modifier
