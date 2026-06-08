@@ -150,6 +150,7 @@ fun AppNavHost() {
         }
         composable<Routes.Verification> {
             VerificationScreen(
+                onBack = { navController.popBackStack() },
                 onScanQr = { navController.navigate(Routes.Scan) },
                 onVerifiedList = { navController.navigate(Routes.Verified) },
                 onSync = { navController.navigate(Routes.Sync) },

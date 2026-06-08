@@ -47,7 +47,7 @@ class VerificationFormContentRenderTest {
                     uiState = VerificationFormUiState(
                         loadState = VerificationFormLoadState.Loaded,
                         licenseRecord = sampleRecord,
-                        officerRemarkOptions = listOf("Documents verified"),
+                        officerRemarkOptions = listOf("Active"),
                     ),
                 )
             }

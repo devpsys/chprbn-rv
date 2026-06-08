@@ -127,7 +127,7 @@ class VerifiedLicenseSyncHandlerTest {
         institutionAttendedName = null,
         verificationLocation = "Lagos",
         practitionerPresent = true,
-        remark = "Documents verified",
+        remark = "Active",
         verifiedAt = 1_700_000_000_000L,
         syncStatus = "Pending",
         lastSyncAttempt = null,

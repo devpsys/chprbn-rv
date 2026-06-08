@@ -55,10 +55,10 @@ class OfficerRemarkOptionsApiServiceTest {
                   "message": "OK",
                   "data": {
                     "options": [
-                      "Documents verified; identity matches register",
-                      "Practitioner present; credentials checked",
-                      "Routine verification completed",
-                      "License confirmed valid for practice"
+                      "Active",
+                      "Expired",
+                      "Long Overdue",
+                      "Fake"
                     ]
                   }
                 }
@@ -71,8 +71,8 @@ class OfficerRemarkOptionsApiServiceTest {
         assertTrue(response.isSuccessful)
         val options = response.body()!!.data!!.options
         assertEquals(4, options!!.size)
-        assertEquals("Documents verified; identity matches register", options.first())
-        assertEquals("License confirmed valid for practice", options.last())
+        assertEquals("Active", options.first())
+        assertEquals("Fake", options.last())
     }
 
     @Test

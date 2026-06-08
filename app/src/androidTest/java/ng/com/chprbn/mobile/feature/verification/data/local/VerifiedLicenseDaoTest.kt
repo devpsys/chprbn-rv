@@ -143,7 +143,7 @@ class VerifiedLicenseDaoTest {
         institutionAttendedName = null,
         verificationLocation = "Lagos",
         practitionerPresent = true,
-        remark = "Documents verified",
+        remark = "Active",
         verifiedAt = verifiedAt,
         syncStatus = syncStatus,
         lastSyncAttempt = null,

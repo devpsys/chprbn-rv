@@ -122,9 +122,9 @@ class VerificationFormViewModelTest {
     fun `onOfficerRemarkSelected updates state`() = runTest {
         val viewModel = makeViewModel(SavedStateHandle())
 
-        viewModel.onOfficerRemarkSelected("Documents verified")
+        viewModel.onOfficerRemarkSelected("Active")
 
-        assertEquals("Documents verified", viewModel.uiState.value.selectedOfficerRemark)
+        assertEquals("Active", viewModel.uiState.value.selectedOfficerRemark)
     }
 
     @Test
@@ -147,17 +147,17 @@ class VerificationFormViewModelTest {
         val record = sampleRecord("REG-123")
         coEvery { getLicenseRecordUseCase("REG-123") } returns LicenseRecordResult.Success(record)
         coEvery {
-            saveVerifiedLicenseUseCase(record, "Documents verified", any())
+            saveVerifiedLicenseUseCase(record, "Active", any())
         } returns SaveVerifiedLicenseResult.Success
 
         val viewModel = makeViewModel(savedStateWith("REG-123"))
-        viewModel.onOfficerRemarkSelected("Documents verified")
+        viewModel.onOfficerRemarkSelected("Active")
 
         viewModel.saveVerification()
 
         assertEquals(SaveVerificationState.Success, viewModel.uiState.value.saveState)
         coVerify(exactly = 1) {
-            saveVerifiedLicenseUseCase(record, "Documents verified", any())
+            saveVerifiedLicenseUseCase(record, "Active", any())
         }
     }
 
@@ -170,7 +170,7 @@ class VerificationFormViewModelTest {
         } returns SaveVerifiedLicenseResult.Error("DB locked")
 
         val viewModel = makeViewModel(savedStateWith("REG-123"))
-        viewModel.onOfficerRemarkSelected("Documents verified")
+        viewModel.onOfficerRemarkSelected("Active")
 
         viewModel.saveVerification()
 
@@ -188,7 +188,7 @@ class VerificationFormViewModelTest {
         } returns SaveVerifiedLicenseResult.Success
 
         val viewModel = makeViewModel(savedStateWith("REG-123"))
-        viewModel.onOfficerRemarkSelected("Documents verified")
+        viewModel.onOfficerRemarkSelected("Active")
         viewModel.saveVerification()
         // sanity: we're at Success now
         assertEquals(SaveVerificationState.Success, viewModel.uiState.value.saveState)
@@ -234,10 +234,10 @@ class VerificationFormViewModelTest {
         SavedStateHandle(mapOf("registrationNumber" to registrationNumber))
 
     private val sampleOfficerRemarkOptions = arrayOf(
-        "Documents verified; identity matches register",
-        "Practitioner present; credentials checked",
-        "Routine verification completed",
-        "License confirmed valid for practice"
+        "Active",
+        "Expired",
+        "Long Overdue",
+        "Fake"
     )
 
     private fun sampleRecord(registrationNumber: String) = LicenseRecord(

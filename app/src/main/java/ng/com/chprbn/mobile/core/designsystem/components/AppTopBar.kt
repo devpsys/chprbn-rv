@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +40,7 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 @Composable
 fun AppTopBar(
     onNotifications: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     // statusBarsPadding keeps the bar below the system status bar on
     // edge-to-edge displays (enforced from API 35+). Scaffold-based
@@ -61,6 +63,16 @@ fun AppTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (onBack != null) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.app_top_bar_back_action),
+                            modifier = Modifier.size(24.dp),
+                            tint = PrimaryGreen
+                        )
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .size(40.dp)

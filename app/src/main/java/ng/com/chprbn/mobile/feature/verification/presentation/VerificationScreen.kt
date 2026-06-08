@@ -62,6 +62,7 @@ import ng.com.chprbn.mobile.feature.verification.domain.model.FeatureType
 @Composable
 fun VerificationScreen(
     modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
     onScanQr: () -> Unit = {},
     onVerifiedList: () -> Unit = {},
     onSync: () -> Unit = {},
@@ -81,6 +82,7 @@ fun VerificationScreen(
             Column(Modifier.fillMaxSize()) {
                 AppTopBar(
                     onNotifications = { },
+                    onBack = onBack,
                 )
                 when (val state = uiState) {
                     is VerificationUiState.Loading -> VerificationContent(

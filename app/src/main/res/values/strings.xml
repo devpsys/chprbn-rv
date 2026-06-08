@@ -39,6 +39,7 @@
     <!-- ============== Shared design-system: AppTopBar ============== -->
     <string name="app_top_bar_official_use_only">OFFICIAL USE ONLY</string>
     <string name="app_top_bar_notifications_action">Notifications</string>
+    <string name="app_top_bar_back_action">Back</string>
 
     <!-- ============== Shared design-system: BottomNavBar ============== -->
     <string name="bottom_nav_home">Home</string>
@@ -202,10 +203,10 @@
         deliberately (callers persist the selected string verbatim today).
     -->
     <string-array name="officer_remark_options">
-        <item>Documents verified; identity matches register</item>
-        <item>Practitioner present; credentials checked</item>
-        <item>Routine verification completed</item>
-        <item>License confirmed valid for practice</item>
+        <item>Active</item>
+        <item>Expired</item>
+        <item>Long Overdue</item>
+        <item>Fake</item>
     </string-array>
 
     <!-- ============== Irregularity report ============== -->
