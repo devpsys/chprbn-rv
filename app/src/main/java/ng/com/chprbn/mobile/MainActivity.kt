@@ -19,12 +19,17 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.navigation.AppNavHost
+import ng.com.chprbn.mobile.feature.auth.domain.session.SessionEventBus
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var sessionEventBus: SessionEventBus
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -49,7 +54,7 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .safeDrawingPadding()
                     ) {
-                        AppNavHost()
+                        AppNavHost(sessionEventBus = sessionEventBus)
                     }
                     Box(
                         modifier = Modifier

@@ -40,6 +40,7 @@
     <string name="app_top_bar_official_use_only">OFFICIAL USE ONLY</string>
     <string name="app_top_bar_notifications_action">Notifications</string>
     <string name="app_top_bar_back_action">Back</string>
+    <string name="session_expired_message">Your session has expired. Please sign in again.</string>
 
     <!-- ============== Shared design-system: BottomNavBar ============== -->
     <string name="bottom_nav_home">Home</string>

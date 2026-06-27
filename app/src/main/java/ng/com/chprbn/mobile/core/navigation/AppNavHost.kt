@@ -1,11 +1,17 @@
 package ng.com.chprbn.mobile.core.navigation
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import ng.com.chprbn.mobile.feature.auth.domain.session.SessionEvent
+import ng.com.chprbn.mobile.feature.auth.domain.session.SessionEventBus
 import ng.com.chprbn.mobile.feature.auth.presentation.login.LoginScreen
 import ng.com.chprbn.mobile.feature.auth.presentation.splash.SplashScreen
 import ng.com.chprbn.mobile.feature.verification.presentation.VerificationScreen
@@ -40,8 +46,28 @@ import ng.com.chprbn.mobile.feature.exam.presentation.CandidateScanResultScreen
  * which gives compile-time type safety and removes Gson-encoded nav payloads.
  */
 @Composable
-fun AppNavHost() {
+fun AppNavHost(sessionEventBus: SessionEventBus) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val sessionExpiredMessage = stringResource(R.string.session_expired_message)
+
+    LaunchedEffect(sessionEventBus) {
+        Log.w("SessionExpiry", "AppNavHost collector subscribed")
+        sessionEventBus.events.collect { event ->
+            Log.w("SessionExpiry", "collector received $event — routing to Login")
+            when (event) {
+                SessionEvent.Expired -> {
+                    Toast.makeText(context, sessionExpiredMessage, Toast.LENGTH_LONG).show()
+                    // Pop everything (including splash) so back from Login exits the app
+                    // rather than landing on an authenticated screen still painted underneath.
+                    navController.navigate(Routes.Login) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
