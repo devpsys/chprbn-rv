@@ -96,7 +96,7 @@ class VerificationApiServiceTest {
         // declaration would land as null at runtime when the server omits the
         // field and any consumer would NPE. The mapper `.orEmpty()`s the
         // nullable field on the way to the domain `User`, so callers always
-        // see a non-null list. Mirror change applied on `AdhocProfileDataDto.permissions`.
+        // see a non-null list. Mirror change applied on `AdhocProfileDataDto.roles`.
         server.enqueue(
             jsonOk(
                 """

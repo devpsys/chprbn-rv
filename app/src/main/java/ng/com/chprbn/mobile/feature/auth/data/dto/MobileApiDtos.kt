@@ -26,7 +26,7 @@ data class AdhocProfileEnvelopeDto(
  * Mobile API v1 adhoc user profile (`data` from GET /adhoc/profile).
  * Numeric [id] may be serialized as JSON number.
  *
- * [permissions] is intentionally nullable (not `= emptyList()`): Gson's
+ * [roles] is intentionally nullable (not `= emptyList()`): Gson's
  * reflective deserialization does NOT honor Kotlin constructor defaults,
  * so an omitted field on the wire would land as a null reference despite
  * a non-null declared type — and any consumer dereferencing it would
@@ -41,9 +41,8 @@ data class AdhocProfileDataDto(
     val phone: String? = null,
     val username: String,
     val status: Int? = null,
-    val role: String? = null,
     val department: String? = null,
-    val permissions: List<String>? = null
+    val roles: List<String>? = null
 )
 
 // endregion
@@ -61,7 +60,7 @@ data class ProfileEnvelopeDto(
  * [photo] is raw Base64 image bytes (no data: prefix) when present.
  *
  * [permissions] is intentionally nullable for the same reason as
- * [AdhocProfileDataDto.permissions]: Gson's reflective deserialization
+ * [AdhocProfileDataDto.roles]: Gson's reflective deserialization
  * does NOT honor Kotlin constructor defaults, so an omitted field on the
  * wire would land as a null reference despite a `List<String>`-typed
  * declaration with a default — and any consumer dereferencing it would

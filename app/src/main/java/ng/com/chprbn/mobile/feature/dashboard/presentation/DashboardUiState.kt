@@ -6,5 +6,6 @@ data class DashboardUiState(
     val userEmail: String = "",
     val userStatus: String = "",
     val profileImageUrl: String? = null,
-    val lastSyncTime: String = ""
+    val lastSyncTime: String = "",
+    val roles: List<String> = emptyList()
 )

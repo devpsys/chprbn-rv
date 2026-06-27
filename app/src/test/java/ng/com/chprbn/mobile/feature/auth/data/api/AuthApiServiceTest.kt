@@ -106,17 +106,16 @@ class AuthApiServiceTest {
                 """
                 {
                   "status": true,
-                  "message": "OK",
+                  "message": "successful",
                   "data": {
-                    "id": 4421,
-                    "name": "Amina Okonkwo",
-                    "email": "field.officer@chprbn.gov.ng",
-                    "phone": "+2348012345678",
-                    "username": "field.officer",
+                    "id": 4,
+                    "name": "Abba El-Muqaddas",
+                    "email": "abba@chprbn.gpv.ng",
+                    "phone": "08022334455",
+                    "username": "abba",
                     "status": 1,
-                    "role": "Senior Field Officer",
-                    "department": "Lagos North",
-                    "permissions": ["verify_practitioner", "mark_attendance"]
+                    "department": "ACC",
+                    "roles": ["Inspector", "Verify Practitioners"]
                   }
                 }
                 """.trimIndent(),
@@ -130,19 +129,18 @@ class AuthApiServiceTest {
         assertEquals("/adhoc/profile", recorded.path)
 
         assertTrue(response.isSuccessful)
-        val data = response.body()!!.data!!
-        assertEquals(4421.0, data.id)
-        assertEquals("Amina Okonkwo", data.name)
-        assertEquals("field.officer@chprbn.gov.ng", data.email)
-        assertEquals("+2348012345678", data.phone)
-        assertEquals("field.officer", data.username)
+        val envelope = response.body()!!
+        assertTrue(envelope.status)
+        assertEquals("successful", envelope.message)
+        val data = envelope.data!!
+        assertEquals(4.0, data.id)
+        assertEquals("Abba El-Muqaddas", data.name)
+        assertEquals("abba@chprbn.gpv.ng", data.email)
+        assertEquals("08022334455", data.phone)
+        assertEquals("abba", data.username)
         assertEquals(1, data.status)
-        assertEquals("Senior Field Officer", data.role)
-        assertEquals("Lagos North", data.department)
-        assertEquals(
-            listOf("verify_practitioner", "mark_attendance"),
-            data.permissions,
-        )
+        assertEquals("ACC", data.department)
+        assertEquals(listOf("Inspector", "Verify Practitioners"), data.roles)
     }
 
     @Test
@@ -164,13 +162,12 @@ class AuthApiServiceTest {
         assertEquals("Field Officer", data.name)
         assertNull(data.phone)
         assertNull(data.status)
-        assertNull(data.role)
         assertNull(data.department)
         assertNull(data.id)
-        // `permissions` is declared nullable on the DTO precisely to dodge the
+        // `roles` is declared nullable on the DTO precisely to dodge the
         // Gson + Kotlin-defaults gotcha — when omitted on the wire it lands as
         // null, and the mapper `.orEmpty()`s it before the domain `User` sees it.
-        assertNull(data.permissions)
+        assertNull(data.roles)
     }
 
     // endregion

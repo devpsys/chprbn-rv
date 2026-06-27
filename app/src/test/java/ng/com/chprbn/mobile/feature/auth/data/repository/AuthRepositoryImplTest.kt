@@ -74,7 +74,6 @@ class AuthRepositoryImplTest {
                     username = "johndoe",
                     phone = "123456",
                     status = 1,
-                    role = null,
                     department = null
                 )
             )
@@ -154,7 +153,6 @@ class AuthRepositoryImplTest {
                     username = "johndoe",
                     phone = null,
                     status = 0,
-                    role = null,
                     department = null
                 )
             )

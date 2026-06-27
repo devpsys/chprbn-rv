@@ -114,6 +114,7 @@ internal fun UnifiedDashboardContent(
         )
         Spacer(modifier = Modifier.height(24.dp))
         DashboardFeatureGridSection(
+            roles = uiState.roles,
             onLicenseVerification = onNavigateToScan,
             onExamAttendance = onNavigateToExamAttendance,
             onPracticalAssessment = onNavigateToPracticalAssessment,
@@ -216,22 +217,25 @@ private data class DashboardGridItem(
     val subtitle: String,
     val icon: ImageVector,
     val isPrimary: Boolean,
+    val requiredRole: String,
     val onClick: () -> Unit
 )
 
 @Composable
 private fun DashboardFeatureGridSection(
+    roles: List<String>,
     onLicenseVerification: () -> Unit,
     onExamAttendance: () -> Unit,
     onPracticalAssessment: () -> Unit,
     onAccreditation: () -> Unit
 ) {
-    val items = listOf(
+    val allItems = listOf(
         DashboardGridItem(
             title = stringResource(R.string.dashboard_feature_osyvalac_title),
             subtitle = stringResource(R.string.dashboard_feature_osyvalac_subtitle),
             icon = Icons.Outlined.VerifiedUser,
             isPrimary = false,
+            requiredRole = "osyvalac",
             onClick = onLicenseVerification
         ),
         DashboardGridItem(
@@ -239,6 +243,7 @@ private fun DashboardFeatureGridSection(
             subtitle = stringResource(R.string.dashboard_feature_exams_subtitle),
             icon = Icons.Outlined.AccountCircle,
             isPrimary = false,
+            requiredRole = "examination",
             onClick = onExamAttendance
         ),
         DashboardGridItem(
@@ -246,6 +251,7 @@ private fun DashboardFeatureGridSection(
             subtitle = stringResource(R.string.dashboard_feature_accreditation_subtitle),
             icon = Icons.Outlined.WorkspacePremium,
             isPrimary = false,
+            requiredRole = "accreditation",
             onClick = onAccreditation
         ),
 //        DashboardGridItem(
@@ -253,9 +259,12 @@ private fun DashboardFeatureGridSection(
 //            subtitle = "Practical assessment",
 //            icon = Icons.Filled.Science,
 //            isPrimary = false,
+//            requiredRole = "practical",
 //            onClick = onPracticalAssessment
 //        )
     )
+    val normalizedRoles = roles.map { it.lowercase() }.toSet()
+    val items = allItems.filter { it.requiredRole.lowercase() in normalizedRoles }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(

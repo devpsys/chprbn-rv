@@ -30,7 +30,8 @@ class DashboardViewModel @Inject constructor(
                     userName = user.fullName?.takeIf(String::isNotBlank) ?: user.username,
                     userEmail = user.email,
                     userStatus = user.role.orEmpty(),
-                    profileImageUrl = user.userPhoto
+                    profileImageUrl = user.userPhoto,
+                    roles = user.permissions
                 )
             }
         }

@@ -10,15 +10,16 @@ fun AdhocProfileDataDto.toDomain(accessToken: String): User {
     val publicId = id?.let { num ->
         if (num % 1.0 == 0.0) "adhoc_${num.toLong()}" else "adhoc_${num}"
     } ?: "adhoc_unknown"
+    val roleNames = roles.orEmpty()
     return User(
         id = publicId,
         username = username,
         email = email,
         fullName = name,
         accessToken = accessToken,
-        permissions = permissions.orEmpty(),
+        permissions = roleNames,
         userPhoto = null,
-        role = role,
+        role = roleNames.firstOrNull(),
         staffId = null,
         unit = department,
         organization = null,

@@ -18,11 +18,13 @@ class UnifiedDashboardContentRenderTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun default_state_renders_feature_grid_and_welcome_copy() {
+    fun feature_grid_renders_only_tiles_unlocked_by_user_roles() {
         composeRule.setContent {
             ChprbnTheme {
                 UnifiedDashboardContent(
-                    uiState = DashboardUiState(),
+                    uiState = DashboardUiState(
+                        roles = listOf("osyvalac", "examination", "accreditation")
+                    ),
                     onNavigateToScan = {},
                     onNavigateToExamAttendance = {},
                     onNavigateToPracticalAssessment = {},
@@ -35,5 +37,45 @@ class UnifiedDashboardContentRenderTest {
         composeRule.onNodeWithText("OSYVALAC").assertExists()
         composeRule.onNodeWithText("EXAMS").assertExists()
         composeRule.onNodeWithText("ACCREDITATION").assertExists()
+    }
+
+    @Test
+    fun feature_grid_hides_tiles_the_user_has_no_role_for() {
+        composeRule.setContent {
+            ChprbnTheme {
+                UnifiedDashboardContent(
+                    uiState = DashboardUiState(roles = listOf("osyvalac")),
+                    onNavigateToScan = {},
+                    onNavigateToExamAttendance = {},
+                    onNavigateToPracticalAssessment = {},
+                    onNavigateToAccreditation = {},
+                    onViewRecentLogs = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("OSYVALAC").assertExists()
+        composeRule.onNodeWithText("EXAMS").assertDoesNotExist()
+        composeRule.onNodeWithText("ACCREDITATION").assertDoesNotExist()
+    }
+
+    @Test
+    fun feature_grid_is_empty_when_user_has_no_matching_roles() {
+        composeRule.setContent {
+            ChprbnTheme {
+                UnifiedDashboardContent(
+                    uiState = DashboardUiState(roles = emptyList()),
+                    onNavigateToScan = {},
+                    onNavigateToExamAttendance = {},
+                    onNavigateToPracticalAssessment = {},
+                    onNavigateToAccreditation = {},
+                    onViewRecentLogs = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("OSYVALAC").assertDoesNotExist()
+        composeRule.onNodeWithText("EXAMS").assertDoesNotExist()
+        composeRule.onNodeWithText("ACCREDITATION").assertDoesNotExist()
     }
 }
