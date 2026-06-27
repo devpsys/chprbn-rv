@@ -63,9 +63,12 @@ class ReportIrregularityViewModel @Inject constructor(
             savedStateHandle.get<String>("registrationNumber").orEmpty()
         ).trim()
         if (registrationNumber.isNotEmpty()) {
-            // Pre-populate form fields from the cached record. If the record can't be
-            // fetched (NotFound / Error), the form stays editable with empty fields —
-            // user can still submit a report with manually-entered details.
+            // Always pre-fill the license number from the nav arg so the "No record
+            // found" report-irregularity flow lands with the scanned/entered number
+            // already in place. The remaining fields are pre-populated from the
+            // cached record on Success; on NotFound / Error they stay empty for the
+            // user to fill in manually.
+            _uiState.update { it.copy(licenseNumber = registrationNumber.uppercase()) }
             viewModelScope.launch {
                 val result = getLicenseRecordUseCase(registrationNumber)
                 if (result is LicenseRecordResult.Success) {
@@ -73,7 +76,7 @@ class ReportIrregularityViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             nameOnCard = record.fullName,
-                            licenseNumber = record.registrationNumber,
+                            licenseNumber = record.registrationNumber.uppercase(),
                             cadre = record.profession,
                             gender = record.gender
                         )
@@ -84,11 +87,21 @@ class ReportIrregularityViewModel @Inject constructor(
     }
 
     fun onNameOnCardChange(value: String) {
-        _uiState.update { it.copy(nameOnCard = value, fieldErrors = it.fieldErrors.copy(nameOnCard = null)) }
+        _uiState.update {
+            it.copy(
+                nameOnCard = value,
+                fieldErrors = it.fieldErrors.copy(nameOnCard = null)
+            )
+        }
     }
 
     fun onLicenseNumberChange(value: String) {
-        _uiState.update { it.copy(licenseNumber = value, fieldErrors = it.fieldErrors.copy(licenseNumber = null)) }
+        _uiState.update {
+            it.copy(
+                licenseNumber = value,
+                fieldErrors = it.fieldErrors.copy(licenseNumber = null)
+            )
+        }
     }
 
     fun onCadreChange(value: String) {
@@ -96,11 +109,21 @@ class ReportIrregularityViewModel @Inject constructor(
     }
 
     fun onGenderChange(value: String) {
-        _uiState.update { it.copy(gender = value, fieldErrors = it.fieldErrors.copy(gender = null)) }
+        _uiState.update {
+            it.copy(
+                gender = value,
+                fieldErrors = it.fieldErrors.copy(gender = null)
+            )
+        }
     }
 
     fun onRemarkSelected(remark: IrregularityRemark) {
-        _uiState.update { it.copy(selectedRemark = remark, fieldErrors = it.fieldErrors.copy(remark = null)) }
+        _uiState.update {
+            it.copy(
+                selectedRemark = remark,
+                fieldErrors = it.fieldErrors.copy(remark = null)
+            )
+        }
     }
 
     fun onSnapshotUriChange(uriString: String?) {
@@ -113,7 +136,12 @@ class ReportIrregularityViewModel @Inject constructor(
     }
 
     fun clearSnapshot() {
-        _uiState.update { it.copy(snapshotContentUri = null, fieldErrors = it.fieldErrors.copy(snapshot = null)) }
+        _uiState.update {
+            it.copy(
+                snapshotContentUri = null,
+                fieldErrors = it.fieldErrors.copy(snapshot = null)
+            )
+        }
     }
 
     fun submit() {
@@ -145,7 +173,12 @@ class ReportIrregularityViewModel @Inject constructor(
             return
         }
 
-        _uiState.update { it.copy(submitState = ReportIrregularitySubmitState.Submitting, fieldErrors = ReportIrregularityFieldErrors()) }
+        _uiState.update {
+            it.copy(
+                submitState = ReportIrregularitySubmitState.Submitting,
+                fieldErrors = ReportIrregularityFieldErrors()
+            )
+        }
         viewModelScope.launch {
             val result = submitIrregularityReportUseCase(
                 nameOnCard = s.nameOnCard,

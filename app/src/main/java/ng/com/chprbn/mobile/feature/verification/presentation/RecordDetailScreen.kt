@@ -88,6 +88,7 @@ fun RecordDetailScreen(
     onMenu: () -> Unit = {},
     onProceedToVerification: (LicenseRecord) -> Unit = {},
     onReportIrregularity: (LicenseRecord) -> Unit = {},
+    onReportIrregularityForUnknown: (String) -> Unit = {},
     onManualEntry: () -> Unit = {},
     viewModel: RecordDetailViewModel = hiltViewModel()
 ) {
@@ -97,7 +98,7 @@ fun RecordDetailScreen(
     }
 
     val record = (state as? RecordDetailUiState.Success)?.record
-    
+
     RecordDetailContent(
         modifier = modifier,
         state = state,
@@ -107,6 +108,7 @@ fun RecordDetailScreen(
         onMenu = onMenu,
         onProceedToVerification = onProceedToVerification,
         onReportIrregularity = onReportIrregularity,
+        onReportIrregularityForUnknown = onReportIrregularityForUnknown,
         onManualEntry = onManualEntry,
         onRetry = { viewModel.retry(registrationNumber) }
     )
@@ -122,6 +124,7 @@ fun RecordDetailContent(
     onMenu: () -> Unit = {},
     onProceedToVerification: (LicenseRecord) -> Unit = {},
     onReportIrregularity: (LicenseRecord) -> Unit = {},
+    onReportIrregularityForUnknown: (String) -> Unit = {},
     onManualEntry: () -> Unit = {},
     onRetry: () -> Unit = {}
 ) {
@@ -150,7 +153,8 @@ fun RecordDetailContent(
                     state is RecordDetailUiState.NotFound -> RecordDetailNoRecordContent(
                         registrationNumber = registrationNumber,
                         onRetry = onRetry,
-                        onManualEntry = onManualEntry
+                        onManualEntry = onManualEntry,
+                        onReportIrregularity = { onReportIrregularityForUnknown(registrationNumber) }
                     )
 
                     state is RecordDetailUiState.Error -> RecordDetailErrorContent(
@@ -759,7 +763,8 @@ private fun RecordDetailLoadingContent() {
 private fun RecordDetailNoRecordContent(
     registrationNumber: String,
     onRetry: () -> Unit,
-    onManualEntry: () -> Unit
+    onManualEntry: () -> Unit,
+    onReportIrregularity: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -882,6 +887,35 @@ private fun RecordDetailNoRecordContent(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryGreen
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clickable(onClick = onReportIrregularity),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ReportProblem,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = stringResource(R.string.record_detail_not_found_report_action),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }

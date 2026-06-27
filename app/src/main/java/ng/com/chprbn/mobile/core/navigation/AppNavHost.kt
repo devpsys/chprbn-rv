@@ -389,6 +389,9 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 onReportIrregularity = { record ->
                     navController.navigate(Routes.ReportIrregularity(record.registrationNumber))
                 },
+                onReportIrregularityForUnknown = { regNumber ->
+                    navController.navigate(Routes.ReportIrregularity(regNumber))
+                },
                 onManualEntry = {
                     navController.navigate(
                         Routes.ManualLicenseEntry(source = ScanSource.Verification),

@@ -182,6 +182,7 @@
     <string name="record_detail_not_found_subtitle_generic">We couldn\'t find a practitioner matching this license number. Please try scanning again or enter the details manually.</string>
     <string name="record_detail_not_found_retry_action">Try Again</string>
     <string name="record_detail_not_found_manual_action">Manual Entry</string>
+    <string name="record_detail_not_found_report_action">Report Irregularity</string>
     <string name="record_detail_not_found_help_caption">Need help with verification?</string>
     <!-- Reusable em-dash placeholder for empty values. -->
     <string name="placeholder_em_dash">—</string>
