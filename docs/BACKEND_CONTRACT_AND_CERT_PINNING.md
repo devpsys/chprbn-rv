@@ -38,8 +38,8 @@ All paths are relative to the production base URL `https://app.chprbn.gov.ng/api
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| E2 | `POST` | `exam/attendance` | Bearer | `ExamSyncApiService.uploadAttendance` | Per-row upload of an attendance mark (one HTTP request per candidate row). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
-| E3 | `POST` | `exam/remarks` | Bearer | `ExamSyncApiService.uploadRemark` | Per-row upload of an officer remark. Idempotent on `(remarkId)` recommended. |
+| E2 | `POST` | `exam/attendance/batch` | Bearer | `ExamSyncApiService.uploadAttendanceBatch` | Batched upload of attendance marks (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
+| E3 | `POST` | `exam/remarks/batch` | Bearer | `ExamSyncApiService.uploadRemarkBatch` | Batched upload of officer remarks (`items[]` in request; per-row `results[]` in response). Idempotent on `(remarkId)` recommended. |
 
 #### Assessment feature — read
 
@@ -52,25 +52,22 @@ All paths are relative to the production base URL `https://app.chprbn.gov.ng/api
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| A3 | `POST` | `assessments/practical-scores` | Bearer | `AssessmentSyncApiService.uploadPracticalScore` | Per-row upload of a practical (section-level) score. Idempotent on `(candidateId, sectionId)` recommended. |
-| A4 | `POST` | `assessments/project-scores` | Bearer | `AssessmentSyncApiService.uploadProjectScore` | Per-row upload of a project score. Idempotent on `(candidateId, paperId)` recommended. |
+| A3 | `POST` | `assessments/practical-scores/batch` | Bearer | `AssessmentSyncApiService.uploadPracticalScoreBatch` | Batched upload of practical (section-level) scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, sectionId)` recommended. |
+| A4 | `POST` | `assessments/project-scores/batch` | Bearer | `AssessmentSyncApiService.uploadProjectScoreBatch` | Batched upload of project scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId)` recommended. |
 
-### 2.3 Envelope convention (audit C3)
+### 2.3 Envelope convention (audit C3 — decided)
 
-Every speculative DTO assumes a uniform envelope:
+Every DTO decodes the uniform envelope:
 
 ```json
 {
-  "status": true,
+  "success": true,
   "message": "OK",
   "data": { /* endpoint-specific payload */ }
 }
 ```
 
-This is the shape already used by `practitioners/license` (item 5.3 in `docs/API_ENDPOINTS.md`). The existing `auth/login` endpoint **breaks this convention** — it returns the user object flat at the top level. **The convention question for backend is: which form is canonical going forward?**
-
-- **Option α (recommended):** Standardize on `{status, message, data}` for all new endpoints. Mobile DTOs already assume this. Login stays as-is (legacy); no client churn.
-- **Option β:** Flat top-level objects everywhere. Mobile rewrites all 8 envelope DTOs. ~½ day of work; not load-bearing but real churn.
+All read envelopes (auth, verification, exam, assessment) have cut over to `success` as the top-level flag. Backend must emit `success`; the legacy `status` boolean is no longer read by mobile. See `docs/api/full-api-documentation.md` §3.1 for the canonical envelope + `meta` block, and §14.1 for the migration history.
 
 ### 2.4 Auth model (audit C2)
 
@@ -94,7 +91,7 @@ Concrete checklist to put to the backend team. Each row gates the corresponding 
 | Q-C1.A3 | Confirm path + idempotency story for practical-score upload (A3). | Practical scoring |
 | Q-C1.A4 | Confirm path + idempotency story for project-score upload (A4). | Project scoring |
 | Q-C2 | Bearer token + scope. Same token as verification? Different TTL? | Every protected endpoint |
-| Q-C3 | Standard envelope: `{status, message, data}` vs flat? | DTO reshape, all 8 endpoints |
+| Q-C3 | ~~Standard envelope: `{status, message, data}` vs flat?~~ **Decided:** `{success, message, data}` for every endpoint. | — |
 | Q-NULL | Behavior when officer has no work assigned today (empty `data` / `null` / 404)? | Empty-state UX |
 | Q-ERR | Error body shape for non-2xx (existing convention: `{ "message": "..." }`)? | Error surfacing |
 | Q-PHOTO | Are candidate `photoUrl` values absolute HTTPS URLs or relative paths or Base64 data URIs? Mobile normalises all three via `core/network/ImageUrlNormalization` (L4 fix). | Candidate avatars |
@@ -116,7 +113,7 @@ Tracked separately so this doc stays "external blockers" only. When the contract
 - [ ] Remove the `**SPECULATIVE**` doc comments from each `*ApiService` interface and from each `*EnvelopeDto`.
 - [ ] Add a real `Api*RemoteSourceTest` per endpoint using MockWebServer (covers wire-level JSON regressions — currently mock the interface so JSON shape drift slips past CI).
 - [ ] Drop the Composite + Fake sources for production builds (keep for `debug` via a `buildType`-scoped binding).
-- [ ] Update `docs/API_ENDPOINTS.md` to add the eight endpoints with finalised paths, sample request/response bodies, and error shapes.
+- [ ] Update `docs/api/full-api-documentation.md` with any finalised path or DTO tweaks that differ from the shipped mobile assumptions.
 - [ ] Re-run `docs/RELEASE_SMOKE_TEST.md` §11 + §12 as real gates.
 
 ---

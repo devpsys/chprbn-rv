@@ -4,7 +4,7 @@ package ng.com.chprbn.mobile.feature.verification.data.dto
  * Mobile API v1 envelope for POST [ng.com.chprbn.mobile.feature.verification.data.api.IrregularityReportApiService.submitIrregularityReport].
  */
 data class IrregularityReportEnvelopeDto(
-    val status: Boolean,
+    val success: Boolean,
     val message: String? = null,
     val data: IrregularityReportResponseDataDto? = null
 )

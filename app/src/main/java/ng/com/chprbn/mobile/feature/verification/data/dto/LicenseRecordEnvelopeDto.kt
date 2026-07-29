@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
  * Mobile API v1 envelope for GET practitioners/license.
  */
 data class LicenseRecordEnvelopeDto(
-    val status: Boolean,
+    val success: Boolean,
     val message: String? = null,
     val data: LicenseRecordDataDto? = null
 )

@@ -18,7 +18,7 @@
 2. Strictly observe Clean Architecture **inside a single Gradle module** — boundaries are enforced by **package**, not by module dependency. Domain code must remain free of Android, Room, Retrofit, Gson, and Compose imports.
 3. Replicate the patterns proven by `feature/verification/` (sealed `*Result` types, `Api*/Fake*/Composite*` remote-source triplet, mappers as top-level extension functions, write-through-Room repositories, encrypted Room via `core/persistence/encryption`, Hilt with one module per logical sub-area).
 4. Eliminate the legacy v1's structural defects: data-layer types crossing the domain boundary, god-object repositories, magic-string paper codes, mutable domain models, swallowed errors, and Room entities used as HTTP wire formats.
-5. Surface — explicitly and early — that **the backend API for exam and assessment does not yet exist** (confirmed from `docs/API_ENDPOINTS.md`, `docs/openapi.yaml`, `mobile_api_v1_documentation.html`). The plan therefore depends on a backend contract negotiation, captured in section 12.
+5. Surface — explicitly and early — that **the backend API for exam and assessment does not yet exist** (confirmed from `docs/api/full-api-documentation.md` §§14.2–14.3 and `docs/BACKEND_CONTRACT_AND_CERT_PINNING.md`). The plan therefore depends on a backend contract negotiation, captured in section 12.
 
 ### 1.2 Key architectural decisions
 

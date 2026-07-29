@@ -40,7 +40,7 @@ class LicenseApiServiceTest {
 
     @Test
     fun `getLicenseRecord GETs practitioners-license with license_number query param`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         api.getLicenseRecord(licenseNumber = "MD-99201-B")
 
@@ -51,7 +51,7 @@ class LicenseApiServiceTest {
 
     @Test
     fun `getLicenseRecord url-encodes license numbers containing reserved chars`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         api.getLicenseRecord(licenseNumber = "MD 99201/B")
 
@@ -68,7 +68,7 @@ class LicenseApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "OK",
                   "data": {
                     "registration_number": "MD-99201-B",
@@ -114,7 +114,7 @@ class LicenseApiServiceTest {
 
     @Test
     fun `getLicenseRecord tolerates a null data field for 'no record'`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"message":"no record","data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"message":"no record","data":null}"""))
 
         val response = api.getLicenseRecord("UNKNOWN")
 

@@ -211,7 +211,7 @@ JSON `true` / `false`. Never `0` / `1` or `"yes"` / `"no"`.
 
 ## 3. Standard Response Envelope
 
-### 3.1 Target envelope (all NEW endpoints from this document onwards)
+### 3.1 Canonical envelope
 
 Every endpoint returns a JSON object with this exact top-level shape:
 
@@ -243,21 +243,7 @@ Every endpoint returns a JSON object with this exact top-level shape:
 | `meta.pagination.total` | int | No | Yes | Total matching records (cross-page). |
 | `meta.pagination.last_page` | int | No | Yes | Last page number = `ceil(total / per_page)`. |
 
-### 3.2 Legacy envelope (existing endpoints today)
-
-Existing endpoints use a **slightly different** envelope; see §14 for the migration plan:
-
-```json
-{ "status": true, "message": "…", "data": { … } }
-```
-
-- `status` (boolean) is the legacy name for `success`.
-- `data` is the same.
-- No `meta` is currently emitted.
-
-Until the existing endpoints migrate, the mobile client tolerates both names; new endpoints MUST use `success`.
-
-### 3.3 Envelope examples
+### 3.2 Envelope examples
 
 **Success — single object:**
 
@@ -1834,17 +1820,9 @@ Logout is local-only — token remains valid server-side until natural expiry. *
 
 ## 14. Migration Notes
 
-### 14.1 Envelope rename `status → success`
+### 14.1 Envelope rename `status → success` (complete)
 
-**Phase 1 (no client change required).** Backend adds `success` alongside `status` in every response:
-
-```json
-{ "status": true, "success": true, "message": "…", "data": { … } }
-```
-
-**Phase 2 (next client release).** Mobile DTOs add a `success` field; field becomes the primary read, `status` is the fallback.
-
-**Phase 3 (one release later).** Backend drops `status`. Mobile DTOs drop the fallback.
+Mobile has cut over: every read envelope now decodes `success` (boolean) as the top-level flag. Backend must emit `success` on all responses. The legacy `status` boolean is no longer read and can be dropped.
 
 ### 14.2 New-endpoint rollout order
 
@@ -1857,7 +1835,7 @@ The mobile client already wires Composite remote sources that prefer the live AP
 
 ### 14.3 Suggested PR sequence (backend)
 
-1. PR #1 — `success` envelope alongside `status`; doc + tests only, no behaviour change.
+1. PR #1 — Ensure every response envelope emits `success` (boolean). Mobile no longer reads `status`; the field can be dropped from responses whenever convenient.
 2. PR #2 — `POST /logout` token revocation.
 3. PR #3 — `GET /exam/dossier` (read-only; simplest to land first).
 4. PR #4 — `POST /exam/attendance/batch` + `POST /exam/remarks/batch` (batched idempotent writes; per-row results).
@@ -1865,7 +1843,7 @@ The mobile client already wires Composite remote sources that prefer the live AP
 6. PR #6 — `GET /assessments/schedules/{id}/package`.
 7. PR #7 — `POST /assessments/practical-scores/batch` + `POST /assessments/project-scores/batch` (batched idempotent writes).
 8. PR #8 — `POST /practitioners/verified-sync/batch` (legacy verified-sync replacement).
-9. PR #9 — Drop legacy `status` field + remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`.
+9. PR #9 — Remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`. (Legacy `status` field already dropped in the mobile client — backend may stop emitting it whenever convenient.)
 
 ### 14.4 Contract tests
 

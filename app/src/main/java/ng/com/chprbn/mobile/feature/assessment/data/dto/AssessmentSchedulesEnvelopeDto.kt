@@ -12,7 +12,7 @@ import com.google.gson.annotations.SerializedName
  * mapper applies fallbacks rather than crashing on a missing key.
  */
 data class AssessmentSchedulesEnvelopeDto(
-    @SerializedName("status") val status: Boolean = false,
+    @SerializedName("success") val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: List<AssessmentScheduleDto>? = null,
 )

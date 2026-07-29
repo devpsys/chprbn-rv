@@ -44,7 +44,7 @@ class ApiVerifiedSyncRemoteSource @Inject constructor(
             error(message)
         }
         val envelope = response.body()
-        if (envelope != null && !envelope.status) {
+        if (envelope != null && !envelope.success) {
             error(envelope.message ?: "Sync rejected.")
         }
         Unit

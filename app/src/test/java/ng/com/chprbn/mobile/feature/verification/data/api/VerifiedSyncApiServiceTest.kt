@@ -41,7 +41,7 @@ class VerifiedSyncApiServiceTest {
 
     @Test
     fun `syncVerifiedLicense posts to practitioners-verified-sync with snake_case fields`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         api.syncVerifiedLicense(
             VerifiedSyncRequestDto(
@@ -75,7 +75,7 @@ class VerifiedSyncApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "Verification accepted.",
                   "data": {
                     "id": 7421,

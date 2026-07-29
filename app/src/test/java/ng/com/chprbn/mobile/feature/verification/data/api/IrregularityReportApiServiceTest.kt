@@ -48,7 +48,7 @@ class IrregularityReportApiServiceTest {
 
     @Test
     fun `submitIrregularityReport posts multipart to the documented path`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         submitSample()
 
@@ -64,7 +64,7 @@ class IrregularityReportApiServiceTest {
 
     @Test
     fun `submitIrregularityReport includes every documented text part by name`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         submitSample()
 
@@ -89,7 +89,7 @@ class IrregularityReportApiServiceTest {
 
     @Test
     fun `submitIrregularityReport sends the actual text values inside their parts`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         submitSample()
 
@@ -107,7 +107,7 @@ class IrregularityReportApiServiceTest {
 
     @Test
     fun `submitIrregularityReport includes the snapshot part with filename and image content-type`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":null}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":null}"""))
 
         submitSample()
 
@@ -128,7 +128,7 @@ class IrregularityReportApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "Report submitted.",
                   "data": {
                     "id": 318,

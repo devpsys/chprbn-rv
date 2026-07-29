@@ -40,7 +40,7 @@ class AuthApiServiceTest {
 
     @Test
     fun `adhocLogin posts to adhoc-login with camelCase username and password fields`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":{"token":"tok"}}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":{"token":"tok"}}"""))
 
         api.adhocLogin(LoginRequestDto(username = "field.officer", password = "S3cret"))
 
@@ -55,12 +55,12 @@ class AuthApiServiceTest {
     }
 
     @Test
-    fun `adhocLogin parses status + message + data token envelope`() = runTest {
+    fun `adhocLogin parses success + message + data token envelope`() = runTest {
         server.enqueue(
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "Login successful.",
                   "data": { "token": "1|aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFG" }
                 }
@@ -72,7 +72,7 @@ class AuthApiServiceTest {
 
         assertTrue(response.isSuccessful)
         val body = response.body()!!
-        assertTrue(body.status)
+        assertTrue(body.success)
         assertEquals("Login successful.", body.message)
         assertEquals("1|aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFG", body.data!!.token)
     }
@@ -105,7 +105,7 @@ class AuthApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "successful",
                   "data": {
                     "id": 4,
@@ -130,7 +130,7 @@ class AuthApiServiceTest {
 
         assertTrue(response.isSuccessful)
         val envelope = response.body()!!
-        assertTrue(envelope.status)
+        assertTrue(envelope.success)
         assertEquals("successful", envelope.message)
         val data = envelope.data!!
         assertEquals(4.0, data.id)
@@ -149,7 +149,7 @@ class AuthApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "data": { "name": "Field Officer", "email": "f@x.gov", "username": "f" }
                 }
                 """.trimIndent(),

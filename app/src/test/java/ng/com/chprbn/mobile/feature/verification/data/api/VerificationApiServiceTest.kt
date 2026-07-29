@@ -37,7 +37,7 @@ class VerificationApiServiceTest {
 
     @Test
     fun `getProfile GETs dashboard-profile`() = runTest {
-        server.enqueue(jsonOk("""{"status":true,"data":{"id":"u1","name":"X","username":"x","email":"x@x"}}"""))
+        server.enqueue(jsonOk("""{"success":true,"data":{"id":"u1","name":"X","username":"x","email":"x@x"}}"""))
 
         api.getProfile()
 
@@ -52,7 +52,7 @@ class VerificationApiServiceTest {
             jsonOk(
                 """
                 {
-                  "status": true,
+                  "success": true,
                   "message": "OK",
                   "data": {
                     "id": "usr_8f3c21a9",
@@ -100,7 +100,7 @@ class VerificationApiServiceTest {
         server.enqueue(
             jsonOk(
                 """
-                {"status":true,"data":{"id":"u1","name":"X","username":"x","email":"x@x"}}
+                {"success":true,"data":{"id":"u1","name":"X","username":"x","email":"x@x"}}
                 """.trimIndent(),
             ),
         )

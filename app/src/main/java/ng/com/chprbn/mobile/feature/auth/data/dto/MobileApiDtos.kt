@@ -3,7 +3,7 @@ package ng.com.chprbn.mobile.feature.auth.data.dto
 // region Login — POST /login (same contract as POST /auth/login)
 
 data class LoginEnvelopeDto(
-    val status: Boolean,
+    val success: Boolean,
     val message: String? = null,
     val data: LoginDataDto? = null
 )
@@ -17,7 +17,7 @@ data class LoginDataDto(
 // region Adhoc profile — GET /adhoc/profile (Bearer from POST adhoc/login)
 
 data class AdhocProfileEnvelopeDto(
-    val status: Boolean,
+    val success: Boolean,
     val message: String? = null,
     val data: AdhocProfileDataDto? = null
 )
@@ -50,7 +50,7 @@ data class AdhocProfileDataDto(
 // region Profile — GET /user & GET /dashboard/profile (practitioner tutor)
 
 data class ProfileEnvelopeDto(
-    val status: Boolean,
+    val success: Boolean,
     val message: String? = null,
     val data: ProfileDataDto? = null
 )

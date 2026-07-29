@@ -72,7 +72,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             val profileEnvelope = profileResponse.body()
             val profileData = profileEnvelope?.data
-            if (profileData == null || profileEnvelope.status != true) {
+            if (profileData == null || profileEnvelope.success != true) {
                 authTokenStore.clear()
                 return AuthResult.Error(profileEnvelope?.message ?: "Invalid profile response.")
             }

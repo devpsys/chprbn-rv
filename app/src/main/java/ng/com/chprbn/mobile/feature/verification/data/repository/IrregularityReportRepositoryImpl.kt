@@ -63,7 +63,7 @@ class IrregularityReportRepositoryImpl @Inject constructor(
                 if (body == null) {
                     return@withContext SubmitIrregularityReportResult.Error("Empty response from server.")
                 }
-                if (!body.status) {
+                if (!body.success) {
                     return@withContext SubmitIrregularityReportResult.Error(
                         body.message?.takeIf { it.isNotBlank() } ?: "Report was not accepted."
                     )

@@ -20,7 +20,7 @@ class ApiLicenseRecordRemoteSource @Inject constructor(
         }.getOrElse { _ -> return null }
         if (!response.isSuccessful || response.code() == 404) return null
         val envelope = response.body() ?: return null
-        if (!envelope.status) return null
+        if (!envelope.success) return null
         val data = envelope.data ?: return null
         return data.toDomain()
     }

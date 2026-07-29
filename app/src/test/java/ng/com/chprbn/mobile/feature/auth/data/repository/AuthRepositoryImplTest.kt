@@ -56,7 +56,7 @@ class AuthRepositoryImplTest {
 
         val loginResponse = Response.success(
             LoginEnvelopeDto(
-                status = true,
+                success = true,
                 message = "Success",
                 data = LoginDataDto(token = "fakeToken")
             )
@@ -65,7 +65,7 @@ class AuthRepositoryImplTest {
 
         val profileResponse = Response.success(
             AdhocProfileEnvelopeDto(
-                status = true,
+                success = true,
                 message = "Success",
                 data = AdhocProfileDataDto(
                     id = 1.0,
@@ -108,7 +108,7 @@ class AuthRepositoryImplTest {
 
         coEvery { apiService.adhocLogin(any()) } returns Response.success(
             LoginEnvelopeDto(
-                status = true,
+                success = true,
                 message = "OK",
                 data = LoginDataDto(token = "freshToken")
             )
@@ -137,14 +137,14 @@ class AuthRepositoryImplTest {
 
         coEvery { apiService.adhocLogin(any()) } returns Response.success(
             LoginEnvelopeDto(
-                status = true,
+                success = true,
                 message = "OK",
                 data = LoginDataDto(token = "freshToken")
             )
         )
         coEvery { apiService.getAdhocProfile() } returns Response.success(
             AdhocProfileEnvelopeDto(
-                status = false,
+                success = false,
                 message = "Account suspended",
                 data = AdhocProfileDataDto(
                     id = 1.0,
