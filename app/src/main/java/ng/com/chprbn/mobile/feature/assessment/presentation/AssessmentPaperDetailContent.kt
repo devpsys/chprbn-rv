@@ -54,6 +54,7 @@ import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
+import androidx.compose.material.icons.filled.WarningAmber
 
 @Composable
 fun AssessmentPaperDetailContent(
@@ -85,6 +86,9 @@ fun AssessmentPaperDetailContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
+            uiState.errorMessage?.let { message ->
+                item { PaperDetailErrorBanner(message = message) }
+            }
             item {
                 PaperHeroCard(
                     paperTitle = uiState.paperTitle,
@@ -118,6 +122,37 @@ fun AssessmentPaperDetailContent(
             // + 16dp Scaffold margin + breathing room) so the last list item
             // can be fully scrolled into view above the FAB.
             item { Spacer(modifier = Modifier.height(96.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun PaperDetailErrorBanner(message: String) {
+    // Kept small on purpose — the whole screen still renders below,
+    // this just tells the officer why the numbers look empty (A-S7).
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = scheme.errorContainer,
+        border = BorderStroke(1.dp, scheme.error.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.WarningAmber,
+                contentDescription = null,
+                tint = scheme.error,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onErrorContainer,
+            )
         }
     }
 }

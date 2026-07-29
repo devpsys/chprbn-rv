@@ -6,6 +6,7 @@ import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchEnvelopeDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -20,13 +21,21 @@ import retrofit2.http.POST
  */
 interface ExamSyncApiService {
 
+    /**
+     * [idempotencyKey] — an opaque, client-generated UUID that identifies
+     * one *attempt* at a batch. The server persists it against the
+     * per-row `client_id`s so a retry (same key + same items) returns the
+     * original result rather than re-applying (X3 audit).
+     */
     @POST("exam/attendance/batch")
     suspend fun uploadAttendanceBatch(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: AttendanceSyncBatchRequestDto,
     ): Response<AttendanceSyncBatchEnvelopeDto>
 
     @POST("exam/remarks/batch")
     suspend fun uploadRemarkBatch(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: RemarkSyncBatchRequestDto,
     ): Response<RemarkSyncBatchEnvelopeDto>
 }

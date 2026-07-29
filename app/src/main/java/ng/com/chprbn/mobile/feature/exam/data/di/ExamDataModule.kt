@@ -6,12 +6,15 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
+import dagger.multibindings.IntoSet
+import ng.com.chprbn.mobile.core.session.SessionScopedCleaner
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
 import ng.com.chprbn.mobile.feature.exam.data.repository.AttendanceRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamCandidateRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamPaperRepositoryImpl
+import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSessionCleaner
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamStatisticsRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.RemarkRepositoryImpl
@@ -104,6 +107,15 @@ abstract class ExamDataModule {
     abstract fun bindRemarkSyncHandler(
         impl: RemarkSyncHandler,
     ): SyncEntityHandler
+
+    /**
+     * Contributes the exam-side wipe to the cross-feature [SessionCleaner]
+     * (A2 audit fix — logout must not leave cached exam rows for the next
+     * user on this device).
+     */
+    @Binds
+    @IntoSet
+    abstract fun bindExamSessionCleaner(impl: ExamSessionCleaner): SessionScopedCleaner
 
     companion object {
 

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Per-question scoring read/write surface. The composite PK
@@ -44,6 +45,24 @@ interface PracticalScoreDao {
         scheduleId: String,
         candidateId: String,
     ): List<PracticalScoreEntity>
+
+    /**
+     * Flow variant of [getForCandidate] — emits a fresh snapshot every
+     * time a score for this candidate is upserted. Backs the practical-
+     * sections screen so navigating back from a scoring child screen
+     * shows the updated section summary without a manual refresh (A-S6
+     * audit fix).
+     */
+    @Query(
+        """
+        SELECT * FROM practical_scores
+        WHERE scheduleId = :scheduleId AND candidateId = :candidateId
+        """,
+    )
+    fun observeForCandidate(
+        scheduleId: String,
+        candidateId: String,
+    ): Flow<List<PracticalScoreEntity>>
 
     @Query(
         """
@@ -101,4 +120,8 @@ interface PracticalScoreDao {
 
     @Query("DELETE FROM practical_scores WHERE scheduleId = :scheduleId")
     suspend fun deleteForSchedule(scheduleId: String): Int
+
+    /** Used by the SessionCleaner on logout — global wipe. */
+    @Query("DELETE FROM practical_scores")
+    suspend fun clearAll(): Int
 }

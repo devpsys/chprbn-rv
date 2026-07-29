@@ -11,6 +11,7 @@ import ng.com.chprbn.mobile.feature.assessment.data.mappers.toSyncItemDto
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ProjectScore
 import retrofit2.Response
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -30,10 +31,18 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
 
         val transportOutcome: Result<List<PracticalScoreSyncResultDto>> = runCatching {
             val response = api.uploadPracticalScoreBatch(
-                PracticalScoreSyncBatchRequestDto(items = items),
+                idempotencyKey = UUID.randomUUID().toString(),
+                body = PracticalScoreSyncBatchRequestDto(items = items),
             )
             response.requireSuccessOrThrow()
-            response.body()?.data?.results.orEmpty()
+            val envelope = response.body()
+                ?: error("Practical-score batch: empty response body.")
+            if (!envelope.success) {
+                // A-S3 audit: envelope-level rejection fails every row with
+                // the server's own message, not the generic "no result."
+                error(envelope.message ?: "Practical-score batch rejected by server.")
+            }
+            envelope.data?.results.orEmpty()
         }
 
         return foldBatchResults(
@@ -53,10 +62,16 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
 
         val transportOutcome: Result<List<ProjectScoreSyncResultDto>> = runCatching {
             val response = api.uploadProjectScoreBatch(
-                ProjectScoreSyncBatchRequestDto(items = items),
+                idempotencyKey = UUID.randomUUID().toString(),
+                body = ProjectScoreSyncBatchRequestDto(items = items),
             )
             response.requireSuccessOrThrow()
-            response.body()?.data?.results.orEmpty()
+            val envelope = response.body()
+                ?: error("Project-score batch: empty response body.")
+            if (!envelope.success) {
+                error(envelope.message ?: "Project-score batch rejected by server.")
+            }
+            envelope.data?.results.orEmpty()
         }
 
         return foldBatchResults(

@@ -1,11 +1,13 @@
 package ng.com.chprbn.mobile.feature.profile.data.repository
 
 import io.mockk.coVerifyOrder
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.core.session.SessionCleaner
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.local.UserEntity
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
@@ -20,13 +22,15 @@ class ProfileRepositoryImplTest {
 
     private lateinit var userDao: UserDao
     private lateinit var authTokenStore: AuthTokenStore
+    private lateinit var sessionCleaner: SessionCleaner
     private lateinit var repository: ProfileRepositoryImpl
 
     @Before
     fun setUp() {
         userDao = mockk(relaxed = true)
         authTokenStore = mockk(relaxed = true)
-        repository = ProfileRepositoryImpl(userDao, authTokenStore)
+        sessionCleaner = mockk(relaxed = true)
+        repository = ProfileRepositoryImpl(userDao, authTokenStore, sessionCleaner)
     }
 
     @Test
@@ -119,10 +123,14 @@ class ProfileRepositoryImplTest {
     }
 
     @Test
-    fun `logout clears DAO then token store in order`() = runTest {
+    fun `logout wipes feature caches, then user DAO, then token store — in that order`() = runTest {
         repository.logout()
 
+        // A2 audit contract: feature caches (via SessionCleaner) must be
+        // wiped before the auth-side state so a session cleaner that
+        // needs the DAO (unlikely, but permitted) can still read it.
         coVerifyOrder {
+            sessionCleaner.clearAllFeatures()
             userDao.clearUser()
             authTokenStore.clear()
         }

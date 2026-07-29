@@ -42,4 +42,8 @@ interface ProjectScoreDao {
 
     @Query("DELETE FROM project_scores WHERE scheduleId = :scheduleId")
     suspend fun deleteForSchedule(scheduleId: String): Int
+
+    /** Used by the SessionCleaner on logout — global wipe. */
+    @Query("DELETE FROM project_scores")
+    suspend fun clearAll(): Int
 }

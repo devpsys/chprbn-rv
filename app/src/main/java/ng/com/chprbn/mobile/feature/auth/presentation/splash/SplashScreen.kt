@@ -55,7 +55,7 @@ fun SplashScreen(
     val destination by viewModel.destination.collectAsStateWithLifecycle(null)
     LaunchedEffect(destination) {
         when (destination) {
-            SplashDestination.Verification -> onNavigateToDashboard()
+            SplashDestination.Dashboard -> onNavigateToDashboard()
             SplashDestination.Login -> onNavigateToLogin()
             null -> { /* still loading */ }
         }

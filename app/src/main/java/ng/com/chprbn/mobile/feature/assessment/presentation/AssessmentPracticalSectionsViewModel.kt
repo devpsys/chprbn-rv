@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionSummary
@@ -41,20 +42,33 @@ class AssessmentPracticalSectionsViewModel @Inject constructor(
     val uiState: StateFlow<AssessmentPracticalSectionsUiState> = _uiState.asStateFlow()
 
     init {
+        // Candidate header is fetched once — the profile doesn't change during
+        // the visit. Section summaries collect via Flow so any per-question
+        // score upsert re-emits and the pills stay live (A-S6 audit fix).
         viewModelScope.launch {
             val candidate = lookupCandidate(scheduleId, candidateId)
-            val summaries = getSections(scheduleId, candidateId)
-            val done = summaries.count { it.status == ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionStatus.Complete }
             _uiState.update {
                 it.copy(
                     candidateName = candidate?.fullName.orEmpty(),
                     candidateExamId = candidate?.examNumber.orEmpty(),
                     candidatePhotoUrl = candidate?.photoUrl,
-                    sectionsDone = done,
-                    sectionsTotal = summaries.size,
-                    sectionsRemaining = (summaries.size - done).coerceAtLeast(0),
-                    sections = summaries.map { it.toSectionUi() },
                 )
+            }
+        }
+        viewModelScope.launch {
+            getSections.observe(scheduleId, candidateId).collectLatest { summaries ->
+                val done = summaries.count {
+                    it.status ==
+                        ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionStatus.Complete
+                }
+                _uiState.update {
+                    it.copy(
+                        sectionsDone = done,
+                        sectionsTotal = summaries.size,
+                        sectionsRemaining = (summaries.size - done).coerceAtLeast(0),
+                        sections = summaries.map { summary -> summary.toSectionUi() },
+                    )
+                }
             }
         }
     }

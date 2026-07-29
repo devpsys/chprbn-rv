@@ -11,6 +11,7 @@ import ng.com.chprbn.mobile.feature.exam.data.mappers.toSyncItemDto
 import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
 import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
 import retrofit2.Response
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -34,10 +35,19 @@ class ApiExamSyncRemoteSource @Inject constructor(
 
         val transportOutcome: Result<List<AttendanceSyncResultDto>> = runCatching {
             val response = api.uploadAttendanceBatch(
-                AttendanceSyncBatchRequestDto(items = items),
+                idempotencyKey = UUID.randomUUID().toString(),
+                body = AttendanceSyncBatchRequestDto(items = items),
             )
             response.requireSuccessOrThrow()
-            response.body()?.data?.results.orEmpty()
+            val envelope = response.body()
+                ?: error("Attendance batch: empty response body.")
+            if (!envelope.success) {
+                // E3 audit: an envelope-level rejection must fail every row
+                // with the server's own message so retries surface the real
+                // cause, not the generic per-row "no result" fallback.
+                error(envelope.message ?: "Attendance batch rejected by server.")
+            }
+            envelope.data?.results.orEmpty()
         }
 
         return foldBatchResults(
@@ -57,10 +67,16 @@ class ApiExamSyncRemoteSource @Inject constructor(
 
         val transportOutcome: Result<List<RemarkSyncResultDto>> = runCatching {
             val response = api.uploadRemarkBatch(
-                RemarkSyncBatchRequestDto(items = items),
+                idempotencyKey = UUID.randomUUID().toString(),
+                body = RemarkSyncBatchRequestDto(items = items),
             )
             response.requireSuccessOrThrow()
-            response.body()?.data?.results.orEmpty()
+            val envelope = response.body()
+                ?: error("Remark batch: empty response body.")
+            if (!envelope.success) {
+                error(envelope.message ?: "Remark batch rejected by server.")
+            }
+            envelope.data?.results.orEmpty()
         }
 
         return foldBatchResults(

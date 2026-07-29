@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
+import ng.com.chprbn.mobile.core.sync.Clock
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPapersUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.SyncExamRecordsUseCase
@@ -35,6 +36,7 @@ import javax.inject.Inject
 class ExamPapersViewModel @Inject constructor(
     private val getPapers: GetExamPapersUseCase,
     private val syncExamRecords: SyncExamRecordsUseCase,
+    private val clock: Clock,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -67,13 +69,20 @@ class ExamPapersViewModel @Inject constructor(
     }
 
     private fun List<Paper>.toUiState(): ExamPapersUiState {
-        // Heuristic: the first paper gets the action label. Without a real
-        // wall clock to compare to, we mark the first paper Active and
-        // the rest Upcoming.
+        // Compare each paper's start/end window to now (E9 audit fix — the
+        // previous "first item = Active" heuristic mis-marked papers on
+        // multi-day exams and after the current paper ended). If start/end
+        // are unset (0L placeholders from the mapper), fall back to the
+        // old first-item heuristic so the screen still shows *something*
+        // clickable rather than nothing.
+        val now = clock.nowMillis()
+        val anyPaperHasWindow = any { it.startAt > 0L || it.endAt > 0L }
         val cards = mapIndexed { index, paper ->
-            val status = when (index) {
-                0 -> ExamPaperAttendanceStatus.Active
-                else -> ExamPaperAttendanceStatus.Upcoming
+            val status = if (anyPaperHasWindow) {
+                paper.attendanceStatusFor(now)
+            } else {
+                if (index == 0) ExamPaperAttendanceStatus.Active
+                else ExamPaperAttendanceStatus.Upcoming
             }
             paper.toCardUiState(status)
         }
@@ -106,6 +115,25 @@ class ExamPapersViewModel @Inject constructor(
                 context.getString(R.string.exam_papers_action_mark_attendance)
             } else null,
         )
+
+    /**
+     * Bucket a paper against wall-clock `now`:
+     *
+     * - `now < startAt` → Upcoming
+     * - `startAt ≤ now ≤ endAt` → Active
+     * - `endAt < now` → Completed
+     *
+     * Papers with an unset window (both endpoints 0L) are marked Upcoming
+     * so they at least don't grab the "Mark Attendance" CTA prematurely —
+     * the caller may still override to `Active` when nothing else has a
+     * window (fallback in [toUiState]).
+     */
+    private fun Paper.attendanceStatusFor(now: Long): ExamPaperAttendanceStatus = when {
+        startAt <= 0L && endAt <= 0L -> ExamPaperAttendanceStatus.Upcoming
+        now < startAt -> ExamPaperAttendanceStatus.Upcoming
+        endAt in 1L..now -> ExamPaperAttendanceStatus.Completed
+        else -> ExamPaperAttendanceStatus.Active
+    }
 
     private fun formatTimeRange(start: Long, end: Long): String =
         if (start == 0L && end == 0L) {

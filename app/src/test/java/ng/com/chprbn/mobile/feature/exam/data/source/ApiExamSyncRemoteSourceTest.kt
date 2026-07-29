@@ -27,7 +27,7 @@ class ApiExamSyncRemoteSourceTest {
 
     @Test
     fun `batch returns per-row Result keyed by clientId`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } returns
+        coEvery { api.uploadAttendanceBatch(any(), any()) } returns
             Response.success(
                 AttendanceSyncBatchEnvelopeDto(
                     success = true,
@@ -62,7 +62,7 @@ class ApiExamSyncRemoteSourceTest {
     @Test
     fun `batch sends a single HTTP call carrying every row's clientId`() = runTest {
         val captured = slot<AttendanceSyncBatchRequestDto>()
-        coEvery { api.uploadAttendanceBatch(capture(captured)) } returns
+        coEvery { api.uploadAttendanceBatch(any(), capture(captured)) } returns
             Response.success(AttendanceSyncBatchEnvelopeDto(success = true))
 
         source.uploadAttendanceBatch(listOf(attendance("c1"), attendance("c2")))
@@ -73,7 +73,7 @@ class ApiExamSyncRemoteSourceTest {
 
     @Test
     fun `non-2xx transport failure maps every input row to Result failure`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } returns
+        coEvery { api.uploadAttendanceBatch(any(), any()) } returns
             Response.error(500, "boom".toResponseBody("text/plain".toMediaTypeOrNull()))
 
         val results = source.uploadAttendanceBatch(
@@ -92,7 +92,7 @@ class ApiExamSyncRemoteSourceTest {
 
     @Test
     fun `IOException transport failure maps every input row to Result failure with the cause`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } throws IOException("offline")
+        coEvery { api.uploadAttendanceBatch(any(), any()) } throws IOException("offline")
 
         val results = source.uploadAttendanceBatch(
             listOf(attendance("c1"), attendance("c2")),
@@ -112,7 +112,7 @@ class ApiExamSyncRemoteSourceTest {
 
     @Test
     fun `clientId missing from server response surfaces as 'no result' failure`() = runTest {
-        coEvery { api.uploadAttendanceBatch(any()) } returns
+        coEvery { api.uploadAttendanceBatch(any(), any()) } returns
             Response.success(
                 AttendanceSyncBatchEnvelopeDto(
                     success = true,

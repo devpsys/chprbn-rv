@@ -6,12 +6,15 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
+import dagger.multibindings.IntoSet
 import ng.com.chprbn.mobile.BuildConfig
+import ng.com.chprbn.mobile.core.session.SessionScopedCleaner
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
 import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentCandidateRepositoryImpl
 import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentScheduleRepositoryImpl
+import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentSessionCleaner
 import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentSyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.assessment.data.repository.PracticalScoringRepositoryImpl
 import ng.com.chprbn.mobile.feature.assessment.data.repository.ProjectScoringRepositoryImpl
@@ -99,6 +102,17 @@ abstract class AssessmentDataModule {
     abstract fun bindProjectScoreSyncHandler(
         impl: ProjectScoreSyncHandler,
     ): SyncEntityHandler
+
+    /**
+     * Contributes the assessment-side wipe to the cross-feature
+     * [SessionCleaner] (A2 audit fix — logout must not leave cached scores
+     * / packages for the next user on this device).
+     */
+    @Binds
+    @IntoSet
+    abstract fun bindAssessmentSessionCleaner(
+        impl: AssessmentSessionCleaner,
+    ): SessionScopedCleaner
 
     companion object {
 

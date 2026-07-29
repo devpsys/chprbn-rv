@@ -51,7 +51,8 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
 
         api.uploadAttendanceBatch(
-            AttendanceSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = AttendanceSyncBatchRequestDto(
                 items = listOf(
                     AttendanceSyncItemDto(
                         clientId = "p1:c1",
@@ -98,7 +99,8 @@ class ExamSyncApiServiceTest {
         )
 
         val response = api.uploadAttendanceBatch(
-            AttendanceSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = AttendanceSyncBatchRequestDto(
                 items = listOf(
                     AttendanceSyncItemDto("p1:c1", "p1", "c1", "signed_in", 0L),
                     AttendanceSyncItemDto("p1:c2", "p1", "c2", "signed_in", 0L),
@@ -123,7 +125,8 @@ class ExamSyncApiServiceTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val response = api.uploadAttendanceBatch(
-            AttendanceSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = AttendanceSyncBatchRequestDto(
                 items = listOf(AttendanceSyncItemDto("p1:c1", "p1", "c1", "signed_in", 0L)),
             ),
         )
@@ -138,7 +141,8 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"message":"empty"}"""))
 
         val response = api.uploadAttendanceBatch(
-            AttendanceSyncBatchRequestDto(items = emptyList()),
+            idempotencyKey = "test-idempotency-key",
+            body = AttendanceSyncBatchRequestDto(items = emptyList()),
         )
 
         assertTrue(response.isSuccessful)
@@ -156,7 +160,8 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
 
         api.uploadRemarkBatch(
-            RemarkSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = RemarkSyncBatchRequestDto(
                 items = listOf(
                     RemarkSyncItemDto(
                         clientId = "r1",
@@ -191,7 +196,8 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
 
         api.uploadRemarkBatch(
-            RemarkSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = RemarkSyncBatchRequestDto(
                 items = listOf(
                     RemarkSyncItemDto(
                         clientId = "r1",
@@ -229,7 +235,8 @@ class ExamSyncApiServiceTest {
         )
 
         val response = api.uploadRemarkBatch(
-            RemarkSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = RemarkSyncBatchRequestDto(
                 items = listOf(
                     RemarkSyncItemDto("r1", "r1", "c1", "p1", "x", "info", 0L),
                 ),

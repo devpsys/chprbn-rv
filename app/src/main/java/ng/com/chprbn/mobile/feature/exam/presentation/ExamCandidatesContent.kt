@@ -27,6 +27,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import coil.request.ImageRequest
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.LazyColumn
@@ -312,15 +315,34 @@ private fun ExamCandidateItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalCandidatesImageContext())
-                            .data(candidate.avatarUrl).crossfade(true).build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(avatarShape)
-                    )
+                    if (candidate.avatarUrl.isNullOrBlank()) {
+                        // Bundled fallback — never hotlink a stock photo
+                        // (E11 audit fix).
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(avatarShape)
+                                .background(PrimaryGreen.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AccountCircle,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(36.dp),
+                            )
+                        }
+                    } else {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalCandidatesImageContext())
+                                .data(candidate.avatarUrl).crossfade(true).build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(avatarShape)
+                        )
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = candidate.name,

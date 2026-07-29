@@ -40,7 +40,7 @@ class SplashViewModelTest {
             val viewModel = SplashViewModel(getUserProfileUseCase, authTokenStore)
             advanceUntilIdle()
 
-            assertEquals(SplashDestination.Verification, viewModel.destination.value)
+            assertEquals(SplashDestination.Dashboard, viewModel.destination.value)
             verify { authTokenStore.setToken("valid-token-123") }
         }
 

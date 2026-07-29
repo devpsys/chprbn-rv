@@ -28,8 +28,10 @@ class AuthorizationInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val path = request.url.encodedPath
-        // Tutor: …/login, …/auth/login — Adhoc: …/adhoc/login, …/auth/adhoc/login (all end with /login)
-        if (path.endsWith("/login")) {
+        // Explicit login-endpoint allow-list. Was previously
+        // `path.endsWith("/login")`, which would also swallow the 401 handler
+        // for a future path like `/admin/login` — A5 audit finding.
+        if (LOGIN_ENDPOINTS.any { path.endsWith(it) }) {
             return chain.proceed(request)
         }
         val token = resolveBearerToken()
@@ -61,5 +63,18 @@ class AuthorizationInterceptor @Inject constructor(
 
     private companion object {
         const val TAG = "SessionExpiry"
+
+        /**
+         * Endpoints that must NOT get a Bearer attached and whose 401
+         * response is a bad-credentials error (surfaced to the LoginScreen),
+         * not a session-expired signal. Matched by path-suffix so the base
+         * URL prefix (e.g. `/api/v1/mobile/`) doesn't matter.
+         */
+        val LOGIN_ENDPOINTS = setOf(
+            "/adhoc/login",
+            "/auth/adhoc/login",
+            "/login",
+            "/auth/login",
+        )
     }
 }

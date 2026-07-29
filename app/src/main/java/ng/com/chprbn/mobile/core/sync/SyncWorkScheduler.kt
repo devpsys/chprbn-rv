@@ -17,9 +17,16 @@ import javax.inject.Singleton
  * local write. Keeps the WorkManager-specific knobs (constraints, backoff,
  * unique-work policy) in one place so the schedule call sites are one-liners.
  *
- * The unique-work name `sync-upload` collapses concurrent enqueues so a burst
- * of 30 attendance writes triggers exactly one worker run, not 30. The
- * `KEEP` policy preserves an in-flight run rather than restarting it.
+ * `sync-upload` is the unique-work name that collapses concurrent enqueues,
+ * so a burst of 30 attendance writes triggers one worker chain, not 30.
+ *
+ * Policy: [ExistingWorkPolicy.APPEND_OR_REPLACE]. If a run is in-flight, the
+ * new request queues a follow-up so writes committed mid-flight are picked
+ * up in the next batch. `KEEP` (the previous policy) silently orphaned
+ * those writes until an unrelated schedule fired — E6 audit finding.
+ * `REPLACE` would kill the in-flight run and lose observability of
+ * successful uploads within it; APPEND_OR_REPLACE keeps the current run
+ * and appends a follow-up, which is what we want.
  */
 @Singleton
 class SyncWorkScheduler @Inject constructor(
@@ -42,7 +49,7 @@ class SyncWorkScheduler @Inject constructor(
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             UNIQUE_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             request,
         )
     }

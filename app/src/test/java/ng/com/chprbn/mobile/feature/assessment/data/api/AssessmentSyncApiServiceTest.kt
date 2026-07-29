@@ -45,7 +45,8 @@ class AssessmentSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
 
         api.uploadPracticalScoreBatch(
-            PracticalScoreSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = PracticalScoreSyncBatchRequestDto(
                 items = listOf(
                     PracticalScoreSyncItemDto(
                         clientId = "PE-2024:c1:q1",
@@ -87,7 +88,8 @@ class AssessmentSyncApiServiceTest {
         )
 
         val response = api.uploadPracticalScoreBatch(
-            PracticalScoreSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = PracticalScoreSyncBatchRequestDto(
                 items = listOf(
                     PracticalScoreSyncItemDto("PE-2024:c1:q1", "PE-2024", "c1", "q1", 8, 0L),
                     PracticalScoreSyncItemDto("PE-2024:c1:q2", "PE-2024", "c1", "q2", 9, 0L),
@@ -109,7 +111,8 @@ class AssessmentSyncApiServiceTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val response = api.uploadPracticalScoreBatch(
-            PracticalScoreSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = PracticalScoreSyncBatchRequestDto(
                 items = listOf(
                     PracticalScoreSyncItemDto("PE-2024:c1:q1", "PE-2024", "c1", "q1", 8, 0L),
                 ),
@@ -129,7 +132,8 @@ class AssessmentSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
 
         api.uploadProjectScoreBatch(
-            ProjectScoreSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = ProjectScoreSyncBatchRequestDto(
                 items = listOf(
                     ProjectScoreSyncItemDto(
                         clientId = "PE-2024:c1",
@@ -171,7 +175,8 @@ class AssessmentSyncApiServiceTest {
         )
 
         val response = api.uploadProjectScoreBatch(
-            ProjectScoreSyncBatchRequestDto(
+            idempotencyKey = "test-idempotency-key",
+            body = ProjectScoreSyncBatchRequestDto(
                 items = listOf(
                     ProjectScoreSyncItemDto("PE-2024:c1", "PE-2024", "c1", 78.5, 100, 0L),
                 ),

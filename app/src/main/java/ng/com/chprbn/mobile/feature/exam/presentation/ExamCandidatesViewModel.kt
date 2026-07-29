@@ -75,7 +75,9 @@ class ExamCandidatesViewModel @Inject constructor(
     }
 
     private fun ExamCandidateRow.toCardUi(): ExamCandidateUiState = ExamCandidateUiState(
-        avatarUrl = candidate.photoUrl ?: MARCUS_AVATAR_URL,
+        // Nullable in the model — the card renders a bundled Icon fallback
+        // when null (E11 audit fix; previously hotlinked stock avatars).
+        avatarUrl = candidate.photoUrl,
         name = candidate.fullName,
         idLabel = "ID: ${candidate.examNumber}",
         statusPillLabel = when (attendance?.status) {

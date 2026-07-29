@@ -101,13 +101,23 @@ class AssessmentPaperDetailViewModel @Inject constructor(
 
         when (paperResult) {
             is AssessmentPaperDetailResult.Success -> _uiState.update { current ->
-                paperResult.paper.applyTo(current, total, previewRows)
+                paperResult.paper.applyTo(current, total, previewRows).copy(errorMessage = null)
             }
-            // NotFound and Error leave the (default) empty state; the existing
-            // screen design has no error UI to render so we just emit empties.
-            AssessmentPaperDetailResult.NotFound,
+            AssessmentPaperDetailResult.NotFound -> _uiState.update { current ->
+                current.copy(
+                    candidates = previewRows,
+                    totalCount = total,
+                    errorMessage = "This paper isn't in your cache yet — download the package to view details.",
+                )
+            }
             is AssessmentPaperDetailResult.Error -> _uiState.update { current ->
-                current.copy(candidates = previewRows, totalCount = total)
+                current.copy(
+                    candidates = previewRows,
+                    totalCount = total,
+                    errorMessage = paperResult.message.ifBlank {
+                        "Could not load paper details."
+                    },
+                )
             }
         }
     }

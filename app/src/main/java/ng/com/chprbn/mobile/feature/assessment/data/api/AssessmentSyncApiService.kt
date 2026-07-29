@@ -6,6 +6,7 @@ import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchEnv
 import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -17,13 +18,20 @@ import retrofit2.http.POST
  */
 interface AssessmentSyncApiService {
 
+    /**
+     * [idempotencyKey] — see `ExamSyncApiService.uploadAttendanceBatch`;
+     * X3 audit fix, mirrored so a retry of the same batch is server-side
+     * deduplicated rather than double-applied.
+     */
     @POST("assessments/practical-scores/batch")
     suspend fun uploadPracticalScoreBatch(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: PracticalScoreSyncBatchRequestDto,
     ): Response<PracticalScoreSyncBatchEnvelopeDto>
 
     @POST("assessments/project-scores/batch")
     suspend fun uploadProjectScoreBatch(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: ProjectScoreSyncBatchRequestDto,
     ): Response<ProjectScoreSyncBatchEnvelopeDto>
 }

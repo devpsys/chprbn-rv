@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
+import ng.com.chprbn.mobile.core.sync.Clock
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPapersUseCase
@@ -25,6 +26,10 @@ class ExamPapersViewModelTest {
 
     private val getPapers = mockk<GetExamPapersUseCase>()
     private val syncExamRecords = mockk<SyncExamRecordsUseCase>()
+    // Clock is stubbed at a time when every sample paper's window is either
+    // unset (0L, falls back to the first-item-Active heuristic) or bracketed
+    // by the existing test fixtures, so behaviour matches pre-E9 expectations.
+    private val clock = Clock { 1_700_000_000_000L }
     private val context = mockk<Context> {
         every { getString(R.string.exam_papers_daily_overview_title) } returns "Daily Overview"
         every { getString(R.string.exam_papers_status_pill_in_progress) } returns "In Progress"
@@ -35,7 +40,7 @@ class ExamPapersViewModelTest {
     fun `empty use case result keeps the placeholder state`() = runTest {
         coEvery { getPapers() } returns emptyList()
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
         assertEquals(ExamPapersUiState.placeholder(), viewModel.uiState.value)
     }
@@ -47,7 +52,7 @@ class ExamPapersViewModelTest {
             paper("p2", "Paper II", PaperKind.Practical),
         )
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
         val cards = viewModel.uiState.value.papers
         assertEquals(2, cards.size)
@@ -65,7 +70,7 @@ class ExamPapersViewModelTest {
             paper("p3", "Project", PaperKind.Project),
         )
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
         val byId = viewModel.uiState.value.papers.associateBy { it.id }
         assertEquals(ExamPaperIconKind.Description, byId.getValue("p1").iconKind)
@@ -78,7 +83,7 @@ class ExamPapersViewModelTest {
         coEvery { getPapers() } returns emptyList()
         coEvery { syncExamRecords() } returns SyncBatchResult.Empty
 
-        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, context)
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
         assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
 

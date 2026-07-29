@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.assessment.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionSummary
 import ng.com.chprbn.mobile.feature.assessment.domain.model.SaveResult
@@ -22,6 +23,17 @@ interface PracticalScoringRepository {
         scheduleId: String,
         candidateId: String,
     ): List<PracticalSectionSummary>
+
+    /**
+     * Live variant of [getSections] — emits a fresh summary snapshot every
+     * time the candidate's scores change. The sections VM collects this so
+     * navigating back from the per-question scoring child screen shows the
+     * updated pill counts without a manual refresh (A-S6 audit fix).
+     */
+    fun observeSections(
+        scheduleId: String,
+        candidateId: String,
+    ): Flow<List<PracticalSectionSummary>>
 
     suspend fun getQuestions(
         scheduleId: String,

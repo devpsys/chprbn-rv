@@ -26,7 +26,7 @@ class ApiAssessmentSyncRemoteSourceTest {
 
     @Test
     fun `batch returns per-row Result keyed by clientId`() = runTest {
-        coEvery { api.uploadPracticalScoreBatch(any()) } returns
+        coEvery { api.uploadPracticalScoreBatch(any(), any()) } returns
             Response.success(
                 PracticalScoreSyncBatchEnvelopeDto(
                     success = true,
@@ -61,7 +61,7 @@ class ApiAssessmentSyncRemoteSourceTest {
     @Test
     fun `batch sends a single HTTP call carrying every row's clientId`() = runTest {
         val captured = slot<PracticalScoreSyncBatchRequestDto>()
-        coEvery { api.uploadPracticalScoreBatch(capture(captured)) } returns
+        coEvery { api.uploadPracticalScoreBatch(any(), capture(captured)) } returns
             Response.success(PracticalScoreSyncBatchEnvelopeDto(success = true))
 
         source.uploadPracticalScoreBatch(
@@ -77,7 +77,7 @@ class ApiAssessmentSyncRemoteSourceTest {
 
     @Test
     fun `non-2xx transport failure maps every input row to Result failure`() = runTest {
-        coEvery { api.uploadPracticalScoreBatch(any()) } returns
+        coEvery { api.uploadPracticalScoreBatch(any(), any()) } returns
             Response.error(500, "boom".toResponseBody("text/plain".toMediaTypeOrNull()))
 
         val results = source.uploadPracticalScoreBatch(
@@ -93,7 +93,7 @@ class ApiAssessmentSyncRemoteSourceTest {
 
     @Test
     fun `IOException transport failure maps every input row to Result failure with the cause`() = runTest {
-        coEvery { api.uploadPracticalScoreBatch(any()) } throws IOException("offline")
+        coEvery { api.uploadPracticalScoreBatch(any(), any()) } throws IOException("offline")
 
         val results = source.uploadPracticalScoreBatch(
             listOf(score(questionId = "q1"), score(questionId = "q2")),

@@ -243,7 +243,34 @@ Every endpoint returns a JSON object with this exact top-level shape:
 | `meta.pagination.total` | int | No | Yes | Total matching records (cross-page). |
 | `meta.pagination.last_page` | int | No | Yes | Last page number = `ceil(total / per_page)`. |
 
-### 3.2 Envelope examples
+### 3.2 Batch idempotency header
+
+Every batched write endpoint (`exam/attendance/batch`, `exam/remarks/batch`,
+`practical-scores/batch`, `project-scores/batch`, and future
+`practitioners/verified-sync/batch`) accepts an `Idempotency-Key` request
+header. The mobile client generates a fresh UUIDv4 per batch attempt and
+re-uses the same key on retries of that attempt. The server must dedupe
+so a retried batch returns the original per-row `results[]` rather than
+re-applying — combined with the row-level idempotency on the composite
+key, this eliminates both mid-flight duplicates and second-attempt races.
+
+```
+POST /api/v1/mobile/exam/attendance/batch
+Authorization: Bearer <token>
+Idempotency-Key: 5f3c98e2-8a9d-4a2b-9df1-3e6e6a0c1b21
+Content-Type: application/json; charset=UTF-8
+```
+
+- **Storage:** the recommended shape is a `(user_id, idempotency_key)` row
+  that captures the full response body on first success; subsequent
+  requests short-circuit and return that body.
+- **Retention:** 24 hours is sufficient — the mobile side gives up long
+  before then (see `SyncBatchRunner.MAX_ATTEMPTS`).
+- **Absent header:** treat as a request whose retries can double-apply;
+  the mobile client always sends the header, so absence usually means a
+  third-party caller.
+
+### 3.3 Envelope examples
 
 **Success — single object:**
 

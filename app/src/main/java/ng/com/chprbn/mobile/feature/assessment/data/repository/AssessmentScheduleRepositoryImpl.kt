@@ -132,13 +132,18 @@ class AssessmentScheduleRepositoryImpl @Inject constructor(
             try {
                 db.withTransaction {
                     if (scheduleId == null) {
+                        // Global clear: wipe scores too. Called from the
+                        // logout / clear-cache paths where a different user
+                        // must never inherit another officer's rows. The
+                        // per-schedule branch below intentionally preserves
+                        // scores so a re-download of a package doesn't drop
+                        // pending writes.
+                        practicalScoreDao.clearAll()
+                        projectScoreDao.clearAll()
                         questionDao.clearAll()
                         sectionDao.clearAll()
                         paperDao.clearAll()
                         candidateDao.clearCandidates()
-                        // Score wipe is also fair game on a global clear —
-                        // the user explicitly asked for everything to go.
-                        // Per-schedule clears (below) preserve scores.
                     } else {
                         questionDao.deleteByScheduleId(scheduleId)
                         sectionDao.deleteByScheduleId(scheduleId)

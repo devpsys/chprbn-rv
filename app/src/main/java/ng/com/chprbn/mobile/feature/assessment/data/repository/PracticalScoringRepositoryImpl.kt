@@ -1,6 +1,11 @@
 package ng.com.chprbn.mobile.feature.assessment.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
@@ -8,8 +13,11 @@ import ng.com.chprbn.mobile.core.sync.SyncJobDao
 import ng.com.chprbn.mobile.core.sync.SyncJobEntity
 import ng.com.chprbn.mobile.core.sync.SyncWorkScheduler
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
+import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionDao
+import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.SectionQuestionDao
+import ng.com.chprbn.mobile.feature.assessment.data.local.SectionQuestionEntity
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.assessment.data.sync.PracticalScoreKey
@@ -49,7 +57,30 @@ class PracticalScoringRepositoryImpl @Inject constructor(
         val sections = sectionDao.getByScheduleId(scheduleId)
         val questions = questionDao.getByScheduleId(scheduleId)
         val scores = practicalScoreDao.getForCandidate(scheduleId, candidateId)
+        buildSummaries(sections, questions, scores)
+    }
 
+    override fun observeSections(
+        scheduleId: String,
+        candidateId: String,
+    ): Flow<List<PracticalSectionSummary>> = flow {
+        // Sections + questions come from the (immutable) downloaded package,
+        // so we read them once per emission — cheap. The score flow is the
+        // change signal; each score upsert emits a fresh list.
+        val sections = sectionDao.getByScheduleId(scheduleId)
+        val questions = questionDao.getByScheduleId(scheduleId)
+        emitAll(
+            practicalScoreDao.observeForCandidate(scheduleId, candidateId).map { scores ->
+                buildSummaries(sections, questions, scores)
+            },
+        )
+    }.flowOn(Dispatchers.IO)
+
+    private fun buildSummaries(
+        sections: List<PracticalSectionEntity>,
+        questions: List<SectionQuestionEntity>,
+        scores: List<PracticalScoreEntity>,
+    ): List<PracticalSectionSummary> {
         val questionsBySection = questions.groupBy { it.sectionId }
         val scoredQuestionsBySection = scores
             .filter { it.score != 0 || it.syncStatus != SyncStatus.Pending.name }
@@ -62,7 +93,7 @@ class PracticalScoringRepositoryImpl @Inject constructor(
                 questions.firstOrNull { it.id == score.questionId }?.sectionId
             }
 
-        sections.map { section ->
+        return sections.map { section ->
             val total = questionsBySection[section.id]?.size ?: 0
             val sectionScores = scoredQuestionsBySection[section.id].orEmpty()
             val scored = sectionScores.size
