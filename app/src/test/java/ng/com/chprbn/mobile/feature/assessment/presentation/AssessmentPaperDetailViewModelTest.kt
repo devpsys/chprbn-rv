@@ -3,7 +3,10 @@ package ng.com.chprbn.mobile.feature.assessment.presentation
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
@@ -15,11 +18,14 @@ import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPa
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
+import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentCandidateRepository
+import ng.com.chprbn.mobile.feature.assessment.domain.repository.PracticalScoringRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.DownloadAssessmentPackageUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentCandidatesUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentPaperDetailUseCase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -31,7 +37,38 @@ class AssessmentPaperDetailViewModelTest {
     private val getPaperDetail = mockk<GetAssessmentPaperDetailUseCase>()
     private val getCandidates = mockk<GetAssessmentCandidatesUseCase>()
     private val downloadPackage = mockk<DownloadAssessmentPackageUseCase>()
+    private val candidateRepository = mockk<AssessmentCandidateRepository>()
+    private val practicalScoringRepository = mockk<PracticalScoringRepository>()
     private val savedState = SavedStateHandle(mapOf("scheduleId" to "PE-2024"))
+
+    /**
+     * Set the (assigned, started) counts the progress-observe flow will
+     * emit. Tests call this before instantiating the VM. Defaults keep
+     * pre-A-S5 behaviour of `totalCount = candidates.size` so the pre-fix
+     * assertions still describe a meaningful state.
+     */
+    private fun stubProgress(assigned: Int, started: Int = 0) {
+        every { candidateRepository.observeAssignedCount("PE-2024") } returns flowOf(assigned)
+        every {
+            practicalScoringRepository.observeStartedCandidateCount("PE-2024")
+        } returns flowOf(started)
+    }
+
+    private fun makeViewModel() = AssessmentPaperDetailViewModel(
+        savedState,
+        getPaperDetail,
+        getCandidates,
+        downloadPackage,
+        candidateRepository,
+        practicalScoringRepository,
+    )
+
+    @Before
+    fun defaultStubs() {
+        // Default progress emits zeros so init doesn't blow up in tests that
+        // don't care about the counts. Overridden in specific tests.
+        stubProgress(assigned = 0, started = 0)
+    }
 
     @Test
     fun `Success path populates paper fields and caps candidate preview at 2`() = runTest {
@@ -51,8 +88,13 @@ class AssessmentPaperDetailViewModelTest {
             candidateRow("c3", "Three", SyncStatus.Synced),
             candidateRow("c4", "Four", SyncStatus.Synced),
         )
+        // A-S5: `totalCount` / `progressFraction` are driven by the live
+        // combine(assigned, started) flow; stub 4 assigned / 4 started to
+        // reproduce the pre-fix behaviour of 100% progress on this case.
+        stubProgress(assigned = 4, started = 4)
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
+        advanceUntilIdle()
 
         val state = vm.uiState.value
         assertEquals("Paper A", state.paperTitle)
@@ -75,8 +117,10 @@ class AssessmentPaperDetailViewModelTest {
         coEvery { getCandidates("PE-2024", "") } returns listOf(
             candidateRow("c1", "Jane Doe", SyncStatus.Synced),
         )
+        stubProgress(assigned = 1, started = 0)
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
+        advanceUntilIdle()
 
         val state = vm.uiState.value
         assertEquals("", state.paperTitle)
@@ -89,8 +133,10 @@ class AssessmentPaperDetailViewModelTest {
     fun `Error path falls back to empty paper fields`() = runTest {
         coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Error("boom")
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
+        stubProgress(assigned = 0, started = 0)
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
+        advanceUntilIdle()
 
         val state = vm.uiState.value
         assertEquals("", state.paperTitle)
@@ -105,7 +151,7 @@ class AssessmentPaperDetailViewModelTest {
             candidateRow("c1", "Cher", SyncStatus.Synced),
         )
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
 
         assertEquals("C", vm.uiState.value.candidates.single().initials)
     }
@@ -115,7 +161,7 @@ class AssessmentPaperDetailViewModelTest {
         coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
         assertEquals(DownloadPackageUiState.Idle, vm.downloadState.value)
 
         vm.onDownloadPackageClicked()
@@ -134,7 +180,7 @@ class AssessmentPaperDetailViewModelTest {
             questionsCount = 90,
         )
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
         vm.onDownloadPackageClicked()
         vm.onDownloadConfirmed()
 
@@ -156,7 +202,7 @@ class AssessmentPaperDetailViewModelTest {
         coEvery { downloadPackage("PE-2024") } returns
             DownloadAssessmentPackageResult.Error("offline")
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
         vm.onDownloadPackageClicked()
         vm.onDownloadConfirmed()
 
@@ -170,7 +216,7 @@ class AssessmentPaperDetailViewModelTest {
         coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
 
-        val vm = AssessmentPaperDetailViewModel(savedState, getPaperDetail, getCandidates, downloadPackage)
+        val vm = makeViewModel()
         vm.onDownloadPackageClicked()
         vm.onDownloadDismissed()
 

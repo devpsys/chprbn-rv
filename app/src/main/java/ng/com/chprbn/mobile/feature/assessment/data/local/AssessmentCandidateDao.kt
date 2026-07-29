@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Owns reads/writes to both `assessment_candidates` (the canonical
@@ -116,4 +117,8 @@ interface AssessmentCandidateDao {
 
     @Query("DELETE FROM assessment_candidates")
     suspend fun clearCandidates(): Int
+
+    /** Total assigned candidates for a schedule — drives the paper-detail progress denominator (A-S5). */
+    @Query("SELECT COUNT(*) FROM schedule_candidate_assignments WHERE scheduleId = :scheduleId")
+    fun observeAssignedCandidateCount(scheduleId: String): Flow<Int>
 }

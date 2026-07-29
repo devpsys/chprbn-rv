@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.assessment.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateRow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
@@ -28,4 +29,7 @@ interface AssessmentCandidateRepository {
     ): List<AssessmentCandidateRow>
 
     suspend fun getCandidate(scheduleId: String, candidateId: String): Candidate?
+
+    /** Live count of candidates assigned to [scheduleId]. Denominator for A-S5 progress. */
+    fun observeAssignedCount(scheduleId: String): Flow<Int>
 }

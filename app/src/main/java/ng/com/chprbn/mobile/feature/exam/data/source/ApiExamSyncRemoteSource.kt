@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
+import ng.com.chprbn.mobile.core.sync.foldBatchResults
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamSyncApiService
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
@@ -94,35 +95,3 @@ class ApiExamSyncRemoteSource @Inject constructor(
         }
     }
 }
-
-/**
- * Shared batch-result fold: walks the per-row `results` array (when the
- * transport call succeeded) or applies the same transport-level failure
- * to every input clientId.
- */
-internal fun <R> foldBatchResults(
-    clientIds: List<String>,
-    transportOutcome: Result<List<R>>,
-    acceptedOf: (R) -> Boolean,
-    errorOf: (R) -> String?,
-    clientIdOf: (R) -> String?,
-): Map<String, Result<Unit>> = transportOutcome.fold(
-    onSuccess = { rows ->
-        val byClientId: Map<String, R> = rows.associateBy { clientIdOf(it).orEmpty() }
-        clientIds.associateWith { id ->
-            val r = byClientId[id]
-            when {
-                r == null -> Result.failure(
-                    IllegalStateException("Server returned no result for $id"),
-                )
-                acceptedOf(r) -> Result.success(Unit)
-                else -> Result.failure(
-                    IllegalStateException(errorOf(r) ?: "Server rejected row."),
-                )
-            }
-        }
-    },
-    onFailure = { t ->
-        clientIds.associateWith { Result.failure<Unit>(t) }
-    },
-)

@@ -27,15 +27,30 @@ class SplashViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            delay(2500L)
+            // Run the auth check in parallel with the splash animation floor
+            // so the user waits at most `SPLASH_HOLD_MS` — a fast check
+            // doesn't tack on a 2.5s delay it already spent (A7 audit fix).
+            // If the check takes longer than the floor, we simply dispatch as
+            // soon as it lands.
+            val start = System.currentTimeMillis()
             val user = getUserProfileUseCase()
-            if (user != null && SessionTokenPolicy.isValidForAuthenticatedApi(user.accessToken)) {
+            val destination = if (
+                user != null && SessionTokenPolicy.isValidForAuthenticatedApi(user.accessToken)
+            ) {
                 authTokenStore.setToken(user.accessToken.trim())
-                _destination.value = SplashDestination.Dashboard
+                SplashDestination.Dashboard
             } else {
                 authTokenStore.clear()
-                _destination.value = SplashDestination.Login
+                SplashDestination.Login
             }
+            val remaining = SPLASH_HOLD_MS - (System.currentTimeMillis() - start)
+            if (remaining > 0) delay(remaining)
+            _destination.value = destination
         }
+    }
+
+    private companion object {
+        /** Matches the splash progress-bar animation duration. */
+        const val SPLASH_HOLD_MS = 2500L
     }
 }

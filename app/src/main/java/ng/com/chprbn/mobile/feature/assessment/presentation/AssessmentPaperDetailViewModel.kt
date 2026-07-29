@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
@@ -14,6 +15,8 @@ import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateR
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaperDetailResult
 import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
+import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentCandidateRepository
+import ng.com.chprbn.mobile.feature.assessment.domain.repository.PracticalScoringRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.DownloadAssessmentPackageUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentCandidatesUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentPaperDetailUseCase
@@ -23,10 +26,10 @@ import javax.inject.Inject
  * Resolves the paper detail and a short preview of assigned candidates
  * for the screen header + candidate strip.
  *
- * `checkedInCount` / `progressFraction` map to **all assigned candidates**
- * today — the assessment feature doesn't yet model per-paper attendance.
- * When attendance lands (cross-feature share with exam), the fields will
- * derive from real check-ins.
+ * `progressFraction` / `checkedInCount` / `totalCount` are driven by a live
+ * `combine(observeAssignedCount, observeStartedCandidateCount)` — "started"
+ * is a pragmatic proxy for check-in until the assessment side models
+ * per-paper attendance (A-S5 audit fix; was hardcoded 100%).
  *
  * Also owns the per-schedule package-download flow, triggered from the
  * screen's overflow action: warning dialog → loading overlay → success
@@ -38,6 +41,8 @@ class AssessmentPaperDetailViewModel @Inject constructor(
     private val getPaperDetail: GetAssessmentPaperDetailUseCase,
     private val getCandidates: GetAssessmentCandidatesUseCase,
     private val downloadPackage: DownloadAssessmentPackageUseCase,
+    private val candidateRepository: AssessmentCandidateRepository,
+    private val practicalScoringRepository: PracticalScoringRepository,
 ) : ViewModel() {
 
     private val scheduleId: String = savedStateHandle.get<String>("scheduleId").orEmpty()
@@ -51,6 +56,40 @@ class AssessmentPaperDetailViewModel @Inject constructor(
 
     init {
         refresh()
+        observeProgress()
+    }
+
+    /**
+     * Combines the assigned-candidate count (denominator) with the
+     * distinct-candidates-with-any-score count (numerator) into the
+     * paper-detail progress pill. Re-emits every time either changes —
+     * so scoring a candidate on a child screen updates this screen when
+     * the user pops back (A-S5 audit fix). Both flows are live Room
+     * queries: no explicit refresh needed.
+     */
+    private fun observeProgress() {
+        if (scheduleId.isBlank()) return
+        viewModelScope.launch {
+            combine(
+                candidateRepository.observeAssignedCount(scheduleId),
+                practicalScoringRepository.observeStartedCandidateCount(scheduleId),
+            ) { assigned, started ->
+                val fraction = if (assigned > 0) {
+                    started.toFloat() / assigned.toFloat()
+                } else {
+                    0f
+                }
+                Triple(assigned, started, fraction.coerceIn(0f, 1f))
+            }.collect { (assigned, started, fraction) ->
+                _uiState.update {
+                    it.copy(
+                        checkedInCount = started,
+                        totalCount = assigned,
+                        progressFraction = fraction,
+                    )
+                }
+            }
+        }
     }
 
     private fun refresh() {
@@ -124,14 +163,15 @@ class AssessmentPaperDetailViewModel @Inject constructor(
 
     private fun AssessmentPaper.applyTo(
         current: AssessmentPaperDetailUiState,
-        total: Int,
+        @Suppress("UNUSED_PARAMETER") total: Int,
         previewRows: List<CandidateRowUiState>,
     ): AssessmentPaperDetailUiState = current.copy(
         paperTitle = title,
         statusLabel = statusLabel,
-        progressFraction = if (total > 0) 1f else 0f,
-        checkedInCount = total,
-        totalCount = total,
+        // progressFraction / checkedInCount / totalCount are owned by
+        // observeProgress() — a live combine() of assigned + started counts
+        // (A-S5 audit fix). Leaving the placeholder overrides here would
+        // race the flow's first emission.
         facilityName = facility.name,
         facilityAddress = facility.address,
         hallName = hall.name,

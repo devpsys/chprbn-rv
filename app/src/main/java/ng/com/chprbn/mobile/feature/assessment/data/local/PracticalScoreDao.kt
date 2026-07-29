@@ -121,6 +121,24 @@ interface PracticalScoreDao {
     @Query("DELETE FROM practical_scores WHERE scheduleId = :scheduleId")
     suspend fun deleteForSchedule(scheduleId: String): Int
 
+    /**
+     * Live count of distinct candidates who have at least one score row for
+     * the schedule. Drives the paper-detail "progress" pill (A-S5 audit fix
+     * — was a hardcoded 100%). Re-emits on every score upsert.
+     *
+     * "Distinct scored candidates" is a pragmatic approximation of
+     * completion: the design's "checked-in" concept doesn't yet track
+     * per-candidate submission state, so we use "started scoring" as the
+     * signal until that lands.
+     */
+    @Query(
+        """
+        SELECT COUNT(DISTINCT candidateId) FROM practical_scores
+        WHERE scheduleId = :scheduleId
+        """,
+    )
+    fun observeStartedCandidateCountForSchedule(scheduleId: String): Flow<Int>
+
     /** Used by the SessionCleaner on logout — global wipe. */
     @Query("DELETE FROM practical_scores")
     suspend fun clearAll(): Int

@@ -107,6 +107,9 @@ class PracticalScoringRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun observeStartedCandidateCount(scheduleId: String): Flow<Int> =
+        practicalScoreDao.observeStartedCandidateCountForSchedule(scheduleId)
+
     override suspend fun getQuestions(
         scheduleId: String,
         candidateId: String,

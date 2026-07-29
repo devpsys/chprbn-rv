@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.assessment.data.source
 
+import ng.com.chprbn.mobile.core.sync.foldBatchResults
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentSyncApiService
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncItemDto
@@ -89,34 +90,3 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
         }
     }
 }
-
-/**
- * Shared batch-result fold (copy of the exam-side helper — same logic,
- * separate file so each feature's data layer compiles independently).
- */
-private fun <R> foldBatchResults(
-    clientIds: List<String>,
-    transportOutcome: Result<List<R>>,
-    acceptedOf: (R) -> Boolean,
-    errorOf: (R) -> String?,
-    clientIdOf: (R) -> String?,
-): Map<String, Result<Unit>> = transportOutcome.fold(
-    onSuccess = { rows ->
-        val byClientId: Map<String, R> = rows.associateBy { clientIdOf(it).orEmpty() }
-        clientIds.associateWith { id ->
-            val r = byClientId[id]
-            when {
-                r == null -> Result.failure(
-                    IllegalStateException("Server returned no result for $id"),
-                )
-                acceptedOf(r) -> Result.success(Unit)
-                else -> Result.failure(
-                    IllegalStateException(errorOf(r) ?: "Server rejected row."),
-                )
-            }
-        }
-    },
-    onFailure = { t ->
-        clientIds.associateWith { Result.failure<Unit>(t) }
-    },
-)

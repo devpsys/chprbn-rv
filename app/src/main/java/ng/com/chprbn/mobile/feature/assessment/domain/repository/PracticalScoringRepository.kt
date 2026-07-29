@@ -35,6 +35,13 @@ interface PracticalScoringRepository {
         candidateId: String,
     ): Flow<List<PracticalSectionSummary>>
 
+    /**
+     * Live count of distinct candidates in this schedule who have started
+     * scoring (any score row exists). Numerator for the paper-detail
+     * progress pill (A-S5 audit fix).
+     */
+    fun observeStartedCandidateCount(scheduleId: String): Flow<Int>
+
     suspend fun getQuestions(
         scheduleId: String,
         candidateId: String,
