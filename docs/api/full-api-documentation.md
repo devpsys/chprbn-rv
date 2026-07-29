@@ -66,7 +66,7 @@ All paths in this document are **relative** to the base URL. Where a path is wri
 | **Token type** | Laravel Sanctum personal-access token (opaque string). The mobile client does not decode it. |
 | **Issuing endpoints** | `POST /adhoc/login` (field officers) and `POST /login` (practitioner tutors) both return `data.token`. |
 | **Refresh** | **Not supported.** There is no refresh endpoint. Token expiry forces re-login. Mobile clears the local token on 401 and routes the user back to `LoginScreen`. |
-| **Logout** | Mobile clears local state only; no server-side revocation endpoint is wired today. |
+| **Logout** | Client-initiated. Mobile POSTs `/adhoc/logout` (adhoc) or `/logout` (tutor) to revoke the bearer token, then clears local state. Endpoint specced in §5.3 — awaiting backend implementation. |
 | **Token TTL** | Backend-controlled. Mobile must not assume a TTL; it treats any 401 on a protected route as "session over." |
 
 ### 1.5 Standard HTTP headers
@@ -483,23 +483,78 @@ Request body, response shape, and error responses are identical to §5.1. The on
 
 ---
 
-### 5.3 Logout
+### 5.3 Logout — Field Officer
 
 | Property | Value |
 |---|---|
 | **Module** | Authentication |
-| **Status** | **To Be Implemented** |
+| **Feature** | Field-officer sign-out |
+| **Purpose** | Revoke the current bearer token server-side before the mobile client wipes local session state. Closes the "stolen device with cached token" hole described in §13.7. |
+| **Authentication required** | Yes |
+| **Authorization / roles** | Adhoc users only (any authenticated adhoc user can log themselves out). |
+| **HTTP method** | `POST` |
+| **URL path** | `/adhoc/logout` |
+| **API version** | v1 |
+| **Status** | **To Be Implemented** (backend) — mobile hookup follows once the endpoint lands. |
+| **Mobile source** | `AuthApiService.adhocLogout` (planned; wired from `ProfileRepositoryImpl.logout` before the local `SessionCleaner` runs). |
 
-Server-side token revocation does not exist today. When implemented:
+#### Headers
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `Authorization` | string | Yes | `Bearer <token>` — the exact token that is about to be revoked. |
+| `Accept` | string | Yes | `application/json` |
+
+#### Request
+
+No query, path, or body parameters. The token to revoke is the one on the `Authorization` header — no `token` field in the body (which would let a caller with token A revoke a colleague's token B).
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Signed out.",
+  "data": null
+}
+```
+
+`204 No Content` is also acceptable — the mobile client treats any 2xx as success and does not read the body. The envelope shape above is documented so the backend can log a machine-parseable message for audit; it is not consumed by mobile.
+
+#### Effect
+
+- The Sanctum personal-access-token row corresponding to the `Authorization` header is deleted.
+- Subsequent authenticated requests with that same token return `401 Unauthorized` (which the mobile interceptor already treats as session-expired — see §13.4).
+- Other tokens the same user may have on other devices are **not** affected. This endpoint is per-token, not per-user.
+
+#### Error Responses
+
+| Status | Meaning | Mobile handling |
+|---|---|---|
+| `401 Unauthorized` | Bearer token was already invalid before the call (expired, previously revoked, or malformed). | Treat as success — the desired end state is "token no longer works," which is already true. The mobile client proceeds to clear local state without alerting the user. |
+| `429 Too Many Requests` | Rare — logout is called at most once per session. | Log; proceed to clear local state anyway. Never block the user from signing out on the client. |
+| `5xx` | Backend error. | Log; proceed to clear local state anyway. The client-side wipe is authoritative for the local install — a failed server revoke leaves the token usable elsewhere, which is worse than the pre-fix status quo but no worse than not calling this endpoint at all. |
+
+The mobile contract is **best-effort**: the client does not surface any failure to the user, and never blocks logout on the network. Retrying the call would leak the token further; the safer move is to proceed with the local wipe.
+
+#### Sample cURL
+
+```
+curl -X POST 'https://app.chprbn.gov.ng/api/v1/mobile/adhoc/logout' \
+  -H 'Authorization: Bearer 1|aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFG' \
+  -H 'Accept: application/json'
+```
+
+### 5.4 Logout — Practitioner Tutor
+
+Identical contract to §5.3 but at `POST /logout` and mirroring the tutor auth flow at `POST /login` (§5.2). Currently no mobile flow triggers it (tutors don't have a mobile logout gesture yet); documented for parity so the backend implementation can ship both variants in one PR.
 
 | Property | Value |
 |---|---|
 | **HTTP method** | `POST` |
 | **URL path** | `/logout` |
-| **Authentication required** | Yes |
-| **Request body** | None |
-| **Success response** | `204 No Content` |
-| **Effect** | Revoke the bearer token used on this request. Subsequent requests with the same token return 401. |
+| **Authentication required** | Yes (tutor bearer). |
+| **Status** | **To Be Implemented** — parity with §5.3. |
 
 ---
 
@@ -1747,15 +1802,15 @@ Server-side transitions are out of scope for this document.
 
 - **TTL:** server-controlled. Mobile does not assume any TTL.
 - **Refresh:** none. Token expiry = re-login.
-- **Revocation:** server may revoke a token by deleting the Sanctum row; mobile detects via 401 on the next call.
+- **Revocation:** client-initiated via `POST /adhoc/logout` / `POST /logout` (§5.3 + §5.4) — mobile calls this before local wipe on the logout gesture. Server may also revoke unilaterally by deleting the Sanctum row (admin action, compromised-token response). Either way, the next authenticated request returns 401 and mobile treats it as session-expired.
 - **Storage at rest:** Bearer token persists inside SQLCipher-encrypted Room (`auth.db`) and a separate EncryptedSharedPreferences file. Both encrypt via a 256-bit random key generated by `DatabaseKeyProvider` and stored in EncryptedSharedPreferences.
 
 ### 12.3 Role-based access control
 
 | Role | Endpoints |
 |---|---|
-| **Field officer (adhoc)** | `/adhoc/login`, `/adhoc/profile`, `/practitioners/license`, `/practitioners/verified-sync`, `/practitioners/license-irregularity-reports`, `/exam/*`, `/assessments/*` |
-| **Practitioner tutor** | `/login`, `/dashboard/profile`, `/practitioners/license` (read-only). |
+| **Field officer (adhoc)** | `/adhoc/login`, `/adhoc/logout`, `/adhoc/profile`, `/practitioners/license`, `/practitioners/verified-sync`, `/practitioners/license-irregularity-reports`, `/exam/*`, `/assessments/*` |
+| **Practitioner tutor** | `/login`, `/logout`, `/dashboard/profile`, `/practitioners/license` (read-only). |
 | **Public** | `/login`, `/adhoc/login`. |
 
 Mobile does NOT enforce RBAC client-side; it reacts to 403 by surfacing a generic "Not allowed" toast. Backend MUST enforce.
@@ -1816,9 +1871,9 @@ Not yet a problem; will be a problem the first time an officer is assigned to a 
 
 Mobile blindly retries failed POSTs from the sync worker. A 429 today would burn cycles. **Fix:** consume `Retry-After` in `SyncBatchRunner`. Cheap.
 
-### 13.7 No `/logout` endpoint
+### 13.7 Server-side logout not yet implemented
 
-Logout is local-only — token remains valid server-side until natural expiry. **Risk:** stolen device with cached token. **Fix:** §5.3.
+Mobile currently clears local state on logout but does not revoke the server-side token. **Risk:** stolen device with cached token can be used against the API until the token's natural expiry. **Fix:** endpoints specced at §5.3 (`POST /adhoc/logout`) + §5.4 (`POST /logout`); mobile hookup follows.
 
 ### 13.8 Validation gaps
 
@@ -1863,7 +1918,7 @@ The mobile client already wires Composite remote sources that prefer the live AP
 ### 14.3 Suggested PR sequence (backend)
 
 1. PR #1 — Ensure every response envelope emits `success` (boolean). Mobile no longer reads `status`; the field can be dropped from responses whenever convenient.
-2. PR #2 — `POST /logout` token revocation.
+2. PR #2 — `POST /adhoc/logout` and `POST /logout` token revocation (§5.3 + §5.4).
 3. PR #3 — `GET /exam/dossier` (read-only; simplest to land first).
 4. PR #4 — `POST /exam/attendance/batch` + `POST /exam/remarks/batch` (batched idempotent writes; per-row results).
 5. PR #5 — `GET /assessments/schedules`.
@@ -1890,7 +1945,8 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 |---|---|---|---|---|---|
 | Auth | `POST` | `/adhoc/login` | Existing | `AuthApiService.adhocLogin` | §5.1 |
 | Auth | `POST` | `/login` | Existing (server) | — (reserved) | §5.2 |
-| Auth | `POST` | `/logout` | To Be Implemented | — | §5.3 |
+| Auth | `POST` | `/adhoc/logout` | To Be Implemented | — (planned: `AuthApiService.adhocLogout`) | §5.3 |
+| Auth | `POST` | `/logout` | To Be Implemented | — (parity with §5.3) | §5.4 |
 | Profile | `GET` | `/adhoc/profile` | Existing | `AuthApiService.getAdhocProfile` | §6.1 |
 | Profile | `GET` | `/dashboard/profile` | Existing | `VerificationApiService.getProfile` | §6.2 |
 | Verification | `GET` | `/practitioners/license` | Existing | `LicenseApiService.getLicenseRecord` | §7.1 |
