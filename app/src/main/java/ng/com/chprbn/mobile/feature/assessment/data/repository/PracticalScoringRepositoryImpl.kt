@@ -93,8 +93,12 @@ class PracticalScoringRepositoryImpl @Inject constructor(
 
     override suspend fun recordScore(score: PracticalScore): SaveResult =
         withContext(Dispatchers.IO) {
+            // Enqueue first, then upsert. Scores live in AssessmentDatabase and
+            // sync jobs in SyncDatabase, so we cannot share a Room transaction.
+            // See AttendanceRepositoryImpl.markAttendance for the full rationale
+            // + self-heal contract (PracticalScoreSyncHandler drops ghost jobs
+            // whose local row is missing).
             try {
-                practicalScoreDao.upsert(score.toEntity())
                 syncJobDao.enqueue(
                     SyncJobEntity(
                         entityType = SyncEntityType.PracticalScore.name,
@@ -107,6 +111,7 @@ class PracticalScoringRepositoryImpl @Inject constructor(
                         status = SyncStatus.Pending.name,
                     ),
                 )
+                practicalScoreDao.upsert(score.toEntity())
                 statusUpdater.refresh(score.scheduleId)
                 workScheduler.scheduleSyncWork()
                 SaveResult.Success

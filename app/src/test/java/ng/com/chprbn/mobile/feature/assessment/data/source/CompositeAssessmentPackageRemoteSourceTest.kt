@@ -13,6 +13,7 @@ import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CompositeAssessmentPackageRemoteSourceTest {
@@ -69,6 +70,26 @@ class CompositeAssessmentPackageRemoteSourceTest {
         coEvery { fallback.fetchPackage("PE-2024") } returns bundle
 
         assertSame(bundle, composite.fetchPackage("PE-2024"))
+    }
+
+    @Test
+    fun `fetchSchedules primary error propagates and fallback is not called`() = runTest {
+        // A-S1 audit: a live-API failure must surface as an error, not
+        // silently degrade to Fake data.
+        coEvery { primary.fetchSchedules() } throws IllegalStateException("HTTP 500")
+
+        val thrown = runCatching { composite.fetchSchedules() }.exceptionOrNull()
+        assertTrue(thrown is IllegalStateException)
+        coVerify(exactly = 0) { fallback.fetchSchedules() }
+    }
+
+    @Test
+    fun `fetchPackage primary error propagates and fallback is not called`() = runTest {
+        coEvery { primary.fetchPackage("X") } throws IllegalStateException("HTTP 500")
+
+        val thrown = runCatching { composite.fetchPackage("X") }.exceptionOrNull()
+        assertTrue(thrown is IllegalStateException)
+        coVerify(exactly = 0) { fallback.fetchPackage(any()) }
     }
 
     private fun schedule(id: String) = AssessmentSchedule(

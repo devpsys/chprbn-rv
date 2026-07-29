@@ -38,12 +38,12 @@ class AttendanceSyncHandlerTest {
     }
 
     @Test
-    fun `missing local row produces per-key Failure`() = runTest {
+    fun `missing local row is Drop, not Failure — self-cleans the ghost job`() = runTest {
         coEvery { dao.getOne("p1", "c1") } returns null
 
         val outcomes = handler.uploadBatch(listOf("p1/c1"))
 
-        assertTrue(outcomes["p1/c1"] is SyncOutcome.Failure)
+        assertEquals(SyncOutcome.Drop, outcomes["p1/c1"])
         coVerify(exactly = 0) { remote.uploadAttendanceBatch(any()) }
     }
 

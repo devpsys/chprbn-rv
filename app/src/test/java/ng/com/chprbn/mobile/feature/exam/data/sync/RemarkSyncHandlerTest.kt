@@ -36,12 +36,12 @@ class RemarkSyncHandlerTest {
     }
 
     @Test
-    fun `missing local row produces per-key Failure`() = runTest {
+    fun `missing local row is Drop, not Failure — self-cleans the ghost job`() = runTest {
         coEvery { dao.getById("r1") } returns null
 
         val outcomes = handler.uploadBatch(listOf("r1"))
 
-        assertTrue(outcomes["r1"] is SyncOutcome.Failure)
+        assertEquals(SyncOutcome.Drop, outcomes["r1"])
         coVerify(exactly = 0) { remote.uploadRemarkBatch(any()) }
     }
 

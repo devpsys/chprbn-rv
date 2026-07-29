@@ -30,7 +30,8 @@ class ProjectScoreSyncHandler @Inject constructor(
             val (scheduleId, candidateId) = parsed
             val entity = projectScoreDao.getOne(scheduleId, candidateId)
             if (entity == null) {
-                outcomes[key] = SyncOutcome.Failure("Project score not found locally: $key")
+                // Ghost sync job — see ProjectScoringRepositoryImpl.recordProjectScore.
+                outcomes[key] = SyncOutcome.Drop
                 continue
             }
             val domain = entity.toDomain()

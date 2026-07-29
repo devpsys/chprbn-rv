@@ -49,8 +49,10 @@ class RemarkRepositoryImpl @Inject constructor(
             createdAt = createdAt,
             syncStatus = SyncStatus.Pending,
         )
+        // See AttendanceRepositoryImpl.markAttendance for the enqueue-before-upsert
+        // rationale (cross-database — no shared transaction; ghost sync jobs are
+        // self-cleaned by RemarkSyncHandler when the local row is missing).
         try {
-            remarkDao.upsert(remark.toEntity())
             syncJobDao.enqueue(
                 SyncJobEntity(
                     entityType = SyncEntityType.Remark.name,
@@ -59,6 +61,7 @@ class RemarkRepositoryImpl @Inject constructor(
                     status = SyncStatus.Pending.name,
                 ),
             )
+            remarkDao.upsert(remark.toEntity())
             workScheduler.scheduleSyncWork()
             AddRemarkResult.Success(remark)
         } catch (t: Throwable) {

@@ -16,6 +16,7 @@ import ng.com.chprbn.mobile.feature.auth.data.dto.LoginEnvelopeDto
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.local.UserEntity
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
+import ng.com.chprbn.mobile.feature.auth.data.network.PasswordVerifier
 import ng.com.chprbn.mobile.feature.auth.domain.model.AuthResult
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -32,6 +33,7 @@ class AuthRepositoryImplTest {
     private lateinit var gson: Gson
     private lateinit var connectivityChecker: ConnectivityChecker
     private lateinit var authTokenStore: AuthTokenStore
+    private lateinit var passwordVerifier: PasswordVerifier
 
     private lateinit var authRepository: AuthRepositoryImpl
 
@@ -42,9 +44,18 @@ class AuthRepositoryImplTest {
         gson = mockk()
         connectivityChecker = mockk()
         authTokenStore = mockk(relaxed = true)
+        passwordVerifier = mockk()
+        // Default: online login stores a fresh credential; offline verify defaults
+        // to `false` so tests that don't opt in fail closed (matches production).
+        every { passwordVerifier.hash(any()) } returns PasswordVerifier.Credential(
+            saltB64 = "salt",
+            verifierB64 = "verifier",
+            algorithm = "PBKDF2-HMAC-SHA256:210000:256",
+        )
+        every { passwordVerifier.verify(any(), any()) } returns false
 
         authRepository = AuthRepositoryImpl(
-            apiService, userDao, gson, connectivityChecker, authTokenStore
+            apiService, userDao, gson, connectivityChecker, authTokenStore, passwordVerifier,
         )
     }
 
@@ -171,24 +182,13 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `login returns cached user when offline and cache has valid token`() = runTest {
+    fun `offline login succeeds when password verifies against stored credential`() = runTest {
         every { connectivityChecker.isConnected() } returns false
 
-        val cached = UserEntity(
-            id = "adhoc_1",
-            username = "johndoe",
-            email = "john@example.com",
-            fullName = "John Doe",
-            permissions = emptyList(),
-            userPhoto = null,
-            role = "examiner",
-            staffId = null,
-            unit = null,
-            organization = null,
-            lastLoginAt = "May 8, 9:00 AM"
-        )
+        val cached = cachedUserEntityWithCredential()
         coEvery { userDao.getUser() } returns cached
         every { authTokenStore.peekToken() } returns "valid-cached-token"
+        every { passwordVerifier.verify(eq("password"), any()) } returns true
 
         // Username comparison is case-insensitive; pass mismatched case to verify.
         val result = authRepository.login("JOHNDOE", "password")
@@ -198,10 +198,59 @@ class AuthRepositoryImplTest {
         assertEquals("johndoe", user.username)
         assertEquals("John Doe", user.fullName)
         assertEquals("valid-cached-token", user.accessToken)
-        // No network calls and no token mutation when serving from cache
         coVerify(exactly = 0) { apiService.adhocLogin(any()) }
         coVerify(exactly = 0) { apiService.getAdhocProfile() }
         coVerify(exactly = 0) { authTokenStore.setToken(any()) }
         coVerify(exactly = 0) { authTokenStore.clear() }
     }
+
+    @Test
+    fun `offline login rejects a wrong password (does not fall through to Success)`() = runTest {
+        every { connectivityChecker.isConnected() } returns false
+        coEvery { userDao.getUser() } returns cachedUserEntityWithCredential()
+        every { passwordVerifier.verify(any(), any()) } returns false
+
+        val result = authRepository.login("johndoe", "wrong")
+
+        assertTrue(result is AuthResult.Error)
+        assertEquals("Incorrect username or password.", (result as AuthResult.Error).message)
+        coVerify(exactly = 0) { authTokenStore.setToken(any()) }
+    }
+
+    @Test
+    fun `offline login refuses cached user without a stored credential (pre-v8)`() = runTest {
+        every { connectivityChecker.isConnected() } returns false
+        // Row migrated from v7 has no PBKDF2 columns.
+        coEvery { userDao.getUser() } returns cachedUserEntityWithCredential().copy(
+            passwordSalt = null,
+            passwordVerifier = null,
+            passwordAlgorithm = null,
+        )
+
+        val result = authRepository.login("johndoe", "password")
+
+        assertTrue(result is AuthResult.Error)
+        assertTrue(
+            (result as AuthResult.Error).message.contains("Sign in online", ignoreCase = true),
+        )
+        // Never attempted to derive a hash — the caller was refused before that.
+        coVerify(exactly = 0) { passwordVerifier.verify(any(), any()) }
+    }
+
+    private fun cachedUserEntityWithCredential(): UserEntity = UserEntity(
+        id = "adhoc_1",
+        username = "johndoe",
+        email = "john@example.com",
+        fullName = "John Doe",
+        permissions = emptyList(),
+        userPhoto = null,
+        role = "examiner",
+        staffId = null,
+        unit = null,
+        organization = null,
+        lastLoginAt = "May 8, 9:00 AM",
+        passwordSalt = "salt",
+        passwordVerifier = "verifier",
+        passwordAlgorithm = "PBKDF2-HMAC-SHA256:210000:256",
+    )
 }

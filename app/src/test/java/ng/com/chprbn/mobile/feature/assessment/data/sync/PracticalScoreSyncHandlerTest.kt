@@ -34,12 +34,12 @@ class PracticalScoreSyncHandlerTest {
     }
 
     @Test
-    fun `missing local row produces per-key Failure`() = runTest {
+    fun `missing local row is Drop, not Failure — self-cleans the ghost job`() = runTest {
         coEvery { dao.getOne("s", "c", "q") } returns null
 
         val outcomes = handler.uploadBatch(listOf("s/c/q"))
 
-        assertTrue(outcomes["s/c/q"] is SyncOutcome.Failure)
+        assertEquals(SyncOutcome.Drop, outcomes["s/c/q"])
         coVerify(exactly = 0) { remote.uploadPracticalScoreBatch(any()) }
     }
 

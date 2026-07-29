@@ -53,6 +53,29 @@ class SyncBatchRunnerTest {
     }
 
     @Test
+    fun `Drop deletes the job without incrementing failed count or attemptCount`() = runTest {
+        val dao = FakeSyncJobDao().apply {
+            seed(attendanceJob(id = 1, key = "p1/c1"))
+        }
+        val runner = SyncBatchRunner(
+            syncJobDao = dao,
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Drop }
+                },
+            ),
+            clock = clock,
+        )
+
+        val result = runner.runBatch()
+
+        assertEquals(1, result.attempted)
+        assertEquals(1, result.succeeded)
+        assertEquals(0, result.failed)
+        assertTrue("Drop should remove the job like Success", dao.snapshot().isEmpty())
+    }
+
+    @Test
     fun `failed handler marks job Failed with error message and continues batch`() = runTest {
         val dao = FakeSyncJobDao().apply {
             seed(
@@ -370,15 +393,64 @@ class SyncBatchRunnerTest {
         )
     }
 
+    @Test
+    fun `Failure below the attempt cap keeps status Failed for retry`() = runTest {
+        val dao = FakeSyncJobDao().apply {
+            // attemptCount already at MAX-2 → one more failure keeps it below
+            // the cap (MAX-1 < MAX), so it stays Failed and eligible for retry.
+            seed(attendanceJob(id = 1, key = "p1/c1", attemptCount = SyncBatchRunner.MAX_ATTEMPTS - 2))
+        }
+        val runner = SyncBatchRunner(
+            syncJobDao = dao,
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Failure("HTTP 500") }
+                },
+            ),
+            clock = clock,
+        )
+
+        runner.runBatch()
+
+        val row = dao.snapshot().single()
+        assertEquals(SyncStatus.Failed.name, row.status)
+        assertEquals(SyncBatchRunner.MAX_ATTEMPTS - 1, row.attemptCount)
+    }
+
+    @Test
+    fun `Failure at the attempt cap flips the row to Abandoned so it stops being retried`() = runTest {
+        val dao = FakeSyncJobDao().apply {
+            // One more failure will hit MAX_ATTEMPTS exactly.
+            seed(attendanceJob(id = 1, key = "p1/c1", attemptCount = SyncBatchRunner.MAX_ATTEMPTS - 1))
+        }
+        val runner = SyncBatchRunner(
+            syncJobDao = dao,
+            handlers = mapOf(
+                SyncEntityType.Attendance to SyncEntityHandler { keys ->
+                    keys.associateWith { SyncOutcome.Failure("poison row") }
+                },
+            ),
+            clock = clock,
+        )
+
+        runner.runBatch()
+
+        val row = dao.snapshot().single()
+        assertEquals(SyncStatus.Abandoned.name, row.status)
+        assertEquals(SyncBatchRunner.MAX_ATTEMPTS, row.attemptCount)
+    }
+
     private fun attendanceJob(
         id: Long,
         key: String,
         enqueuedAt: Long = now,
+        attemptCount: Int = 0,
     ): SyncJobEntity = SyncJobEntity(
         id = id,
         entityType = SyncEntityType.Attendance.name,
         entityKey = key,
         enqueuedAt = enqueuedAt,
         status = SyncStatus.Pending.name,
+        attemptCount = attemptCount,
     )
 }

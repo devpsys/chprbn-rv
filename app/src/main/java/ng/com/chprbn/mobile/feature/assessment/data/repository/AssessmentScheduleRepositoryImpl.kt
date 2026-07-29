@@ -78,10 +78,19 @@ class AssessmentScheduleRepositoryImpl @Inject constructor(
 
     override suspend fun downloadPackage(scheduleId: String): DownloadAssessmentPackageResult =
         withContext(Dispatchers.IO) {
-            val bundle = runCatching { remoteSource.fetchPackage(scheduleId) }.getOrNull()
-                ?: return@withContext DownloadAssessmentPackageResult.Error(
-                    "Could not download package for $scheduleId.",
-                )
+            // remoteSource.fetchPackage throws on transport/envelope error
+            // (A-S1 fix). Preserve the caught message so the officer sees
+            // the specific reason rather than a generic "could not download."
+            val bundle = runCatching { remoteSource.fetchPackage(scheduleId) }.fold(
+                onSuccess = { it },
+                onFailure = { t ->
+                    return@withContext DownloadAssessmentPackageResult.Error(
+                        t.message ?: "Could not download package for $scheduleId.",
+                    )
+                },
+            ) ?: return@withContext DownloadAssessmentPackageResult.Error(
+                "The server has no package for $scheduleId.",
+            )
 
             try {
                 db.withTransaction {

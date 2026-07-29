@@ -35,6 +35,9 @@ interface SyncJobDao {
     @Query("SELECT COUNT(*) FROM sync_jobs WHERE entityType = :entityType AND status = :status")
     suspend fun countByTypeAndStatus(entityType: String, status: String): Int
 
+    @Query("SELECT * FROM sync_jobs WHERE status = 'Abandoned' ORDER BY lastAttemptAt DESC")
+    fun observeAbandoned(): Flow<List<SyncJobEntity>>
+
     @Query("SELECT * FROM sync_jobs ORDER BY enqueuedAt DESC")
     fun observeAll(): Flow<List<SyncJobEntity>>
 

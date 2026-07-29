@@ -40,8 +40,21 @@ class ExamSyncRepositoryImpl @Inject constructor(
 ) : ExamSyncRepository {
 
     override suspend fun downloadDossier(): DownloadDossierResult = withContext(Dispatchers.IO) {
-        val bundle = runCatching { remoteSource.fetchDossier() }.getOrNull()
-            ?: return@withContext DownloadDossierResult.Error("Could not download dossier.")
+        // remoteSource.fetchDossier() throws on transport/envelope error
+        // (E1 fix) so a real backend problem doesn't silently degrade to a
+        // Fake bundle in release. Surface the caught message rather than a
+        // generic "could not download" so the officer sees "HTTP 500" or
+        // "Network error" — actionable, not misleading.
+        val bundle = runCatching { remoteSource.fetchDossier() }.fold(
+            onSuccess = { it },
+            onFailure = { t ->
+                return@withContext DownloadDossierResult.Error(
+                    t.message ?: "Could not download dossier.",
+                )
+            },
+        ) ?: return@withContext DownloadDossierResult.Error(
+            "The server returned no dossier for today.",
+        )
 
         try {
             db.withTransaction {

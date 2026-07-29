@@ -28,7 +28,8 @@ class RemarkSyncHandler @Inject constructor(
             }
             val entity = remarkDao.getById(id)
             if (entity == null) {
-                outcomes[key] = SyncOutcome.Failure("Remark not found locally: $key")
+                // Ghost sync job — see RemarkRepositoryImpl.addRemark comment.
+                outcomes[key] = SyncOutcome.Drop
                 continue
             }
             // Remark's clientId is the row id itself (matches SyncPayloadMappers).

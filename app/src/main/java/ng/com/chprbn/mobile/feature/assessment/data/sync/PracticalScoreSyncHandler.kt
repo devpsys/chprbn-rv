@@ -37,7 +37,8 @@ class PracticalScoreSyncHandler @Inject constructor(
             val (scheduleId, candidateId, questionId) = parsed
             val entity = practicalScoreDao.getOne(scheduleId, candidateId, questionId)
             if (entity == null) {
-                outcomes[key] = SyncOutcome.Failure("Practical score not found locally: $key")
+                // Ghost sync job — see PracticalScoringRepositoryImpl.recordScore.
+                outcomes[key] = SyncOutcome.Drop
                 continue
             }
             val domain = entity.toDomain()

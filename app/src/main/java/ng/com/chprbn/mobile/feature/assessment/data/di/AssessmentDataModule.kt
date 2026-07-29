@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
+import ng.com.chprbn.mobile.BuildConfig
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
@@ -101,12 +102,23 @@ abstract class AssessmentDataModule {
 
     companion object {
 
+        /**
+         * Debug builds get the composite (Api → Fake fallback for empty-live
+         * responses). Release builds bind the API source directly — the Fake
+         * path is inaccessible, so a 500 / empty envelope surfaces as a real
+         * error rather than silently synthetic data (A-S1 audit finding).
+         */
         @Provides
         @Singleton
         fun provideAssessmentPackageRemoteSource(
             api: ApiAssessmentPackageRemoteSource,
             fake: FakeAssessmentPackageRemoteSource,
-        ): AssessmentPackageRemoteSource = CompositeAssessmentPackageRemoteSource(api, fake)
+        ): AssessmentPackageRemoteSource =
+            if (BuildConfig.DEBUG) {
+                CompositeAssessmentPackageRemoteSource(api, fake)
+            } else {
+                api
+            }
 
         /**
          * Cohort-level "below this aggregate score = Low" threshold. Defaulted

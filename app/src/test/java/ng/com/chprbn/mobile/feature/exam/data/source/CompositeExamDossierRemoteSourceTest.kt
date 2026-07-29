@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.feature.exam.domain.model.Center
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CompositeExamDossierRemoteSourceTest {
@@ -36,11 +37,23 @@ class CompositeExamDossierRemoteSourceTest {
     }
 
     @Test
-    fun `returns null when both sources fail`() = runTest {
+    fun `returns null when both sources return null`() = runTest {
         coEvery { primary.fetchDossier() } returns null
         coEvery { fallback.fetchDossier() } returns null
 
         assertNull(composite.fetchDossier())
+    }
+
+    @Test
+    fun `primary error propagates and fallback is not called`() = runTest {
+        // E1 audit: an API failure must not silently degrade to a Fake bundle,
+        // because the officer cannot then tell "server broke" apart from
+        // "server returned live-empty."
+        coEvery { primary.fetchDossier() } throws IllegalStateException("HTTP 500")
+
+        val thrown = runCatching { composite.fetchDossier() }.exceptionOrNull()
+        assertTrue(thrown is IllegalStateException)
+        coVerify(exactly = 0) { fallback.fetchDossier() }
     }
 
     private fun bundle() = ExamDossierBundle(

@@ -15,6 +15,7 @@ import ng.com.chprbn.mobile.feature.exam.data.repository.ExamPaperRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamStatisticsRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.RemarkRepositoryImpl
+import ng.com.chprbn.mobile.BuildConfig
 import ng.com.chprbn.mobile.feature.exam.data.source.ApiExamDossierRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.source.ApiExamSyncRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.source.CompositeExamDossierRemoteSource
@@ -106,11 +107,19 @@ abstract class ExamDataModule {
 
     companion object {
 
+        /**
+         * Debug builds get the composite (Api → Fake fallback for empty-live
+         * responses) so screens stay functional against a partial backend.
+         * Release builds bind the API source directly — the Fake path is
+         * inaccessible, so a 500 / empty envelope surfaces as a real error
+         * rather than silently synthetic data (E1 audit finding).
+         */
         @Provides
         @Singleton
         fun provideExamDossierRemoteSource(
             api: ApiExamDossierRemoteSource,
             fake: FakeExamDossierRemoteSource,
-        ): ExamDossierRemoteSource = CompositeExamDossierRemoteSource(api, fake)
+        ): ExamDossierRemoteSource =
+            if (BuildConfig.DEBUG) CompositeExamDossierRemoteSource(api, fake) else api
     }
 }

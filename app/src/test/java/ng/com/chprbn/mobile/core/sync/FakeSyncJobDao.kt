@@ -42,6 +42,13 @@ internal class FakeSyncJobDao : SyncJobDao {
 
     override fun observeAll(): Flow<List<SyncJobEntity>> = flow
 
+    override fun observeAbandoned(): Flow<List<SyncJobEntity>> =
+        MutableStateFlow(
+            rows.values
+                .filter { it.status == "Abandoned" }
+                .sortedByDescending { it.lastAttemptAt ?: Long.MIN_VALUE },
+        )
+
     override suspend fun markAttempted(
         id: Long,
         status: String,

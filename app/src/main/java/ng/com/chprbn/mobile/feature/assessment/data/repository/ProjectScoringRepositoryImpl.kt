@@ -32,8 +32,11 @@ class ProjectScoringRepositoryImpl @Inject constructor(
 
     override suspend fun recordProjectScore(score: ProjectScore): SaveResult =
         withContext(Dispatchers.IO) {
+            // Enqueue first, then upsert — cross-DB, no shared Room transaction.
+            // See AttendanceRepositoryImpl.markAttendance for the full rationale
+            // + self-heal contract (ProjectScoreSyncHandler drops ghost jobs
+            // whose local row is missing).
             try {
-                projectScoreDao.upsert(score.toEntity())
                 syncJobDao.enqueue(
                     SyncJobEntity(
                         entityType = SyncEntityType.ProjectScore.name,
@@ -45,6 +48,7 @@ class ProjectScoringRepositoryImpl @Inject constructor(
                         status = SyncStatus.Pending.name,
                     ),
                 )
+                projectScoreDao.upsert(score.toEntity())
                 statusUpdater.refresh(score.scheduleId)
                 workScheduler.scheduleSyncWork()
                 SaveResult.Success

@@ -41,7 +41,10 @@ class AttendanceSyncHandler @Inject constructor(
             val (paperId, candidateId) = parsed
             val entity = attendanceDao.getOne(paperId, candidateId)
             if (entity == null) {
-                outcomes[key] = SyncOutcome.Failure("Attendance not found locally: $key")
+                // Ghost sync job — the write-path upsert never landed (see
+                // enqueue-before-upsert order in AttendanceRepositoryImpl).
+                // Drop rather than fail so we don't retry a non-existent row.
+                outcomes[key] = SyncOutcome.Drop
                 continue
             }
             val domain = entity.toDomain()

@@ -72,10 +72,29 @@ class SyncBatchRunner @Inject constructor(
                         syncJobDao.delete(job.id)
                         succeeded++
                     }
+                    is SyncOutcome.Drop -> {
+                        // Handler signalled self-clean: no local row to upload.
+                        // Delete without touching attemptCount so metrics stay
+                        // truthful, but count as succeeded from the queue's
+                        // perspective (the job is done).
+                        syncJobDao.delete(job.id)
+                        succeeded++
+                    }
                     is SyncOutcome.Failure -> {
+                        // Cap retries so a poison row (server permanently
+                        // rejects, malformed clientId, …) doesn't sit in the
+                        // queue forever. `markAttempted` increments the count
+                        // then and there, so the next-attempt view is what we
+                        // compare against MAX_ATTEMPTS.
+                        val nextAttemptCount = job.attemptCount + 1
+                        val nextStatus = if (nextAttemptCount >= MAX_ATTEMPTS) {
+                            SyncStatus.Abandoned.name
+                        } else {
+                            SyncStatus.Failed.name
+                        }
                         syncJobDao.markAttempted(
                             id = job.id,
-                            status = SyncStatus.Failed.name,
+                            status = nextStatus,
                             attemptedAt = attemptedAt,
                             error = outcome.message,
                         )
@@ -96,5 +115,15 @@ class SyncBatchRunner @Inject constructor(
 
     companion object {
         const val DEFAULT_BATCH_SIZE = 50
+
+        /**
+         * A failing row is retried up to this many times before it is
+         * flipped to [SyncStatus.Abandoned] and left in the queue for
+         * auditability. Chosen so a genuinely-transient issue (rolling
+         * network drop, 15-minute backend outage) gets multiple shots,
+         * but a poison row (server permanently rejects, malformed
+         * clientId) stops burning bandwidth after ~5 attempts.
+         */
+        const val MAX_ATTEMPTS = 5
     }
 }

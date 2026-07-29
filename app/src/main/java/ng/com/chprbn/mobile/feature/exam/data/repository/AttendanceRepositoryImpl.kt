@@ -46,8 +46,16 @@ class AttendanceRepositoryImpl @Inject constructor(
             markedAt = markedAt,
             syncStatus = SyncStatus.Pending,
         )
+        // Enqueue first, then upsert. attendance rows live in ExamDatabase and
+        // sync jobs in SyncDatabase, so we cannot share a Room transaction.
+        // Two failure modes:
+        //   - enqueue throws → no local ghost row, UI shows error.
+        //   - upsert throws AFTER a successful enqueue → sync job points at a
+        //     non-existent local row; the handler treats that as a self-clean
+        //     signal (deletes the ghost job — see AttendanceSyncHandler).
+        // Doing it in this order keeps user-visible state consistent with the
+        // returned Result.
         try {
-            attendanceDao.upsert(attendance.toEntity())
             syncJobDao.enqueue(
                 SyncJobEntity(
                     entityType = SyncEntityType.Attendance.name,
@@ -56,6 +64,7 @@ class AttendanceRepositoryImpl @Inject constructor(
                     status = SyncStatus.Pending.name,
                 ),
             )
+            attendanceDao.upsert(attendance.toEntity())
             workScheduler.scheduleSyncWork()
             MarkAttendanceResult.Success(attendance)
         } catch (t: Throwable) {

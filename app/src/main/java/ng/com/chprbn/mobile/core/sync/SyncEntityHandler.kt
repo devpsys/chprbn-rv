@@ -33,6 +33,17 @@ fun interface SyncEntityHandler {
 
 sealed interface SyncOutcome {
     data object Success : SyncOutcome
+
+    /**
+     * Handler signal: this queued job has no matching local row — the local
+     * write must have failed after the sync job was enqueued (see the
+     * enqueue-before-upsert order in every write-path repository). The
+     * runner removes the job from the queue without an attempt counter
+     * increment; the row was never uploaded and never will be from this
+     * queue entry.
+     */
+    data object Drop : SyncOutcome
+
     data class Failure(val message: String) : SyncOutcome
 }
 
