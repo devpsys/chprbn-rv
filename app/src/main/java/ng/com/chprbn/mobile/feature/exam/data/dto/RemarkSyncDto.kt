@@ -35,7 +35,7 @@ data class RemarkSyncItemDto(
 )
 
 data class RemarkSyncBatchEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: RemarkSyncBatchResultsDto? = null,
 )

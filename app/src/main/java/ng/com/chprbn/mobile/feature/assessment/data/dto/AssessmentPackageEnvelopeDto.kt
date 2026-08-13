@@ -11,7 +11,7 @@ import com.google.gson.annotations.SerializedName
  * into the per-table inserts inside `db.withTransaction`.
  */
 data class AssessmentPackageEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: AssessmentPackageDataDto? = null,
 )

@@ -1902,9 +1902,11 @@ Mobile currently clears local state on logout but does not revoke the server-sid
 
 ## 14. Migration Notes
 
-### 14.1 Envelope rename `status → success` (complete)
+### 14.1 Envelope rename `status → success` (in progress)
 
-Mobile has cut over: every read envelope now decodes `success` (boolean) as the top-level flag. Backend must emit `success` on all responses. The legacy `status` boolean is no longer read and can be dropped.
+The canonical envelope flag is `success` (boolean). Mobile prefers `success` but **also accepts the legacy `status` key** as an alias — every read envelope carries `@SerializedName(value = "success", alternate = ["status"])` so a backend that still emits `"status": true` decodes cleanly. Backend can migrate on its own schedule; once every endpoint emits `success`, mobile can drop the alias in a follow-up release.
+
+**Do not remove the shim from the DTOs without first confirming every response envelope (auth, profile, verification, exam, assessment, batch writes) is emitting `"success"`.** The regression test at [`AuthApiServiceTest.adhocLogin tolerates legacy status flag during backend migration`](../../app/src/test/java/ng/com/chprbn/mobile/feature/auth/data/api/AuthApiServiceTest.kt) pins the tolerant behaviour for the login envelope.
 
 ### 14.2 New-endpoint rollout order
 

@@ -29,7 +29,7 @@ data class ProjectScoreSyncItemDto(
 )
 
 data class ProjectScoreSyncBatchEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: ProjectScoreSyncBatchResultsDto? = null,
 )

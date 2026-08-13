@@ -78,6 +78,37 @@ class AuthApiServiceTest {
     }
 
     @Test
+    fun `adhocLogin tolerates legacy status flag during backend migration`() = runTest {
+        // Regression: a real device saw
+        //   {"status":true,"message":"login successful","data":{"token":"…"}}
+        // (backend still on the pre-migration flag name). Mobile decoded the
+        // envelope with success=false and the repository surfaced the
+        // "login successful" message as an error, blocking navigation.
+        // The DTO's @SerializedName(alternate = ["status"]) closes the gap
+        // until the backend cuts over to "success".
+        server.enqueue(
+            jsonOk(
+                """
+                {
+                  "status": true,
+                  "message": "login successful",
+                  "data": { "token": "2082|hHVWLV5aDPkaFeY1MGcp1G176USjZiIonEcU8tX928f127ba" }
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val body = api.adhocLogin(LoginRequestDto("u", "p")).body()!!
+
+        assertTrue("legacy status:true must decode as success", body.success)
+        assertEquals("login successful", body.message)
+        assertEquals(
+            "2082|hHVWLV5aDPkaFeY1MGcp1G176USjZiIonEcU8tX928f127ba",
+            body.data!!.token,
+        )
+    }
+
+    @Test
     fun `adhocLogin 401 surfaces error body without throwing`() = runTest {
         server.enqueue(
             MockResponse()

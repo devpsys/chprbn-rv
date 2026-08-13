@@ -43,7 +43,7 @@ data class AttendanceSyncItemDto(
  * the client sent so a partial-success batch can be reconciled.
  */
 data class AttendanceSyncBatchEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: AttendanceSyncBatchResultsDto? = null,
 )

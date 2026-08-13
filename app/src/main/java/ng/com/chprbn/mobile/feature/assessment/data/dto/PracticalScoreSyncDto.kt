@@ -33,7 +33,7 @@ data class PracticalScoreSyncItemDto(
 )
 
 data class PracticalScoreSyncBatchEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: PracticalScoreSyncBatchResultsDto? = null,
 )

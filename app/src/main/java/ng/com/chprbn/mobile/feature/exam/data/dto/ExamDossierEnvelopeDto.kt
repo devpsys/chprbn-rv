@@ -14,7 +14,7 @@ import com.google.gson.annotations.SerializedName
  * mapper's job a flat fan-out.
  */
 data class ExamDossierEnvelopeDto(
-    @SerializedName("success") val success: Boolean = false,
+    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
     @SerializedName("message") val message: String? = null,
     @SerializedName("data") val data: ExamDossierDataDto? = null,
 )
