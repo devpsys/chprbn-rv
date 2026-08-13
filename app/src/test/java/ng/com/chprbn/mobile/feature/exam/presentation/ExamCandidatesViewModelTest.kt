@@ -7,7 +7,6 @@ import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
-import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceFilter
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamCandidateRow
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamCandidatesUseCase
@@ -34,7 +33,7 @@ class ExamCandidatesViewModelTest {
     }
 
     @Test
-    fun `populated cohort maps domain rows into Signed In or Pending pills`() = runTest {
+    fun `populated cohort maps attendance to the pill and keeps remark count separate`() = runTest {
         coEvery { getCandidates(any(), any(), any()) } returns listOf(
             row("c1", "Jane Doe", AttendanceStatus.SignedIn),
             row("c2", "Bob Jones", attendance = null, remarkCount = 1),
@@ -44,25 +43,65 @@ class ExamCandidatesViewModelTest {
         val viewModel = ExamCandidatesViewModel(getCandidates)
 
         val byName = viewModel.uiState.value.candidates.associateBy { it.name }
+        // The pill is now a pure attendance signal — Bob has no attendance,
+        // so the pill is "Pending" regardless of his remark count. The
+        // "N Remark" state renders on the card button, driven by
+        // [ExamCandidateUiState.remarkCount].
         assertEquals("Signed In", byName.getValue("Jane Doe").statusPillLabel)
-        assertEquals("1 Remark", byName.getValue("Bob Jones").statusPillLabel)
+        assertEquals("Pending", byName.getValue("Bob Jones").statusPillLabel)
+        assertEquals(1, byName.getValue("Bob Jones").remarkCount)
         assertEquals("Flagged", byName.getValue("Mia Smith").statusPillLabel)
     }
 
     @Test
-    fun `onFilterChange forwards the mapped AttendanceFilter to the use case`() = runTest {
-        coEvery { getCandidates(any(), any(), any()) } returns emptyList()
+    fun `onFilterChange narrows the visible list client-side without re-querying the use case`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(
+            row("c1", "Jane Doe", AttendanceStatus.SignedIn),
+            row("c2", "Bob Jones", attendance = null),
+            row("c3", "Mia Smith", AttendanceStatus.Flagged),
+        )
         val viewModel = ExamCandidatesViewModel(getCandidates)
 
         viewModel.onFilterChange("Flagged")
 
-        // The filter label is reflected in state; the actual SQL-side
-        // filter was forwarded as AttendanceFilter.Flagged (verified
-        // indirectly via the use case being invoked).
         assertEquals("Flagged", viewModel.uiState.value.activeFilterLabel)
-        io.mockk.coVerify {
-            getCandidates(any(), AttendanceFilter.Flagged, any())
-        }
+        val visibleNames = viewModel.uiState.value.candidates.map { it.name }
+        assertEquals(listOf("Mia Smith"), visibleNames)
+        // Regression: the pre-fix VM re-called the use case with an
+        // AttendanceFilter and wiped the visible list when the DAO returned
+        // empty (E10 audit — paperId is blank until OfficerSession wires it
+        // up). We now filter the in-memory source client-side, so the use
+        // case is invoked exactly once (in init).
+        io.mockk.coVerify(exactly = 1) { getCandidates(any(), any(), any()) }
+    }
+
+    @Test
+    fun `onFilterChange All restores the full source after a narrowing filter`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(
+            row("c1", "Jane Doe", AttendanceStatus.SignedIn),
+            row("c2", "Bob Jones", AttendanceStatus.SignedOut),
+        )
+        val viewModel = ExamCandidatesViewModel(getCandidates)
+
+        viewModel.onFilterChange("Signed In")
+        assertEquals(1, viewModel.uiState.value.candidates.size)
+
+        viewModel.onFilterChange("All")
+
+        assertEquals(2, viewModel.uiState.value.candidates.size)
+    }
+
+    @Test
+    fun `onQueryChange matches name and idLabel case-insensitively`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(
+            row("c1", "Jane Doe", AttendanceStatus.SignedIn),
+            row("c2", "Bob Jones", AttendanceStatus.SignedIn),
+        )
+        val viewModel = ExamCandidatesViewModel(getCandidates)
+
+        viewModel.onQueryChange("JONES")
+
+        assertEquals(listOf("Bob Jones"), viewModel.uiState.value.candidates.map { it.name })
     }
 
     @Test

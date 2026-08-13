@@ -19,7 +19,9 @@ fun ExamCandidatesScreen(
         uiState = uiState,
         onBack = onBack,
         onAddRemark = onAddRemark,
-        onViewProfile = onViewProfile
+        onViewProfile = onViewProfile,
+        onQueryChange = viewModel::onQueryChange,
+        onFilterSelected = viewModel::onFilterChange,
     )
 }
 

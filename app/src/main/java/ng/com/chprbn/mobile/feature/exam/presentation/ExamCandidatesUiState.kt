@@ -10,8 +10,20 @@ data class ExamCandidateUiState(
     val avatarUrl: String?,
     val name: String,
     val idLabel: String,
+    /**
+     * Attendance status text used on the top-right pill: "Signed In",
+     * "Signed Out", "Flagged", or "Pending". Remark count is a separate
+     * signal ([remarkCount]) so the pill stays a pure attendance signal
+     * and the "N Remark" state renders on the Add-Remark button.
+     */
     val statusPillLabel: String,
     val statusSubLabel: String,
+    /**
+     * Number of remarks the officer has logged for this candidate. When
+     * `> 0`, the "Add Remark" button in the card renders as a warning-
+     * coloured "N Remark" indicator (design spec).
+     */
+    val remarkCount: Int = 0,
 )
 
 data class ExamCandidatesUiState(
@@ -47,7 +59,8 @@ data class ExamCandidatesUiState(
                     name = "David Chen",
                     idLabel = "ID: EX-2024-0741",
                     statusPillLabel = "Signed In",
-                    statusSubLabel = "09:12 AM"
+                    statusSubLabel = "09:12 AM",
+                    remarkCount = 1,
                 ),
                 ExamCandidateUiState(
                     avatarUrl = null,
