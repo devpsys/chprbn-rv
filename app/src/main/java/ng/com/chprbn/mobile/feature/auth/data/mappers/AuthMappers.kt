@@ -23,7 +23,8 @@ fun AdhocProfileDataDto.toDomain(accessToken: String): User {
         staffId = null,
         unit = department,
         organization = null,
-        lastLoginAt = null
+        lastLoginAt = null,
+        location = location,
     )
 }
 
@@ -39,7 +40,9 @@ fun ProfileDataDto.toDomain(accessToken: String): User = User(
     staffId = null,
     unit = unit,
     organization = null,
-    lastLoginAt = lastLoginAt
+    lastLoginAt = lastLoginAt,
+    // Tutor profile envelope has no location field yet — leave null.
+    location = null,
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -53,7 +56,8 @@ fun User.toEntity(): UserEntity = UserEntity(
     staffId = staffId,
     unit = unit,
     organization = organization,
-    lastLoginAt = lastLoginAt
+    lastLoginAt = lastLoginAt,
+    location = location,
 )
 
 fun UserEntity.toDomain(accessToken: String): User = User(
@@ -68,5 +72,6 @@ fun UserEntity.toDomain(accessToken: String): User = User(
     staffId = staffId,
     unit = unit,
     organization = organization,
-    lastLoginAt = lastLoginAt
+    lastLoginAt = lastLoginAt,
+    location = location,
 )

@@ -29,6 +29,7 @@ data class UserEntity(
     val unit: String? = null,
     val organization: String? = null,
     val lastLoginAt: String? = null,
+    val location: String? = null,
     val passwordSalt: String? = null,
     val passwordVerifier: String? = null,
     val passwordAlgorithm: String? = null,

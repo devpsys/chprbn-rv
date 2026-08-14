@@ -17,5 +17,6 @@ data class User(
     val staffId: String? = null,
     val unit: String? = null,
     val organization: String? = null,
-    val lastLoginAt: String? = null
+    val lastLoginAt: String? = null,
+    val location: String? = null,
 )

@@ -591,17 +591,17 @@ No query, path, or body parameters.
 ```json
 {
   "success": true,
-  "message": "OK",
+  "message": "successful",
   "data": {
-    "id": 4421,
-    "name": "Amina Okonkwo",
-    "email": "field.officer@chprbn.gov.ng",
-    "phone": "+2348012345678",
-    "username": "field.officer",
+    "id": 4,
+    "name": "Abba El-Muqaddas",
+    "email": "abba@chprbn.gov.ng",
+    "phone": "08022334455",
+    "username": "abba",
     "status": 1,
-    "role": "Senior Field Officer",
-    "department": "Lagos North",
-    "permissions": ["verify_practitioner", "mark_attendance"]
+    "department": "ACC",
+    "location": "mchst213",
+    "roles": ["Inspector", "Verify Practitioners"]
   }
 }
 ```
@@ -611,12 +611,12 @@ No query, path, or body parameters.
 | `data.id` | number | Yes | Numeric user id. Mobile stores as `Double` to tolerate serialisation drift. |
 | `data.name` | string | No | Display name. |
 | `data.email` | string | No | Login email. |
-| `data.phone` | string | Yes | Contact phone (E.164 preferred). |
+| `data.phone` | string | Yes | Contact phone. Free-format; E.164 preferred but not enforced. |
 | `data.username` | string | No | Login handle (same value sent in §5.1). |
 | `data.status` | int | Yes | `1` = active, `0` = disabled. Mobile rejects login if `0`. |
-| `data.role` | string | Yes | Free-text role label for display. |
-| `data.department` | string | Yes | Free-text unit/department. |
-| `data.permissions` | string[] | Yes | Permission codes (see §12.4). Backend SHOULD always emit the array — when omitted, mobile maps to `emptyList()`. |
+| `data.department` | string | Yes | Free-text unit/department code (e.g. `"ACC"`). |
+| `data.location` | string | Yes | Free-text location identifier (e.g. `"mchst213"`) — the physical centre / station the officer is assigned to. Mobile stores as `User.location` for display. |
+| `data.roles` | string[] | Yes | Role labels assigned to the user (e.g. `["Inspector", "Verify Practitioners"]`). Mobile stores as `User.permissions` and picks the first as `User.role` for display. Backend SHOULD always emit the array — when omitted, mobile maps to `emptyList()`. |
 
 #### Error Responses
 

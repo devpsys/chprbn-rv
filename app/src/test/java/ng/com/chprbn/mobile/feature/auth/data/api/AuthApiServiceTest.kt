@@ -146,6 +146,7 @@ class AuthApiServiceTest {
                     "username": "abba",
                     "status": 1,
                     "department": "ACC",
+                    "location": "mchst213",
                     "roles": ["Inspector", "Verify Practitioners"]
                   }
                 }
@@ -171,6 +172,7 @@ class AuthApiServiceTest {
         assertEquals("abba", data.username)
         assertEquals(1, data.status)
         assertEquals("ACC", data.department)
+        assertEquals("mchst213", data.location)
         assertEquals(listOf("Inspector", "Verify Practitioners"), data.roles)
     }
 
@@ -194,6 +196,7 @@ class AuthApiServiceTest {
         assertNull(data.phone)
         assertNull(data.status)
         assertNull(data.department)
+        assertNull(data.location)
         assertNull(data.id)
         // `roles` is declared nullable on the DTO precisely to dodge the
         // Gson + Kotlin-defaults gotcha — when omitted on the wire it lands as

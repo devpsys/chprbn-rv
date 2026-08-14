@@ -8,12 +8,15 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [UserEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = true,
     autoMigrations = [
         // v7 → v8: adds nullable passwordSalt / passwordVerifier / passwordAlgorithm
         // columns for the offline-login PBKDF2 credential.
         AutoMigration(from = 7, to = 8),
+        // v8 → v9: adds nullable `location` column mirroring the
+        // `AdhocProfileDataDto.location` wire field.
+        AutoMigration(from = 8, to = 9),
     ],
 )
 @TypeConverters(JsonStringListTypeConverter::class)

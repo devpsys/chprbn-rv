@@ -46,6 +46,7 @@ data class AdhocProfileDataDto(
     val username: String,
     val status: Int? = null,
     val department: String? = null,
+    val location: String? = null,
     val roles: List<String>? = null
 )
 
