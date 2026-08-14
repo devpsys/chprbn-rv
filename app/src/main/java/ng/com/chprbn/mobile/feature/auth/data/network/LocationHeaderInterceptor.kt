@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.auth.data.network
 
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
@@ -8,8 +9,15 @@ import okhttp3.Response
 
 /**
  * Attaches `x-location` (the officer's `adhoc/profile` location, e.g.
- * `"mchst213"`) to the exam endpoints that need it to resolve server-side
- * routing/scoping: dossier fetch and the attendance/remarks batch uploads.
+ * `"mchst213"`) to every request. Lives only on the jarabawa client
+ * (`JarabawaNetworkModule`) — that backend takes no bearer token, so
+ * `x-location` is its sole request credential.
+ *
+ * Fails fast with [IOException] when no location is cached rather than
+ * silently sending a credential-less request the server can only answer
+ * with an opaque 401 — every `Api*RemoteSource` on the jarabawa client
+ * already catches [IOException] and surfaces its message to the UI, so
+ * this turns "download failed, no idea why" into an actionable error.
  */
 @Singleton
 class LocationHeaderInterceptor @Inject constructor(
@@ -17,29 +25,15 @@ class LocationHeaderInterceptor @Inject constructor(
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
-        val path = request.url.encodedPath
-        if (LOCATION_ENDPOINTS.none { path.endsWith(it) }) {
-            return chain.proceed(request)
-        }
         val location = userDao.getUser()?.location
-        val finalRequest = if (!location.isNullOrBlank()) {
-            request.newBuilder()
-                .header("x-location", location)
-                .build()
-        } else {
-            request
+        if (location.isNullOrBlank()) {
+            throw IOException(
+                "No location on file for this account — sign out and back in to refresh your profile."
+            )
         }
-        return chain.proceed(finalRequest)
-    }
-
-    private companion object {
-        val LOCATION_ENDPOINTS = setOf(
-            "/attendance/fetch-record",
-            "/attendance/push-record",
-            "/attendance-remarks",
-            "/project/push-record",
-            "/practical/push-record",
-        )
+        val request = chain.request().newBuilder()
+            .header("x-location", location)
+            .build()
+        return chain.proceed(request)
     }
 }

@@ -53,21 +53,24 @@ Every endpoint section uses the same headings, types, and example shapes so a re
 | **Development (local backend)** | `http://10.0.2.2:8000/api/v1/mobile/` | `app/build.gradle.kts` debug `buildConfigField "BASE_URL"` (to be added when local backend exists) |
 | **Staging** | `https://staging.app.chprbn.gov.ng/api/v1/mobile/` | Debug build type `buildConfigField "BASE_URL"` (to be added when staging exists) |
 | **Production** | `https://app.chprbn.gov.ng/api/v1/mobile/` | Release build type `buildConfigField "BASE_URL"` |
+| **Production — exam backend** | `https://jarabawa.chprbn.gov.ng/api/v1/mobile/` | `buildConfigField "JARABAWA_BASE_URL"` (both build types) |
 
 Today both build types point at production because no staging environment exists. The flip lands the day staging comes online; no client-code changes are required — only the `buildConfigField` value.
 
-All paths in this document are **relative** to the base URL. Where a path is written as `/practitioners/license`, the full URL is `<base>/practitioners/license`.
+All paths in this document are **relative** to the base URL. Where a path is written as `/practitioners/license`, the full URL is `<base>/practitioners/license`. The three Examination-module endpoints (§8.1–§8.3) are the exception — they're relative to the **exam backend** base URL above, not the main one, and carry no bearer token (see §1.4).
 
 ### 1.4 Authentication mechanism
 
 | Element | Convention |
 |---|---|
-| **Scheme** | Bearer token in `Authorization` header. |
+| **Scheme** | Bearer token in `Authorization` header — **except** the exam backend (§8.1–§8.3), which takes no token at all; see below. |
 | **Token type** | Laravel Sanctum personal-access token (opaque string). The mobile client does not decode it. |
 | **Issuing endpoints** | `POST /adhoc/login` (field officers) and `POST /login` (practitioner tutors) both return `data.token`. |
 | **Refresh** | **Not supported.** There is no refresh endpoint. Token expiry forces re-login. Mobile clears the local token on 401 and routes the user back to `LoginScreen`. |
 | **Logout** | Client-initiated. Mobile POSTs `/adhoc/logout` (adhoc) or `/logout` (tutor) to revoke the bearer token, then clears local state. Endpoint specced in §5.3 — awaiting backend implementation. |
 | **Token TTL** | Backend-controlled. Mobile must not assume a TTL; it treats any 401 on a protected route as "session over." |
+
+**Exam backend exception:** `GET attendance/fetch-record`, `POST attendance/push-record`, and `POST attendance-remarks` (§8.1–§8.3) run against the separate jarabawa host and carry **no `Authorization` header**. Instead, every request carries `X-Location`, populated from the officer's `adhoc/profile` `data.location` (§6.1) and attached transparently by the mobile client's `LocationHeaderInterceptor` — it is that backend's sole request credential.
 
 ### 1.5 Standard HTTP headers
 
@@ -256,7 +259,7 @@ key, this eliminates both mid-flight duplicates and second-attempt races.
 
 ```
 POST /api/v1/mobile/attendance/push-record
-Authorization: Bearer <token>
+X-Location: mchst213
 Idempotency-Key: 5f3c98e2-8a9d-4a2b-9df1-3e6e6a0c1b21
 Content-Type: application/json; charset=UTF-8
 ```
@@ -1045,10 +1048,11 @@ No query, path, or body parameters.
 | **Module** | Examination |
 | **Feature** | Officer dossier (current centre + today's papers + candidates) |
 | **Purpose** | Single-call fetch of everything the officer needs to run today's exam: centre, papers, candidate roster, paper↔candidate assignments. |
-| **Authentication required** | Yes |
-| **Authorization / roles** | Adhoc officer with an active centre assignment for the current day. |
+| **Authentication required** | No bearer token — see `X-Location` below. |
+| **Authorization / roles** | Adhoc officer with an active centre assignment for the current day, identified via `X-Location`. |
 | **HTTP method** | `GET` |
 | **URL path** | `/attendance/fetch-record` |
+| **Base URL** | Exam backend — `https://jarabawa.chprbn.gov.ng/api/v1/mobile/` (§1.3), **not** the main app base URL. |
 | **API version** | v1 |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamDossierApiService.fetchDossier` |
@@ -1057,9 +1061,8 @@ No query, path, or body parameters.
 
 | Name | Required | Value |
 |---|---|---|
-| `Authorization` | Yes | `Bearer <token>` |
 | `Accept` | Yes | `application/json` |
-| `x-location` | Yes | The officer's `location` from §6.1 `data.location` (e.g. `"mchst213"`). Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location` (e.g. `"mchst213"`) — the sole request credential on this backend. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request
 
@@ -1170,9 +1173,10 @@ See §10.1.
 | **Module** | Examination |
 | **Feature** | Attendance sync (batch) |
 | **Purpose** | Upload N attendance rows in one HTTP request. One auth check + one DB transaction per batch. |
-| **Authentication required** | Yes |
+| **Authentication required** | No bearer token — see `X-Location` below. |
 | **HTTP method** | `POST` |
 | **URL path** | `/attendance/push-record` |
+| **Base URL** | Exam backend — `https://jarabawa.chprbn.gov.ng/api/v1/mobile/` (§1.3), **not** the main app base URL. |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamSyncApiService.uploadAttendanceBatch` |
 
@@ -1180,9 +1184,8 @@ See §10.1.
 
 | Name | Required | Value |
 |---|---|---|
-| `Authorization` | Yes | `Bearer <token>` |
 | `Idempotency-Key` | Yes | See §3.2. |
-| `x-location` | Yes | The officer's `location` from §6.1 `data.location`. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location` — the sole request credential on this backend. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request Body Schema
 
@@ -1265,9 +1268,10 @@ See §10.3 for the shared batch-result schema.
 | **Module** | Examination |
 | **Feature** | Officer remarks on candidates (batch) |
 | **Purpose** | Upload N remarks in one HTTP request. |
-| **Authentication required** | Yes |
+| **Authentication required** | No bearer token — see `X-Location` below. |
 | **HTTP method** | `POST` |
 | **URL path** | `/attendance-remarks` |
+| **Base URL** | Exam backend — `https://jarabawa.chprbn.gov.ng/api/v1/mobile/` (§1.3), **not** the main app base URL. |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamSyncApiService.uploadRemarkBatch` |
 
@@ -1275,9 +1279,8 @@ See §10.3 for the shared batch-result schema.
 
 | Name | Required | Value |
 |---|---|---|
-| `Authorization` | Yes | `Bearer <token>` |
 | `Idempotency-Key` | Yes | See §3.2. |
-| `x-location` | Yes | The officer's `location` from §6.1 `data.location`. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location` — the sole request credential on this backend. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request Body Schema
 
@@ -1747,19 +1750,26 @@ POST /practitioners/license-irregularity-reports  (one per report — multipart,
 
 ### 11.3 Examination module
 
+All three calls below run against the **exam backend** (jarabawa host, §1.3)
+and carry `X-Location` instead of the bearer token from `/adhoc/login` — the
+login call is shown only to establish `data.location` via `/adhoc/profile`.
+
 ```
-POST /adhoc/login ──▶ token
+POST /adhoc/login ──▶ token (main backend)
             │
             ▼
-GET  /attendance/fetch-record
+GET  /adhoc/profile ──▶ data.location
+            │
+            ▼
+GET  /attendance/fetch-record   (X-Location, no bearer — exam backend)
             │
             ├─▶ data.center
             ├─▶ data.papers[]            ──┐
             ├─▶ data.candidates[]         │  (officer marks attendance, adds remarks)
             └─▶ data.assignments[]        │
                                           ▼
-POST /attendance/push-record  (items: N attendance rows per request)
-POST /attendance-remarks     (items: N remark rows per request)
+POST /attendance/push-record  (X-Location, no bearer — items: N attendance rows per request)
+POST /attendance-remarks      (X-Location, no bearer — items: N remark rows per request)
 ```
 
 ### 11.4 Assessment module

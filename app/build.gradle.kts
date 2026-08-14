@@ -61,6 +61,13 @@ android {
                 "BASE_URL",
                 "\"https://app.chprbn.gov.ng/api/v1/mobile/\""
             )
+            // Exam endpoints (dossier/attendance/remarks) live on a separate
+            // backend, keyed on X-Location instead of a bearer token.
+            buildConfigField(
+                "String",
+                "JARABAWA_BASE_URL",
+                "\"https://jarabawa.chprbn.gov.ng/api/v1/mobile/\""
+            )
         }
         release {
             isMinifyEnabled = true
@@ -73,6 +80,11 @@ android {
                 "String",
                 "BASE_URL",
                 "\"https://app.chprbn.gov.ng/api/v1/mobile/\""
+            )
+            buildConfigField(
+                "String",
+                "JARABAWA_BASE_URL",
+                "\"https://jarabawa.chprbn.gov.ng/api/v1/mobile/\""
             )
             if (keystorePropsFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")

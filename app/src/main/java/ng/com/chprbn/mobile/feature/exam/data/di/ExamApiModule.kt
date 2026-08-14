@@ -10,9 +10,11 @@ import retrofit2.Retrofit
 import javax.inject.Singleton
 
 /**
- * Materialises the two Retrofit service interfaces from the shared
- * [Retrofit] instance (configured in `AuthDataModule` — auth
- * interceptors, Gson converter, base URL).
+ * Materialises the two Retrofit service interfaces from the
+ * [JarabawaRetrofit]-qualified [Retrofit] instance (configured in
+ * [JarabawaNetworkModule] — X-Location interceptor, Gson converter, its own
+ * base URL). Exam endpoints live on the jarabawa backend, not the app-wide
+ * one in `AuthDataModule`.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -20,11 +22,11 @@ object ExamApiModule {
 
     @Provides
     @Singleton
-    fun provideExamDossierApiService(retrofit: Retrofit): ExamDossierApiService =
+    fun provideExamDossierApiService(@JarabawaRetrofit retrofit: Retrofit): ExamDossierApiService =
         retrofit.create(ExamDossierApiService::class.java)
 
     @Provides
     @Singleton
-    fun provideExamSyncApiService(retrofit: Retrofit): ExamSyncApiService =
+    fun provideExamSyncApiService(@JarabawaRetrofit retrofit: Retrofit): ExamSyncApiService =
         retrofit.create(ExamSyncApiService::class.java)
 }

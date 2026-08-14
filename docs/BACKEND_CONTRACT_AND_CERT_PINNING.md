@@ -26,20 +26,23 @@ This is acceptable for development; it is **not acceptable for production**. The
 
 ### 2.2 The eight speculative endpoints
 
-All paths are relative to the production base URL `https://app.chprbn.gov.ng/api/v1/mobile/`.
+Assessment + verification paths are relative to the production base URL
+`https://app.chprbn.gov.ng/api/v1/mobile/`. **Exam endpoints (E1–E3) are on a
+separate backend**, `https://jarabawa.chprbn.gov.ng/api/v1/mobile/`, and take
+**no bearer token** — `X-Location` is the sole request credential (see §2.4).
 
-#### Exam feature — read
-
-| # | Method | Path | Auth | Mobile source | Purpose |
-|---|---|---|---|---|---|
-| E1 | `GET` | `attendance/fetch-record` | Bearer | `ExamDossierApiService.fetchDossier` | Pull the officer's currently-active centre + papers + candidate roster + paper↔candidate assignments in one call. Server resolves "which dossier" from the bearer token + today's date. |
-
-#### Exam feature — write
+#### Exam feature — read (jarabawa backend)
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| E2 | `POST` | `attendance/push-record` | Bearer | `ExamSyncApiService.uploadAttendanceBatch` | Batched upload of attendance marks (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
-| E3 | `POST` | `attendance-remarks` | Bearer | `ExamSyncApiService.uploadRemarkBatch` | Batched upload of officer remarks (`items[]` in request; per-row `results[]` in response). Idempotent on `(remarkId)` recommended. |
+| E1 | `GET` | `attendance/fetch-record` | `X-Location` | `ExamDossierApiService.fetchDossier` | Pull the officer's currently-active centre + papers + candidate roster + paper↔candidate assignments in one call. Server resolves "which dossier" from `X-Location` + today's date. |
+
+#### Exam feature — write (jarabawa backend)
+
+| # | Method | Path | Auth | Mobile source | Purpose |
+|---|---|---|---|---|---|
+| E2 | `POST` | `attendance/push-record` | `X-Location` | `ExamSyncApiService.uploadAttendanceBatch` | Batched upload of attendance marks (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
+| E3 | `POST` | `attendance-remarks` | `X-Location` | `ExamSyncApiService.uploadRemarkBatch` | Batched upload of officer remarks (`items[]` in request; per-row `results[]` in response). Idempotent on `(remarkId)` recommended. |
 
 #### Assessment feature — read
 
@@ -71,11 +74,15 @@ All read envelopes (auth, verification, exam, assessment) have cut over to `succ
 
 ### 2.4 Auth model (audit C2)
 
-`AuthorizationInterceptor` already attaches `Authorization: Bearer <token>` on every non-`/login` request (`feature/auth/data/network/AuthorizationInterceptor.kt`). The token comes from `AuthTokenStore`, which is the value the login response returns in its `accessToken` field. So **mobile is ready to authenticate** — the question for backend is:
+`AuthorizationInterceptor` already attaches `Authorization: Bearer <token>` on every non-`/login` request against the app-wide backend (`feature/auth/data/network/AuthorizationInterceptor.kt`). The token comes from `AuthTokenStore`, which is the value the login response returns in its `accessToken` field. So **mobile is ready to authenticate** for verification + assessment — the question for backend is:
 
-- **Q1.** Do the exam + assessment endpoints accept the **same bearer token** the verification endpoints accept? If yes, no client change.
-- **Q2.** Is the token Sanctum-personal or a JWT? Mobile is agnostic but the backend should confirm the lifecycle (does the token expire? if yes, how long?). The current mobile implementation has **no refresh path** — token expiry forces a re-login. If exam/assessment tokens have a different TTL, surface it before launch.
-- **Q3.** If `attendance/fetch-record` resolves "today's centre" from the bearer token + date, what does the response look like when the officer has no active assignment for today? Empty `data`? `data: null`? HTTP 404? Mobile currently degrades all three to "no dossier" — confirm that's the desired UX.
+- **Q1.** Do the assessment endpoints accept the **same bearer token** the verification endpoints accept? If yes, no client change.
+- **Q2.** Is the token Sanctum-personal or a JWT? Mobile is agnostic but the backend should confirm the lifecycle (does the token expire? if yes, how long?). The current mobile implementation has **no refresh path** — token expiry forces a re-login. If assessment tokens have a different TTL, surface it before launch.
+- **Q3.** If `attendance/fetch-record` resolves "today's centre" from `X-Location` + date, what does the response look like when the officer has no active assignment for today? Empty `data`? `data: null`? HTTP 404? Mobile currently degrades all three to "no dossier" — confirm that's the desired UX.
+
+**Exam endpoints (E1–E3) are the exception:** they run against the jarabawa backend and take **no bearer token at all**. Every request instead carries `X-Location`, populated from the officer's `adhoc/profile` `data.location` field (§6.1 of `docs/api/full-api-documentation.md`) and attached transparently by `LocationHeaderInterceptor` (`feature/auth/data/network/LocationHeaderInterceptor.kt`), which lives only on the jarabawa-scoped Retrofit client (`feature/exam/data/di/JarabawaNetworkModule.kt`). Open question for backend:
+
+- **Q4.** Since `X-Location` is the only credential on the exam backend, what happens on an unrecognized or missing location value — 401? 403? empty dossier? This is effectively the exam backend's entire access-control story, so it needs an explicit answer before go-live.
 
 ### 2.5 What backend needs to confirm or change
 
@@ -90,7 +97,8 @@ Concrete checklist to put to the backend team. Each row gates the corresponding 
 | Q-C1.A2 | Confirm path for per-schedule package (A2) and `scheduleId` URL-encoding rules. | Assessment paper detail |
 | Q-C1.A3 | Confirm path + idempotency story for practical-score upload (A3). | Practical scoring |
 | Q-C1.A4 | Confirm path + idempotency story for project-score upload (A4). | Project scoring |
-| Q-C2 | Bearer token + scope. Same token as verification? Different TTL? | Every protected endpoint |
+| Q-C2 | Bearer token + scope. Same token as verification? Different TTL? | Every protected assessment/verification endpoint |
+| Q-C4 | `X-Location`-only access control on the jarabawa backend: behavior on unrecognized/missing location. | Every exam endpoint (E1–E3) |
 | Q-C3 | ~~Standard envelope: `{status, message, data}` vs flat?~~ **Decided:** `{success, message, data}` for every endpoint. | — |
 | Q-NULL | Behavior when officer has no work assigned today (empty `data` / `null` / 404)? | Empty-state UX |
 | Q-ERR | Error body shape for non-2xx (existing convention: `{ "message": "..." }`)? | Error surfacing |

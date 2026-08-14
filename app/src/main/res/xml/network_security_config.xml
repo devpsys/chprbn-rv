@@ -6,10 +6,12 @@
     Policy:
       * App-wide default: cleartext traffic disallowed; system trust anchors only.
       * Production API (app.chprbn.gov.ng and any subdomain): cleartext disallowed.
-        SPKI pinning is intentionally deferred — when the operations team supplies
-        the leaf + backup pin SHA-256 fingerprints, fill in the <pin-set> block
-        below and uncomment it. Do NOT ship a single-pin config; we need at least
-        one rotation pin to avoid bricking installs on certificate roll.
+      * Exam backend (jarabawa.chprbn.gov.ng and any subdomain): cleartext disallowed.
+        SPKI pinning is intentionally deferred on both hosts — when the operations
+        team supplies the leaf + backup pin SHA-256 fingerprints, fill in the
+        relevant <pin-set> block below and uncomment it. Do NOT ship a single-pin
+        config; we need at least one rotation pin to avoid bricking installs on
+        certificate roll.
 
     Debug overrides for staging / localhost should live in
     src/debug/res/xml/network_security_config.xml when those environments come
@@ -25,6 +27,17 @@
 
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">app.chprbn.gov.ng</domain>
+        <!--
+        <pin-set expiration="2027-01-01">
+            <pin digest="SHA-256">REPLACE_WITH_LEAF_SPKI_PIN</pin>
+            <pin digest="SHA-256">REPLACE_WITH_BACKUP_SPKI_PIN</pin>
+        </pin-set>
+        -->
+    </domain-config>
+
+    <!-- Exam backend (dossier/attendance/remarks) — separate host, X-Location auth. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">jarabawa.chprbn.gov.ng</domain>
         <!--
         <pin-set expiration="2027-01-01">
             <pin digest="SHA-256">REPLACE_WITH_LEAF_SPKI_PIN</pin>

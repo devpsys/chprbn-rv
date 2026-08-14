@@ -6,14 +6,15 @@ import retrofit2.http.GET
 
 /**
  * **SPECULATIVE** — path assumed pending backend contract confirmation
- * (plan §12, C1). Bearer auth required.
+ * (plan §12, C1). Served by the jarabawa backend (see [ng.com.chprbn.mobile.feature.exam.data.di.JarabawaNetworkModule]),
+ * not the app-wide API — **no bearer token**; `x-location` is the sole
+ * request credential, attached transparently by
+ * [ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor]
+ * from the officer's `adhoc/profile` location — no param needed here.
  *
  * Scope: the officer's currently-active centre + day. The server
- * resolves "which dossier" from the bearer token + date; the mobile
- * client doesn't send those explicitly.
- *
- * `x-location` is attached transparently by [ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor]
- * from the officer's `adhoc/profile` location — no param needed here.
+ * resolves "which dossier" from `x-location` + date; the mobile client
+ * doesn't send those explicitly.
  */
 interface ExamDossierApiService {
 

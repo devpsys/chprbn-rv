@@ -17,7 +17,6 @@ import ng.com.chprbn.mobile.feature.auth.data.local.AuthDatabase
 import ng.com.chprbn.mobile.feature.auth.data.local.AuthSeedCallback
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthorizationInterceptor
-import ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor
 import ng.com.chprbn.mobile.feature.auth.data.repository.AuthRepositoryImpl
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.AndroidConnectivityChecker
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.ConnectivityChecker
@@ -40,8 +39,7 @@ object AuthDataModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        authorizationInterceptor: AuthorizationInterceptor,
-        locationHeaderInterceptor: LocationHeaderInterceptor
+        authorizationInterceptor: AuthorizationInterceptor
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             // Explicit timeouts so production behavior on poor cellular networks is
@@ -51,7 +49,6 @@ object AuthDataModule {
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(authorizationInterceptor)
-            .addInterceptor(locationHeaderInterceptor)
 
         if (BuildConfig.DEBUG) {
             val logging = HttpLoggingInterceptor().apply {
