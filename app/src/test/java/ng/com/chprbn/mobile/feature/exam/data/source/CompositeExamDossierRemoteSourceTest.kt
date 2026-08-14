@@ -1,13 +1,19 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
+import android.util.Log
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.feature.exam.domain.model.Center
+import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class CompositeExamDossierRemoteSourceTest {
@@ -15,6 +21,20 @@ class CompositeExamDossierRemoteSourceTest {
     private val primary = mockk<ExamDossierRemoteSource>()
     private val fallback = mockk<ExamDossierRemoteSource>()
     private val composite = CompositeExamDossierRemoteSource(primary, fallback)
+
+    @Before
+    fun setUp() {
+        // The fallback path logs a loud warning (so a Fake-data download is
+        // traceable in the field) — stub android.util.Log since plain JUnit
+        // has no real Android runtime behind it.
+        mockkStatic(Log::class)
+        every { Log.w(any(), any<String>()) } returns 0
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Log::class)
+    }
 
     @Test
     fun `returns primary result without calling fallback when primary succeeds`() = runTest {

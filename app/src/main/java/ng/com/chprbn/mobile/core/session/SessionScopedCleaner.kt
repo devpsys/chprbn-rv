@@ -2,10 +2,9 @@ package ng.com.chprbn.mobile.core.session
 
 /**
  * Marker interface that every feature contributes an implementation of via
- * Hilt multibinding (`@Binds @IntoSet` in the feature's data module). The
- * [SessionCleaner] runs them all on logout / clear-cache so that a second
- * user on the same device never inherits the previous user's cached rows
- * (A2 audit finding — was a real cross-user data leak).
+ * Hilt multibinding (`@Binds @IntoSet` in the feature's data module).
+ * [SessionCleaner] runs them all — **currently unused/unwired from logout**,
+ * see [SessionCleaner]'s doc comment.
  *
  * Contract:
  *

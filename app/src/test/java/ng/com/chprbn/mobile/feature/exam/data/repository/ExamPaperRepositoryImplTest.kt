@@ -14,7 +14,6 @@ import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamDashboardResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetailResult
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -44,33 +43,18 @@ class ExamPaperRepositoryImplTest {
     )
 
     @Test
-    fun `dashboard returns Error when no papers cached`() = runTest {
-        coEvery { paperDao.getAll() } returns emptyList()
+    fun `dashboard returns Empty when no center cached`() = runTest {
+        coEvery { centerDao.getFirst() } returns null
 
         val result = repository.getDashboardSummary()
 
-        assertTrue(result is ExamDashboardResult.Error)
-        assertEquals(
-            "No exam data cached yet. Download the dossier first.",
-            (result as ExamDashboardResult.Error).message,
-        )
+        assertEquals(ExamDashboardResult.Empty, result)
     }
 
     @Test
-    fun `dashboard returns Error when centre row missing locally`() = runTest {
-        coEvery { paperDao.getAll() } returns listOf(paperEntity)
-        coEvery { centerDao.getById("c1") } returns null
-
-        val result = repository.getDashboardSummary()
-
-        assertTrue(result is ExamDashboardResult.Error)
-        assertEquals("Centre data missing locally.", (result as ExamDashboardResult.Error).message)
-    }
-
-    @Test
-    fun `dashboard builds summary with checked-in count and total candidates`() = runTest {
-        coEvery { paperDao.getAll() } returns listOf(paperEntity)
-        coEvery { centerDao.getById("c1") } returns centerEntity
+    fun `dashboard builds summary with checked-in count, total candidates, and papers count`() = runTest {
+        coEvery { centerDao.getFirst() } returns centerEntity
+        coEvery { paperDao.getForCenter("c1") } returns listOf(paperEntity)
         coEvery {
             attendanceDao.countByStatusForPaper("p1", AttendanceStatus.SignedIn.name)
         } returns 12
@@ -79,13 +63,27 @@ class ExamPaperRepositoryImplTest {
 
         val summary = (result as ExamDashboardResult.Success).summary
         assertEquals("c1", summary.center.id)
+        assertEquals(1, summary.papersCount)
         assertEquals("Active Session", summary.attendanceCard.statusLabel)
         assertEquals("12 / 30 checked in", summary.attendanceCard.countLabel)
     }
 
     @Test
+    fun `dashboard builds a Success with zero papers when centre has no schedule today`() = runTest {
+        coEvery { centerDao.getFirst() } returns centerEntity
+        coEvery { paperDao.getForCenter("c1") } returns emptyList()
+
+        val result = repository.getDashboardSummary()
+
+        val summary = (result as ExamDashboardResult.Success).summary
+        assertEquals(0, summary.papersCount)
+        assertEquals("No Session", summary.attendanceCard.statusLabel)
+        assertEquals("0 / 0 checked in", summary.attendanceCard.countLabel)
+    }
+
+    @Test
     fun `dashboard maps IOException to friendly Error message`() = runTest {
-        coEvery { paperDao.getAll() } throws IOException("offline")
+        coEvery { centerDao.getFirst() } throws IOException("offline")
 
         val result = repository.getDashboardSummary()
 

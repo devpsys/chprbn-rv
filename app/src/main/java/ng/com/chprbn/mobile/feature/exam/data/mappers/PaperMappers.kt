@@ -28,18 +28,26 @@ internal fun Paper.toEntity(): PaperEntity = PaperEntity(
     totalCandidates = totalCandidates,
 )
 
-/** Returns `null` when the wire payload omits `id`. */
-internal fun PaperDto.toDomain(): Paper? {
+/**
+ * Returns `null` when the wire payload omits `id`. [centerId] and
+ * [totalCandidates] aren't on the wire for a paper — the caller supplies
+ * [centerId] from the dossier's own centre and [totalCandidates] from
+ * counting that paper's rows in the assignment list (see
+ * `ApiExamDossierRemoteSource`). `paperKind`/`startAt`/`endAt`/`hall`
+ * have no wire signal at all and fall back to their mapper defaults
+ * (`Theory`, `0`, `0`, `""`).
+ */
+internal fun PaperDto.toDomain(centerId: String, totalCandidates: Int = 0): Paper? {
     val safeId = id?.takeIf { it.isNotBlank() } ?: return null
     return Paper(
         id = safeId,
-        centerId = centerId.orEmpty(),
-        title = title.orEmpty(),
-        subtitle = subtitle.orEmpty(),
-        paperKind = paperKind.orEmpty().toPaperKind(),
-        startAt = startAt ?: 0L,
-        endAt = endAt ?: 0L,
-        hall = hall.orEmpty(),
-        totalCandidates = totalCandidates ?: 0,
+        centerId = centerId,
+        title = name.orEmpty(),
+        subtitle = code.orEmpty(),
+        paperKind = "".toPaperKind(),
+        startAt = 0L,
+        endAt = 0L,
+        hall = "",
+        totalCandidates = totalCandidates,
     )
 }

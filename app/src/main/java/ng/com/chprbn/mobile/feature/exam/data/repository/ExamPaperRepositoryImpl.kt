@@ -40,21 +40,20 @@ class ExamPaperRepositoryImpl @Inject constructor(
     override suspend fun getDashboardSummary(): ExamDashboardResult =
         withContext(Dispatchers.IO) {
             try {
-                val papers = paperDao.getAll()
-                val firstCenterId = papers.firstOrNull()?.centerId
-                    ?: return@withContext ExamDashboardResult.Error(
-                        "No exam data cached yet. Download the dossier first.",
-                    )
-                val centerEntity = centerDao.getById(firstCenterId)
-                    ?: return@withContext ExamDashboardResult.Error(
-                        "Centre data missing locally.",
-                    )
+                // Resolved directly from `centers`, not derived from a paper's
+                // centerId — a center can be downloaded with zero papers
+                // scheduled for today, and that's a valid Success, not Empty.
+                val centerEntity = centerDao.getFirst()
+                    ?: return@withContext ExamDashboardResult.Empty
 
+                val papers = paperDao.getForCenter(centerEntity.id)
                 val totalCandidates = papers.sumOf { it.totalCandidates }
-                val checkedIn = attendanceDao.countByStatusForPaper(
-                    paperId = papers.first().id,
-                    status = AttendanceStatus.SignedIn.name,
-                )
+                val checkedIn = papers.firstOrNull()?.let {
+                    attendanceDao.countByStatusForPaper(
+                        paperId = it.id,
+                        status = AttendanceStatus.SignedIn.name,
+                    )
+                } ?: 0
 
                 ExamDashboardResult.Success(
                     ExamDashboardSummary(
@@ -66,6 +65,7 @@ class ExamPaperRepositoryImpl @Inject constructor(
                             dayIso = LocalDate.now().toString(),
                         ),
                         center = centerEntity.toDomain(),
+                        papersCount = papers.size,
                         attendanceCard = ExamTaskSummary(
                             statusLabel = if (papers.isNotEmpty()) "Active Session" else "No Session",
                             countLabel = "$checkedIn / $totalCandidates checked in",

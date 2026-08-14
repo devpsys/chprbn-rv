@@ -10,6 +10,7 @@ internal fun CenterEntity.toDomain(): Center = Center(
     code = code,
     location = location,
     heroImageUrl = heroImageUrl,
+    hasSections = hasSections,
 )
 
 internal fun Center.toEntity(): CenterEntity = CenterEntity(
@@ -18,6 +19,7 @@ internal fun Center.toEntity(): CenterEntity = CenterEntity(
     code = code,
     location = location,
     heroImageUrl = heroImageUrl,
+    hasSections = hasSections,
 )
 
 /** Returns `null` when the wire payload omits a required identity field. */

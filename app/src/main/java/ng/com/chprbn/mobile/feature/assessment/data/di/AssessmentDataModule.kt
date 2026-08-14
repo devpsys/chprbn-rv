@@ -105,8 +105,10 @@ abstract class AssessmentDataModule {
 
     /**
      * Contributes the assessment-side wipe to the cross-feature
-     * [SessionCleaner] (A2 audit fix — logout must not leave cached scores
-     * / packages for the next user on this device).
+     * `SessionCleaner` multibinding. **Currently unused** —
+     * `SessionCleaner` is no longer called from logout (see its doc
+     * comment); kept for a possible future "switch account" / "wipe all
+     * data" flow.
      */
     @Binds
     @IntoSet

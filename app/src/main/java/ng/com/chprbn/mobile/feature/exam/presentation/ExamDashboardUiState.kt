@@ -19,7 +19,13 @@ data class ExamDashboardUiState(
     val currentGpa: String,
     val heroImageUrl: String,
     val attendanceTask: ExamTaskCardUiState,
-    val practicalTask: ExamTaskCardUiState
+    val practicalTask: ExamTaskCardUiState,
+    /** True once a dossier has been successfully downloaded to this device. */
+    val hasDownloadedData: Boolean = false,
+    /** True when the downloaded center has at least one paper scheduled today. */
+    val hasSchedules: Boolean = true,
+    /** True when the dossier's `sections` array was non-empty — gates the Practical Assessment card. */
+    val hasPracticalAssessment: Boolean = true,
 ) {
     companion object {
         fun placeholder(): ExamDashboardUiState = ExamDashboardUiState(

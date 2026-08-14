@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.local
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 
@@ -13,11 +14,10 @@ import androidx.room.RoomDatabase
  * transaction wipes reference rows but never touches attendance / remarks,
  * so the officer's pending writes always survive a re-download.
  *
- * Schema version 1; no migrations yet. Future schema bumps must add
- * explicit `Migration(n, n+1)` objects here and pass them to
- * `Room.databaseBuilder(...).addMigrations(...)`. `fallbackToDestructive`
- * is the safety net only — losing pending attendance writes to a missed
- * migration is unacceptable.
+ * Future schema bumps must add explicit `Migration`/`AutoMigration`
+ * objects here and pass them to `Room.databaseBuilder(...)`.
+ * `fallbackToDestructive` is deliberately not used — losing pending
+ * attendance writes to a missed migration is unacceptable.
  */
 @Database(
     entities = [
@@ -28,8 +28,13 @@ import androidx.room.RoomDatabase
         AttendanceEntity::class,
         RemarkEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [
+        // v1 → v2: adds nullable-with-default `centers.hasSections`,
+        // derived from the dossier's `data.sections` array.
+        AutoMigration(from = 1, to = 2),
+    ],
 )
 abstract class ExamDatabase : RoomDatabase() {
     abstract fun centerDao(): CenterDao

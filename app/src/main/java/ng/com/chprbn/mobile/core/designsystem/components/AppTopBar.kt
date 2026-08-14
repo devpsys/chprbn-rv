@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +42,7 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 fun AppTopBar(
     onNotifications: () -> Unit,
     onBack: (() -> Unit)? = null,
+    onLogout: (() -> Unit)? = null,
 ) {
     // statusBarsPadding keeps the bar below the system status bar on
     // edge-to-edge displays (enforced from API 35+). Scaffold-based
@@ -122,6 +124,19 @@ fun AppTopBar(
                             .background(Color.Red)
                             .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
                     )
+                }
+                if (onLogout != null) {
+                    IconButton(
+                        onClick = onLogout,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = stringResource(R.string.app_top_bar_logout_action),
+                            modifier = Modifier.size(24.dp),
+                            tint = PrimaryGreen
+                        )
+                    }
                 }
             }
         }

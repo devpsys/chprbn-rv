@@ -136,6 +136,11 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 onExamDashboardTab = {},
                 onStatisticsTab = {
                     navController.navigate(Routes.ExamStatistics)
+                },
+                onLogout = {
+                    navController.navigate(Routes.Login) {
+                        popUpTo<Routes.Splash> { inclusive = true }
+                    }
                 }
             )
         }

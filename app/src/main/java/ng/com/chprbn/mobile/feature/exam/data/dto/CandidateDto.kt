@@ -11,9 +11,12 @@ import com.google.gson.annotations.SerializedName
  */
 data class CandidateDto(
     @SerializedName("id") val id: String? = null,
-    @SerializedName("exam_number") val examNumber: String? = null,
-    @SerializedName("full_name") val fullName: String? = null,
-    @SerializedName("photo_url") val photoUrl: String? = null,
+    // Live backend sends "indexing" (e.g. "B/213/104/14"), not "exam_number".
+    @SerializedName(value = "exam_number", alternate = ["indexing"]) val examNumber: String? = null,
+    // Live backend sends "fullname" (no underscore), not "full_name".
+    @SerializedName(value = "full_name", alternate = ["fullname"]) val fullName: String? = null,
+    // Live backend sends "photo" (still raw Base64), not "photo_url".
+    @SerializedName(value = "photo_url", alternate = ["photo"]) val photoUrl: String? = null,
 )
 
 data class PaperCandidateAssignmentDto(

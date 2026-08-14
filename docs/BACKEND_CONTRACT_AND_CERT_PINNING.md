@@ -24,6 +24,8 @@ The Android client has already implemented **eight HTTP endpoints** that the bac
 
 This is acceptable for development; it is **not acceptable for production**. The "Composite tries API, falls back to Fake" pattern was a deliberate choice during development so the UI could be built ahead of the backend (plan §11.2 risk row 1) — its job is over once the backend ships, but until the backend ships, **anyone running a release APK against `app.chprbn.gov.ng` will see seemingly-real exam data that is in fact synthetic**.
 
+**Update, 2026-08-14:** the Composite/Fake fallback for the exam dossier (E1) has been disabled outright — `ExamDataModule` now binds the live API source in every build type, no exceptions. This was forced by exactly the failure mode described above: a debug build silently served fake data (3 papers, 3 candidates) that looked identical to a real download. E1 is also now **confirmed live** against a real device response — see §8.1 of `docs/api/full-api-documentation.md`, whose shape turned out to diverge substantially from what §2.2 below originally speculated (`centre` not `center`, candidates/assignments nested per-schedule rather than flat top-level arrays, minimal `papers[]` with no kind/timing/hall). E2/E3 remain unconfirmed.
+
 ### 2.2 The eight speculative endpoints
 
 Assessment + verification paths are relative to the production base URL

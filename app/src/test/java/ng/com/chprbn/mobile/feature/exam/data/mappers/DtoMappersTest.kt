@@ -45,45 +45,37 @@ class DtoMappersTest {
     }
 
     @Test
-    fun `paper dto maps to domain`() {
-        val dto = PaperDto(
-            id = "p1",
-            centerId = "C-1",
-            title = "Mathematics — Paper II",
-            subtitle = "General",
-            paperKind = "Practical",
-            startAt = 1_700_000_000_000L,
-            endAt = 1_700_003_600_000L,
-            hall = "Main Hall A",
-            totalCandidates = 142,
-        )
+    fun `paper dto maps to domain using code and name, with centerId and count supplied by the caller`() {
+        val dto = PaperDto(id = "p1", code = "P1", name = "PAPER 1")
 
-        val paper = dto.toDomain()!!
+        val paper = dto.toDomain(centerId = "C-1", totalCandidates = 142)
 
-        assertEquals("p1", paper.id)
-        assertEquals(PaperKind.Practical, paper.paperKind)
-        assertEquals(1_700_000_000_000L, paper.startAt)
-        assertEquals(142, paper.totalCandidates)
+        assertEquals("p1", paper?.id)
+        assertEquals("C-1", paper?.centerId)
+        assertEquals("PAPER 1", paper?.title)
+        assertEquals("P1", paper?.subtitle)
+        assertEquals(142, paper?.totalCandidates)
     }
 
     @Test
     fun `paper dto missing id returns null`() {
-        assertNull(PaperDto(id = null).toDomain())
+        assertNull(PaperDto(id = null).toDomain(centerId = "C-1"))
     }
 
     @Test
-    fun `paper dto with unknown paper kind degrades to Theory`() {
-        val paper = PaperDto(id = "p1", paperKind = "garbage").toDomain()!!
+    fun `paper dto has no wire signal for kind, timing, or hall, so those default`() {
+        val paper = PaperDto(id = "p1").toDomain(centerId = "C-1")!!
 
         assertEquals(PaperKind.Theory, paper.paperKind)
+        assertEquals(0L, paper.startAt)
+        assertEquals(0L, paper.endAt)
+        assertEquals("", paper.hall)
     }
 
     @Test
-    fun `paper dto with null counts defaults to zero`() {
-        val paper = PaperDto(id = "p1").toDomain()!!
+    fun `paper dto totalCandidates defaults to zero when the caller doesn't supply a count`() {
+        val paper = PaperDto(id = "p1").toDomain(centerId = "C-1")!!
 
-        assertEquals(0L, paper.startAt)
-        assertEquals(0L, paper.endAt)
         assertEquals(0, paper.totalCandidates)
     }
 

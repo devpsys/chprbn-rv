@@ -7,7 +7,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import ng.com.chprbn.mobile.core.session.SessionCleaner
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.local.UserEntity
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthTokenStore
@@ -22,15 +21,13 @@ class ProfileRepositoryImplTest {
 
     private lateinit var userDao: UserDao
     private lateinit var authTokenStore: AuthTokenStore
-    private lateinit var sessionCleaner: SessionCleaner
     private lateinit var repository: ProfileRepositoryImpl
 
     @Before
     fun setUp() {
         userDao = mockk(relaxed = true)
         authTokenStore = mockk(relaxed = true)
-        sessionCleaner = mockk(relaxed = true)
-        repository = ProfileRepositoryImpl(userDao, authTokenStore, sessionCleaner)
+        repository = ProfileRepositoryImpl(userDao, authTokenStore)
     }
 
     @Test
@@ -123,14 +120,13 @@ class ProfileRepositoryImplTest {
     }
 
     @Test
-    fun `logout wipes feature caches, then user DAO, then token store — in that order`() = runTest {
+    fun `logout clears only the auth session, in order — feature caches are left alone`() = runTest {
         repository.logout()
 
-        // A2 audit contract: feature caches (via SessionCleaner) must be
-        // wiped before the auth-side state so a session cleaner that
-        // needs the DAO (unlikely, but permitted) can still read it.
+        // Explicit product decision: logout must not clear any downloaded
+        // feature data (exam dossier, assessment packages, verification
+        // cache) — only the auth-side session (cached user row + token).
         coVerifyOrder {
-            sessionCleaner.clearAllFeatures()
             userDao.clearUser()
             authTokenStore.clear()
         }

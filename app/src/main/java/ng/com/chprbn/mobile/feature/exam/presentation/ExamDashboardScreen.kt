@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -36,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -70,10 +74,26 @@ fun ExamDashboardScreen(
     onGradePractical: () -> Unit = {},
     onPracticalInfo: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
-    onStatisticsTab: () -> Unit = {}
+    onStatisticsTab: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val loggedOut by viewModel.loggedOut.collectAsStateWithLifecycle()
+
+    // The Statistics tab returns here via popBackStack, not a fresh
+    // navigate(), so this ViewModel instance survives the round trip —
+    // reload on every resume (covers first entry too) so a sync/clear
+    // over on Statistics isn't left stale on the dashboard.
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose {}
+    }
+
+    LaunchedEffect(loggedOut) {
+        if (loggedOut) onLogout()
+    }
+
     ExamDashboardScreenContent(
         uiState = uiState,
         onNotifications = onNotifications,
@@ -83,7 +103,8 @@ fun ExamDashboardScreen(
         onPracticalInfo = onPracticalInfo,
         onDownloadDossier = viewModel::onDownloadDossierClicked,
         onExamDashboardTab = onExamDashboardTab,
-        onStatisticsTab = onStatisticsTab
+        onStatisticsTab = onStatisticsTab,
+        onLogout = viewModel::onLogoutClicked
     )
     ExamDownloadDossierOverlay(
         state = downloadState,
@@ -152,7 +173,8 @@ internal fun ExamDashboardScreenContent(
     onPracticalInfo: () -> Unit = {},
     onDownloadDossier: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
-    onStatisticsTab: () -> Unit = {}
+    onStatisticsTab: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
     Surface(
@@ -197,7 +219,8 @@ internal fun ExamDashboardScreenContent(
                     .padding(paddingValues)
             ) {
                 AppTopBar(
-                    onNotifications = onNotifications
+                    onNotifications = onNotifications,
+                    onLogout = onLogout
                 )
                 Column(
                     modifier = Modifier
@@ -205,65 +228,176 @@ internal fun ExamDashboardScreenContent(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    ExamOfficerSessionCard(
-                        heroImageUrl = uiState.heroImageUrl,
-                        sectionLabel = uiState.institutionSectionLabel,
-                        institutionName = uiState.institutionName,
-                        institutionCode = uiState.institutionCode,
-                        institutionLocation = uiState.institutionLocation
-                    )
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        Text(
-                            text = stringResource(R.string.exam_dashboard_section_admin_tasks),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = scheme.onBackground,
-                            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+                    if (!uiState.hasDownloadedData) {
+                        ExamDashboardEmptyState(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp, bottom = 24.dp)
                         )
-                        ExamTaskCard(
-                            imageUrl = uiState.attendanceTask.imageUrl,
-                            imageContentDescription = uiState.attendanceTask.imageContentDescription,
-                            chipPrimaryLabel = uiState.attendanceTask.chipPrimaryLabel,
-                            chipPrimaryContainer = scheme.secondaryContainer,
-                            chipPrimaryText = scheme.onSecondaryContainer,
-                            chipSecondaryLabel = uiState.attendanceTask.chipSecondaryLabel,
-                            chipSecondaryContainer = scheme.tertiaryContainer,
-                            chipSecondaryText = scheme.onTertiaryContainer,
-                            title = uiState.attendanceTask.title,
-                            description = uiState.attendanceTask.description,
-                            primaryActionLabel = uiState.attendanceTask.primaryActionLabel,
-                            onPrimaryAction = onLogAttendance,
-                            trailingIcon = Icons.Filled.MoreHoriz,
-                            onTrailingClick = onAttendanceMore,
-                            trailingContentDescription = stringResource(R.string.exam_dashboard_more_options_cd)
+                    } else {
+                        ExamOfficerSessionCard(
+                            heroImageUrl = uiState.heroImageUrl,
+                            sectionLabel = uiState.institutionSectionLabel,
+                            institutionName = uiState.institutionName,
+                            institutionCode = uiState.institutionCode,
+                            institutionLocation = uiState.institutionLocation
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        ExamTaskCard(
-                            imageUrl = uiState.practicalTask.imageUrl,
-                            imageContentDescription = uiState.practicalTask.imageContentDescription,
-                            chipPrimaryLabel = uiState.practicalTask.chipPrimaryLabel,
-                            chipPrimaryContainer = scheme.primaryContainer,
-                            chipPrimaryText = scheme.onPrimaryContainer,
-                            chipSecondaryLabel = uiState.practicalTask.chipSecondaryLabel,
-                            chipSecondaryContainer = scheme.surfaceVariant,
-                            chipSecondaryText = scheme.onSurfaceVariant,
-                            title = uiState.practicalTask.title,
-                            description = uiState.practicalTask.description,
-                            primaryActionLabel = uiState.practicalTask.primaryActionLabel,
-                            onPrimaryAction = onGradePractical,
-                            trailingIcon = Icons.Filled.Info,
-                            onTrailingClick = onPracticalInfo,
-                            trailingContentDescription = stringResource(R.string.exam_dashboard_information_cd)
-                        )
-                        Spacer(modifier = Modifier.height(88.dp))
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            Text(
+                                text = stringResource(R.string.exam_dashboard_section_admin_tasks),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = scheme.onBackground,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+                            )
+                            if (uiState.hasSchedules) {
+                                ExamTaskCard(
+                                    imageUrl = uiState.attendanceTask.imageUrl,
+                                    imageContentDescription = uiState.attendanceTask.imageContentDescription,
+                                    chipPrimaryLabel = uiState.attendanceTask.chipPrimaryLabel,
+                                    chipPrimaryContainer = scheme.secondaryContainer,
+                                    chipPrimaryText = scheme.onSecondaryContainer,
+                                    chipSecondaryLabel = uiState.attendanceTask.chipSecondaryLabel,
+                                    chipSecondaryContainer = scheme.tertiaryContainer,
+                                    chipSecondaryText = scheme.onTertiaryContainer,
+                                    title = uiState.attendanceTask.title,
+                                    description = uiState.attendanceTask.description,
+                                    primaryActionLabel = uiState.attendanceTask.primaryActionLabel,
+                                    onPrimaryAction = onLogAttendance,
+                                    trailingIcon = Icons.Filled.MoreHoriz,
+                                    onTrailingClick = onAttendanceMore,
+                                    trailingContentDescription = stringResource(R.string.exam_dashboard_more_options_cd)
+                                )
+                                if (uiState.hasPracticalAssessment) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    ExamTaskCard(
+                                        imageUrl = uiState.practicalTask.imageUrl,
+                                        imageContentDescription = uiState.practicalTask.imageContentDescription,
+                                        chipPrimaryLabel = uiState.practicalTask.chipPrimaryLabel,
+                                        chipPrimaryContainer = scheme.primaryContainer,
+                                        chipPrimaryText = scheme.onPrimaryContainer,
+                                        chipSecondaryLabel = uiState.practicalTask.chipSecondaryLabel,
+                                        chipSecondaryContainer = scheme.surfaceVariant,
+                                        chipSecondaryText = scheme.onSurfaceVariant,
+                                        title = uiState.practicalTask.title,
+                                        description = uiState.practicalTask.description,
+                                        primaryActionLabel = uiState.practicalTask.primaryActionLabel,
+                                        onPrimaryAction = onGradePractical,
+                                        trailingIcon = Icons.Filled.Info,
+                                        onTrailingClick = onPracticalInfo,
+                                        trailingContentDescription = stringResource(R.string.exam_dashboard_information_cd)
+                                    )
+                                }
+                            } else {
+                                ExamDashboardNoSchedulesMessage()
+                            }
+                            Spacer(modifier = Modifier.height(88.dp))
 //                        ExamQuickStatsRow(
 //                            attendanceRate = uiState.attendanceRatePercent,
 //                            gpa = uiState.currentGpa,
 //                            modifier = Modifier.padding(top = 24.dp, bottom = 24.dp)
 //                        )
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Shown in place of the institution card + admin tasks when no dossier
+ * has ever been downloaded to this device (E1/E9 hardening — a blank
+ * "screen looks broken" state is worse than telling the officer exactly
+ * what to do next: tap Download Records).
+ */
+@Composable
+private fun ExamDashboardEmptyState(modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier.padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(112.dp)
+                .clip(CircleShape)
+                .background(scheme.primary.copy(alpha = 0.10f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(scheme.primary.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CloudDownload,
+                    contentDescription = null,
+                    tint = scheme.primary,
+                    modifier = Modifier.size(40.dp),
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = stringResource(R.string.exam_dashboard_empty_title),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = scheme.onSurface,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.exam_dashboard_empty_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = scheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * Shown instead of the attendance/practical task cards when the
+ * downloaded center has zero papers scheduled for today.
+ */
+@Composable
+private fun ExamDashboardNoSchedulesMessage(modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = scheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, scheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventBusy,
+                contentDescription = null,
+                tint = scheme.onSurfaceVariant,
+                modifier = Modifier.size(32.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.exam_dashboard_no_schedules_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = scheme.onSurface,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.exam_dashboard_no_schedules_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }
@@ -730,10 +864,33 @@ private fun ExamStatTile(label: String, value: String, modifier: Modifier = Modi
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Empty — nothing downloaded")
+@Composable
+private fun ExamDashboardScreenEmptyPreview() {
+    ChprbnTheme {
+        ExamDashboardScreenContent(uiState = ExamDashboardUiState.placeholder())
+    }
+}
+
+@Preview(showBackground = true, name = "Loaded — with schedules")
 @Composable
 private fun ExamDashboardScreenPreview() {
     ChprbnTheme {
-        ExamDashboardScreenContent(uiState = ExamDashboardUiState.placeholder())
+        ExamDashboardScreenContent(
+            uiState = ExamDashboardUiState.placeholder().copy(hasDownloadedData = true),
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Loaded — no schedules today")
+@Composable
+private fun ExamDashboardScreenNoSchedulesPreview() {
+    ChprbnTheme {
+        ExamDashboardScreenContent(
+            uiState = ExamDashboardUiState.placeholder().copy(
+                hasDownloadedData = true,
+                hasSchedules = false,
+            ),
+        )
     }
 }

@@ -12,6 +12,7 @@ import ng.com.chprbn.mobile.feature.exam.domain.model.DownloadDossierResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamDashboardResult
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.DownloadExamDossierUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamDashboardUseCase
+import ng.com.chprbn.mobile.feature.profile.domain.usecase.LogoutUseCase
 import javax.inject.Inject
 
 /**
@@ -20,15 +21,25 @@ import javax.inject.Inject
  * (hero URLs, default chip labels) comes from the placeholder; only the
  * institution / chip-label fields are overridden when domain data lands.
  *
+ * [refresh] is public (not just called from `init`) so the screen can
+ * reload it on every `ON_RESUME` — the bottom-nav tab returns here via
+ * `popBackStack` rather than a fresh `navigate()`, so this ViewModel
+ * instance survives a round trip to Statistics and would otherwise show
+ * stale data after a sync/clear there.
+ *
  * Also owns the destructive dossier-download flow: the FAB asks the
  * user to confirm via the warning dialog, then [downloadDossier] runs
  * the use case while the screen renders the loading overlay, and the
  * outcome flips [downloadState] to Success or Error.
+ *
+ * [logoutUseCase] mirrors `ProfileViewModel.logout()` — clears the local
+ * session; the screen observes [loggedOut] and navigates to Login.
  */
 @HiltViewModel
 class ExamDashboardViewModel @Inject constructor(
     private val getDashboard: GetExamDashboardUseCase,
     private val downloadDossier: DownloadExamDossierUseCase,
+    private val logoutUseCase: LogoutUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamDashboardUiState.placeholder())
@@ -37,11 +48,14 @@ class ExamDashboardViewModel @Inject constructor(
     private val _downloadState = MutableStateFlow<DownloadDossierUiState>(DownloadDossierUiState.Idle)
     val downloadState: StateFlow<DownloadDossierUiState> = _downloadState.asStateFlow()
 
+    private val _loggedOut = MutableStateFlow(false)
+    val loggedOut: StateFlow<Boolean> = _loggedOut.asStateFlow()
+
     init {
-        refreshDashboard()
+        refresh()
     }
 
-    private fun refreshDashboard() {
+    fun refresh() {
         viewModelScope.launch {
             when (val result = getDashboard()) {
                 is ExamDashboardResult.Success -> {
@@ -51,6 +65,10 @@ class ExamDashboardViewModel @Inject constructor(
                             institutionName = summary.center.name,
                             institutionCode = "#${summary.center.code}",
                             institutionLocation = summary.center.location,
+                            heroImageUrl = summary.center.heroImageUrl ?: current.heroImageUrl,
+                            hasDownloadedData = true,
+                            hasSchedules = summary.papersCount > 0,
+                            hasPracticalAssessment = summary.center.hasSections,
                             attendanceTask = current.attendanceTask.copy(
                                 chipSecondaryLabel = summary.attendanceCard.statusLabel,
                             ),
@@ -60,11 +78,22 @@ class ExamDashboardViewModel @Inject constructor(
                         )
                     }
                 }
-                // Loading / Error keep the placeholder content so the
-                // screen stays usable before the dossier lands.
+                // No dossier ever downloaded — drives the empty state.
+                ExamDashboardResult.Empty -> {
+                    _uiState.update { it.copy(hasDownloadedData = false) }
+                }
+                // Loading / Error keep whatever content is already showing
+                // so the screen stays usable before/around a transient hiccup.
                 ExamDashboardResult.Loading,
                 is ExamDashboardResult.Error -> Unit
             }
+        }
+    }
+
+    fun onLogoutClicked() {
+        viewModelScope.launch {
+            runCatching { logoutUseCase() }
+                .onSuccess { _loggedOut.value = true }
         }
     }
 
@@ -80,7 +109,7 @@ class ExamDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _downloadState.value = when (val result = downloadDossier()) {
                 is DownloadDossierResult.Success -> {
-                    refreshDashboard()
+                    refresh()
                     DownloadDossierUiState.Success(
                         papersCount = result.papersCount,
                         candidatesCount = result.candidatesCount,

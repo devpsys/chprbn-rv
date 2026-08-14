@@ -21,12 +21,12 @@ import javax.inject.Singleton
  * `SupportOpenHelperFactory` from `core.persistence.encryption.EncryptionModule`,
  * and exposes every DAO as a singleton.
  *
- * Schema version 1; no migrations registered. Future schema bumps MUST
- * add explicit `Migration(n, n+1)` objects to [ExamDatabase] and pass
- * them to `addMigrations(...)`. The destructive fallback was deliberately
- * removed — losing pending attendance writes to a missed migration is
- * unacceptable, so a missing migration now fails loudly at startup instead
- * of silently wiping.
+ * Migrations are registered on [ExamDatabase] itself (`autoMigrations`).
+ * Future schema bumps MUST add an explicit `Migration`/`AutoMigration`
+ * there. The destructive fallback is deliberately not used — losing
+ * pending attendance writes to a missed migration is unacceptable, so a
+ * missing migration now fails loudly at startup instead of silently
+ * wiping.
  */
 @Module
 @InstallIn(SingletonComponent::class)

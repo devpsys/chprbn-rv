@@ -9,12 +9,13 @@ import ng.com.chprbn.mobile.core.sync.SyncJobDao
 
 /**
  * Runs every [SessionScopedCleaner] contributed by the feature modules,
- * then wipes the shared sync queue. Called from [ProfileRepositoryImpl.logout]
- * (via injection) so the next user on the device starts with an empty
- * cache — closes the A2 audit gap.
+ * then wipes the shared sync queue.
  *
- * Auth-side clears (user DAO row, token store) stay in `ProfileRepositoryImpl`
- * so this class doesn't reach into the auth feature.
+ * **Currently unused/unwired.** Was called from `ProfileRepositoryImpl.logout()`
+ * (A2 audit finding — shared-device threat model, next user on the
+ * device shouldn't inherit cached rows), but that call was removed on
+ * explicit request: logout must not clear any downloaded data. Kept in
+ * case a distinct "switch account" / "wipe all data" flow wants it later.
  */
 @Singleton
 class SessionCleaner @Inject constructor(

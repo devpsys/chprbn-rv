@@ -18,13 +18,10 @@ import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSessionCleaner
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamStatisticsRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.RemarkRepositoryImpl
-import ng.com.chprbn.mobile.BuildConfig
 import ng.com.chprbn.mobile.feature.exam.data.source.ApiExamDossierRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.source.ApiExamSyncRemoteSource
-import ng.com.chprbn.mobile.feature.exam.data.source.CompositeExamDossierRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.source.ExamDossierRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.source.ExamSyncRemoteSource
-import ng.com.chprbn.mobile.feature.exam.data.source.FakeExamDossierRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceSyncHandler
 import ng.com.chprbn.mobile.feature.exam.data.sync.RemarkSyncHandler
 import ng.com.chprbn.mobile.feature.exam.domain.repository.AttendanceRepository
@@ -39,10 +36,14 @@ import javax.inject.Singleton
  * Wires every exam-side abstraction to its concrete implementation:
  *
  * - **Repositories** — domain interfaces ↔ `*Impl` classes.
- * - **ExamDossierRemoteSource** — `@Provides` builds the
- *   [CompositeExamDossierRemoteSource], with the live API as primary
- *   and the in-memory fake as fallback so screens stay functional
- *   before the backend ships.
+ * - **ExamDossierRemoteSource** — `@Provides` binds
+ *   [ApiExamDossierRemoteSource] directly in every build type. The fake
+ *   fallback (`FakeExamDossierRemoteSource` / `CompositeExamDossierRemoteSource`)
+ *   is intentionally disabled here — it was reachable in debug builds and
+ *   made a live-but-center-less API response indistinguishable from a
+ *   real download (see `ApiExamDossierRemoteSource`'s doc comment). Both
+ *   classes are kept for now but unwired; re-enable only behind an
+ *   explicit, non-signing-config-tied dev flag if this is needed again.
  * - **ExamSyncRemoteSource** — `@Binds` directly to the Retrofit impl.
  * - **Sync handler multibindings** — both handlers contribute to the
  *   shared `core.sync` `Map<SyncEntityType, SyncEntityHandler>` so
@@ -109,9 +110,10 @@ abstract class ExamDataModule {
     ): SyncEntityHandler
 
     /**
-     * Contributes the exam-side wipe to the cross-feature [SessionCleaner]
-     * (A2 audit fix — logout must not leave cached exam rows for the next
-     * user on this device).
+     * Contributes the exam-side wipe to the cross-feature `SessionCleaner`
+     * multibinding. **Currently unused** — `SessionCleaner` is no longer
+     * called from logout (see its doc comment); kept for a possible
+     * future "switch account" / "wipe all data" flow.
      */
     @Binds
     @IntoSet
@@ -120,18 +122,18 @@ abstract class ExamDataModule {
     companion object {
 
         /**
-         * Debug builds get the composite (Api → Fake fallback for empty-live
-         * responses) so screens stay functional against a partial backend.
-         * Release builds bind the API source directly — the Fake path is
-         * inaccessible, so a 500 / empty envelope surfaces as a real error
-         * rather than silently synthetic data (E1 audit finding).
+         * Always the live API, in every build type — no Fake fallback.
+         * A 500 / empty envelope / center-less response surfaces as a
+         * real error (or "no dossier" empty state) rather than silently
+         * synthetic data, whether this is a release build or a debug
+         * build sideloaded for field testing (E1 audit finding, extended
+         * to cover debug builds after a field officer saw a fake 3-paper /
+         * 3-candidate dossier reported as a real 150-candidate download).
          */
         @Provides
         @Singleton
         fun provideExamDossierRemoteSource(
             api: ApiExamDossierRemoteSource,
-            fake: FakeExamDossierRemoteSource,
-        ): ExamDossierRemoteSource =
-            if (BuildConfig.DEBUG) CompositeExamDossierRemoteSource(api, fake) else api
+        ): ExamDossierRemoteSource = api
     }
 }

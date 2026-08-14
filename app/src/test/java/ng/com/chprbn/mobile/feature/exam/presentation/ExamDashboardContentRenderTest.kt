@@ -1,8 +1,10 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
 import android.app.Application
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
@@ -21,11 +23,26 @@ class ExamDashboardContentRenderTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private fun loadedPlaceholder() = ExamDashboardUiState.placeholder().copy(hasDownloadedData = true)
+
     @Test
-    fun placeholder_state_renders_institution_and_task_cards() {
+    fun no_data_downloaded_renders_the_empty_state_instead_of_institution_card() {
         composeRule.setContent {
             ChprbnTheme {
                 ExamDashboardScreenContent(uiState = ExamDashboardUiState.placeholder())
+            }
+        }
+
+        composeRule.onNodeWithText("No Records Downloaded").assertExists()
+        composeRule.onNodeWithText("National Institute of Health Sciences").assertDoesNotExist()
+        composeRule.onNodeWithText("Attendance Monitoring").assertDoesNotExist()
+    }
+
+    @Test
+    fun loaded_state_renders_institution_and_task_cards() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(uiState = loadedPlaceholder())
             }
         }
 
@@ -39,12 +56,59 @@ class ExamDashboardContentRenderTest {
     }
 
     @Test
+    fun loaded_state_with_no_schedules_shows_friendly_message_instead_of_task_cards() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = loadedPlaceholder().copy(hasSchedules = false),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("National Institute of Health Sciences").assertExists()
+        composeRule.onNodeWithText("No Papers Scheduled Today").assertExists()
+        composeRule.onNodeWithText("Attendance Monitoring").assertDoesNotExist()
+        composeRule.onNodeWithText("Practical Assessment").assertDoesNotExist()
+    }
+
+    @Test
+    fun loaded_state_without_sections_hides_practical_card_but_keeps_attendance_card() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = loadedPlaceholder().copy(hasPracticalAssessment = false),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Attendance Monitoring").assertExists()
+        composeRule.onNodeWithText("Practical Assessment").assertDoesNotExist()
+    }
+
+    @Test
+    fun logout_icon_invokes_callback() {
+        var loggedOut = 0
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = loadedPlaceholder(),
+                    onLogout = { loggedOut++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Logout").performClick()
+
+        assertEquals(1, loggedOut)
+    }
+
+    @Test
     fun log_attendance_button_invokes_callback() {
         var logged = 0
         composeRule.setContent {
             ChprbnTheme {
                 ExamDashboardScreenContent(
-                    uiState = ExamDashboardUiState.placeholder(),
+                    uiState = loadedPlaceholder(),
                     onLogAttendance = { logged++ },
                 )
             }
@@ -57,7 +121,7 @@ class ExamDashboardContentRenderTest {
 
     @Test
     fun custom_state_propagates_institution_overrides() {
-        val state = ExamDashboardUiState.placeholder().copy(
+        val state = loadedPlaceholder().copy(
             institutionName = "Kano Centre",
             institutionCode = "#KAN",
             institutionLocation = "Kano",

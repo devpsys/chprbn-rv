@@ -11,4 +11,6 @@ data class Center(
     val code: String,
     val location: String,
     val heroImageUrl: String? = null,
+    /** True when the dossier's `data.sections` array was non-empty. Drives the Practical Assessment card on the dashboard. */
+    val hasSections: Boolean = false,
 )

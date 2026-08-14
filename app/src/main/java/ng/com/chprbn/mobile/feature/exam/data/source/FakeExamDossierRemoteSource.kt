@@ -10,9 +10,15 @@ import javax.inject.Inject
 /**
  * In-memory golden data for offline UI development. Matches the screen
  * mockups closely enough that every Compose preview / E2E walkthrough
- * shows realistic content. Production builds resolve
- * [CompositeExamDossierRemoteSource] with this as the **fallback** —
- * it's never the primary.
+ * shows realistic content.
+ *
+ * **Currently unwired** — `ExamDataModule.provideExamDossierRemoteSource`
+ * binds [ApiExamDossierRemoteSource] directly in every build type, so
+ * this class and [CompositeExamDossierRemoteSource] are dead code from
+ * the app's perspective (kept for their own unit tests / potential
+ * future dev-mode reactivation). A center-less API response reaching
+ * this fallback was silently indistinguishable from a real download —
+ * see `ApiExamDossierRemoteSource`'s doc comment.
  *
  * The 200 ms delay mimics network latency so loading skeletons render
  * meaningfully during development.

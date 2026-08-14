@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.repository
 
+import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,6 +49,7 @@ class ExamSyncRepositoryImpl @Inject constructor(
         val bundle = runCatching { remoteSource.fetchDossier() }.fold(
             onSuccess = { it },
             onFailure = { t ->
+                Log.e(TAG, "Failed to fetch dossier from the remote source", t)
                 return@withContext DownloadDossierResult.Error(
                     t.message ?: "Could not download dossier.",
                 )
@@ -82,11 +84,26 @@ class ExamSyncRepositoryImpl @Inject constructor(
                 candidatesCount = bundle.candidates.size,
             )
         } catch (t: Throwable) {
+            // Full stack trace only reaches Logcat — the officer only ever
+            // sees `t.message` (often a terse SQLite/Room string), so this
+            // is the only way to pin down which row/column/entity a
+            // persistence failure actually came from.
+            Log.e(
+                TAG,
+                "Failed to persist downloaded dossier (center=${bundle.center.id}, " +
+                    "papers=${bundle.papers.size}, candidates=${bundle.candidates.size}, " +
+                    "assignments=${bundle.assignments.size})",
+                t,
+            )
             DownloadDossierResult.Error(t.message ?: "Could not persist downloaded dossier.")
         }
     }
 
     override suspend fun syncPending(): SyncBatchResult = withContext(Dispatchers.IO) {
         runner.runBatch()
+    }
+
+    private companion object {
+        const val TAG = "ExamDossier"
     }
 }

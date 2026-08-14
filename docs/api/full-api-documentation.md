@@ -1054,7 +1054,7 @@ No query, path, or body parameters.
 | **URL path** | `/attendance/fetch-record` |
 | **Base URL** | Exam backend — `https://jarabawa.chprbn.gov.ng/api/v1/mobile/` (§1.3), **not** the main app base URL. |
 | **API version** | v1 |
-| **Status** | **To Be Implemented** |
+| **Status** | **Confirmed live** — captured from a real device response, 2026-08-14. Diverges substantially from the shape originally speculated here; see below. |
 | **Mobile source** | `ExamDossierApiService.fetchDossier` |
 
 #### Headers
@@ -1066,90 +1066,106 @@ No query, path, or body parameters.
 
 #### Request
 
-No query, path, or body parameters. Server resolves "which dossier" from `(token → officer → today's centre assignment)`.
+No query, path, or body parameters. Server resolves "which dossier" from `X-Location` (the centre's own `api_key` matches this value — confirmed against a real response).
 
 #### Success Response — `200 OK`
 
 ```json
 {
-  "success": true,
-  "message": "OK",
+  "status": true,
+  "message": "Successful",
   "data": {
-    "center": {
-      "id": "ctr_001",
-      "name": "Lagos State Exam Centre",
-      "code": "LSEC-01",
-      "location": "12 Awolowo Way, Ikeja, Lagos",
-      "hero_image_url": "https://app.chprbn.gov.ng/media/centres/lsec01.jpg"
+    "centre": {
+      "id": 229,
+      "name": "213 - MK COLLEGE OF HEALTH SCIENCE AND TECHNOLOGY",
+      "location": "213 - MK COLLEGE OF HEALTH SCIENCE AND TECHNOLOGY",
+      "status": "Active",
+      "api_key": "mchst213",
+      "sample_token": null
     },
     "papers": [
+      { "id": 12, "code": "P1", "name": "PAPER 1" }
+    ],
+    "schedules": [
       {
-        "id": "pap_001",
-        "center_id": "ctr_001",
-        "title": "Anatomy & Physiology",
-        "subtitle": "Paper 1",
-        "paper_kind": "theory",
-        "start_at": 1768501800000,
-        "end_at": 1768509000000,
-        "hall": "Hall A",
-        "total_candidates": 120
+        "id": 2,
+        "test_date": "Friday, 14th Aug 2026",
+        "test_code": "CHEW",
+        "test_type": "Regular Exam",
+        "paper_candidates": [
+          { "candidate_id": 27858, "paper_id": 12, "scheduled_candidate_id": 1 }
+        ],
+        "candidates": [
+          {
+            "id": 27858,
+            "indexing": "B/213/104/24",
+            "fullname": "MUHAMMAD MARYAM ",
+            "photo": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYE…"
+          }
+        ]
       }
     ],
-    "candidates": [
-      {
-        "id": "can_001",
-        "exam_number": "EX-2026-00001",
-        "full_name": "John Adebayo",
-        "photo_url": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYE…"
-      }
-    ],
-    "assignments": [
-      { "paper_id": "pap_001", "candidate_id": "can_001" }
-    ]
+    "year": "2026",
+    "sections": []
   }
 }
 ```
 
-##### `data.center` (object, nullable)
+**Envelope note:** the live envelope flag is `status`, not `success` (mobile accepts both via `alternate`). The centre key is `centre` (British spelling), not `center`.
+
+##### `data.centre` (object, nullable — mobile field name stays `center` internally)
 
 | Field | Type | Nullable | Description |
 |---|---|---|---|
-| `id` | string | No | Opaque centre id. |
+| `id` | int | No | Opaque centre id (mobile coerces to string). |
 | `name` | string | No | Display name. |
-| `code` | string | Yes | Short centre code. |
-| `location` | string | Yes | Postal address. |
-| `hero_image_url` | string | Yes | Absolute HTTPS URL. |
+| `location` | string | Yes | Free-text location/address — same value for both `name` and `location` in observed responses. |
+| `status` | string | Yes | e.g. `"Active"`. Not currently consumed by mobile. |
+| `api_key` | string | Yes | Matches the `X-Location` value the officer's `adhoc/profile` returns — this is how the server resolves "which centre" without a bearer token. Not currently consumed by mobile beyond auth. |
+| `sample_token` | string | Yes | Observed `null`. Purpose unconfirmed. |
 
-##### `data.papers` (array of `Paper`, may be empty)
+No `code` or `hero_image_url` field exists on the wire (both fields in the mobile `Center` domain model default to empty/`null` for this endpoint).
 
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| `id` | string | No | Opaque paper id. |
-| `center_id` | string | No | Owning centre. |
-| `title` | string | No | Display title. |
-| `subtitle` | string | Yes | Optional second line. |
-| `paper_kind` | enum string | No | See §2.7 — `theory`, `practical`, `project`. |
-| `start_at` | int64 | No | Epoch millis (UTC). |
-| `end_at` | int64 | Yes | Epoch millis (UTC). Null if open-ended. |
-| `hall` | string | Yes | Hall / room label. |
-| `total_candidates` | int | Yes | Officer-visible roster size for this paper. |
+##### `data.papers` (array, may be empty)
 
-##### `data.candidates` (array of `Candidate`, may be empty)
-
-See §10.1.
-
-##### `data.assignments` (array of paper↔candidate links, may be empty)
+Minimal catalogue of papers for this centre — **not** scoped per schedule.
 
 | Field | Type | Nullable | Description |
 |---|---|---|---|
-| `paper_id` | string | No | FK → `data.papers[].id`. |
-| `candidate_id` | string | No | FK → `data.candidates[].id`. |
+| `id` | int | No | Opaque paper id (mobile coerces to string). Referenced by `schedules[].paper_candidates[].paper_id`. |
+| `code` | string | Yes | Short code, e.g. `"P1"`. Mapped to the mobile `Paper.subtitle`. |
+| `name` | string | Yes | Display name, e.g. `"PAPER 1"`. Mapped to the mobile `Paper.title`. |
+
+No `center_id`, `paper_kind`, `start_at`/`end_at`, `hall`, or `total_candidates` field exists on the wire. Mobile derives `total_candidates` by counting that paper's rows across every schedule's `paper_candidates[]`; `paper_kind`/timing/`hall` have no wire signal and fall back to mapper defaults (`Theory`, `0`, `0`, `""`).
+
+##### `data.schedules` (array, may be empty)
+
+One exam sitting for this centre — a date + qualification code, carrying its own nested candidate roster and paper assignments. **This is where the actual candidate/assignment data lives** — there is no top-level `data.candidates` or `data.assignments`.
+
+| Field | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | int | No | Opaque schedule id. |
+| `test_date` | string | Yes | Formatted display date, e.g. `"Friday, 14th Aug 2026"` — **not** epoch millis. Not currently parsed by mobile. |
+| `test_code` | string | Yes | Qualification/cadre code, e.g. `"CHEW"`. Not currently consumed by mobile. |
+| `test_type` | string | Yes | e.g. `"Regular Exam"`. Not currently consumed by mobile. |
+| `paper_candidates` | array | Yes | The candidate↔paper join for this schedule — see below. |
+| `candidates` | array | Yes | Full candidate roster for this schedule — see §10.1. |
+
+###### `schedules[].paper_candidates[]` (paper↔candidate assignment)
+
+| Field | Type | Nullable | Description |
+|---|---|---|---|
+| `candidate_id` | int | No | FK → a `schedules[].candidates[].id` (any schedule). Mobile coerces to string. |
+| `paper_id` | int | No | FK → `data.papers[].id`. Mobile coerces to string. |
+| `scheduled_candidate_id` | int | Yes | Purpose unconfirmed; not currently consumed by mobile. |
+
+Mobile flattens `paper_candidates[]` across every schedule into one assignment list, and every `candidates[]` array across every schedule into one deduplicated candidate list (dedup key: `id` — the same person can appear in more than one schedule).
 
 #### Error Responses
 
 | Code | Cause |
 |---|---|
-| `401` | Invalid token. |
+| `401` | Invalid `X-Location`. |
 | `403` | Officer has no centre assignment for today. |
 | `404` | Same as 403 (alternative) — empty-state UI. |
 | `5xx` | Generic. |
@@ -1158,11 +1174,11 @@ See §10.1.
 
 - Idempotent and side-effect-free.
 - The same dossier MAY change throughout the day (re-issued papers, added candidates) — mobile re-fetches on pull-to-refresh.
-- Empty `papers` or `candidates` arrays are valid (centre with no scheduled work).
+- Empty `papers`, `schedules`, or a schedule's `candidates`/`paper_candidates` are all valid (centre with no scheduled work today).
 
 #### Related entities
 
-`centers`, `papers`, `candidates`, `paper_candidate_assignments`.
+`centres`, `papers`, `schedules`, `paper_candidates` (join), candidates nested per schedule.
 
 ---
 
@@ -1654,16 +1670,20 @@ Same set as §9.3.
 
 ### 10.1 `Candidate` (shared by §8.1, §9.2)
 
-Cross-feature candidate identity. The exam dossier and the assessment package use the same shape so the local Room `candidates` table holds one canonical row per person.
+Cross-feature candidate identity. The exam dossier and the assessment package use nearly the same shape so the local Room `candidates` table holds one canonical row per person — **but the exam dossier's live field names differ from the assessment package's**, confirmed against a real device response (2026-08-14):
 
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| `id` | string | No | Opaque candidate id. Stable across features. |
-| `exam_number` | string | No | User-visible identifier ("indexing number" in assessment UI). What QR scans resolve to. |
-| `full_name` | string | No | Display name. |
-| `photo_url` | string | Yes | **Raw Base64 image bytes (no `data:` prefix).** Despite the field name, the dossier and assessment-package endpoints embed the photo inline rather than serving a URL — backend keeps the dossier self-contained for offline use after a single download. Mobile routes the value through `core/network/ImageUrlNormalization.normalizeApiPhotoToDataUri` which wraps it as `data:image/jpeg;base64,…` for Compose `AsyncImage`. Values that already begin with `data:image` pass through unchanged. |
+| Field | Exam dossier (`/attendance/fetch-record`, live) | Assessment package (`/assessments/.../package`, speculative) | Type | Description |
+|---|---|---|---|---|
+| id | `id` | `id` | int/string | Opaque candidate id. Mobile coerces the exam dossier's numeric id to string. Stable across features. |
+| exam number | `indexing` (e.g. `"B/213/104/24"`) | `exam_number` | string | User-visible identifier ("indexing number" in assessment UI). What QR scans resolve to. |
+| full name | `fullname` (no underscore) | `full_name` | string | Display name. |
+| photo | `photo` | `photo_url` | string, nullable | **Raw Base64 image bytes (no `data:` prefix).** Despite the assessment-side field name, both endpoints embed the photo inline rather than serving a URL — backend keeps the dossier self-contained for offline use after a single download. Mobile routes the value through `core/network/ImageUrlNormalization.normalizeApiPhotoToDataUri` which wraps it as `data:image/jpeg;base64,…` for Compose `AsyncImage`. Values that already begin with `data:image` pass through unchanged. |
 
-**Invariant:** for any candidate served by both `/attendance/fetch-record` and `/assessments/schedules/{id}/package`, the `id`, `exam_number`, and `full_name` MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
+Mobile's `CandidateDto` accepts both sets of keys via Gson `alternate` so either backend shape parses correctly — see `feature/exam/data/dto/CandidateDto.kt`.
+
+On the exam dossier, candidates arrive nested per-schedule (`data.schedules[].candidates[]`), not as a flat top-level array — see §8.1.
+
+**Invariant:** for any candidate served by both `/attendance/fetch-record` and `/assessments/schedules/{id}/package`, the `id`, exam number, and full name MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
 
 ### 10.2 Enums
 
@@ -1983,7 +2003,7 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Verification | `POST` | `/practitioners/license-irregularity-reports` | Existing | `IrregularityReportApiService.submitIrregularityReport` | §7.3 |
 | Verification | `POST` | `/practitioners/verified-sync/batch` | To Be Implemented | — (TBI) | §7.4 |
 | Verification | `GET` | `/practitioners/officer-remark-options` | To Be Implemented | `OfficerRemarkOptionsApiService.getOfficerRemarkOptions` | §7.5 |
-| Examination | `GET` | `/attendance/fetch-record` | To Be Implemented | `ExamDossierApiService.fetchDossier` | §8.1 |
+| Examination | `GET` | `/attendance/fetch-record` | Confirmed live | `ExamDossierApiService.fetchDossier` | §8.1 |
 | Examination | `POST` | `/attendance/push-record` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
 | Examination | `POST` | `/attendance-remarks` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |
 | Assessment | `GET` | `/assessments/schedules` | To Be Implemented | `AssessmentPackageApiService.fetchSchedules` | §9.1 |

@@ -11,6 +11,8 @@ data class ExamDashboardSummary(
     val center: Center,
     val attendanceCard: ExamTaskSummary,
     val practicalCard: ExamTaskSummary,
+    /** Papers ("schedules") scheduled for this center today. Zero is valid. */
+    val papersCount: Int = 0,
 )
 
 /**

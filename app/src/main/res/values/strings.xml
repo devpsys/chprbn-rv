@@ -40,6 +40,7 @@
     <string name="app_top_bar_official_use_only">OFFICIAL USE ONLY</string>
     <string name="app_top_bar_notifications_action">Notifications</string>
     <string name="app_top_bar_back_action">Back</string>
+    <string name="app_top_bar_logout_action">Logout</string>
     <string name="session_expired_message">Your session has expired. Please sign in again.</string>
 
     <!-- ============== Shared design-system: BottomNavBar ============== -->
@@ -362,6 +363,10 @@
     <string name="exam_dashboard_notifications_cd">Notifications</string>
     <string name="exam_dashboard_stat_attendance_rate">Attendance Rate</string>
     <string name="exam_dashboard_stat_current_gpa">Current GPA</string>
+    <string name="exam_dashboard_empty_title">No Records Downloaded</string>
+    <string name="exam_dashboard_empty_subtitle">Download today\'s dossier to see your centre, papers, and candidate roster.</string>
+    <string name="exam_dashboard_no_schedules_title">No Papers Scheduled Today</string>
+    <string name="exam_dashboard_no_schedules_subtitle">There are no exam papers assigned to this centre for today.</string>
 
     <!-- ============== Exam — download dossier warning + loading ============== -->
     <string name="exam_download_warning_title">Download Candidate Records</string>
