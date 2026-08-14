@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamStatistics
+import ng.com.chprbn.mobile.feature.exam.domain.model.SaveResult
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.ClearExamCacheUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamStatisticsUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.SyncExamRecordsUseCase
@@ -20,12 +21,20 @@ import javax.inject.Inject
 
 /**
  * Surfaces real local-DB counters in the existing statistics shape.
- * Exposes [refresh], [onSyncNow], and [onClearCached] for the screen's
+ * Exposes [refresh], [onSyncNow], and the [onClearCachedClicked]/
+ * [onClearCacheConfirmed]/[onClearCacheDismissed] trio for the screen's
  * action buttons; the FAB callbacks today are still pure navigation
  * stubs in the Screen layer (P3 hardening will wire them through).
  *
  * [syncState] toggles to [SyncOperationUiState.Syncing] for the duration
- * of [onSyncNow] so the screen can render the blocking sync overlay.
+ * of [onSyncNow], then to [SyncOperationUiState.Result] so the screen can
+ * tell the officer how many rows synced vs. failed instead of the
+ * [ng.com.chprbn.mobile.core.domain.model.SyncBatchResult] being silently
+ * discarded.
+ *
+ * [clearCacheState] gates the destructive clear-cache action behind a
+ * warning dialog — [ClearExamCacheUseCase]'s own contract requires the
+ * caller to confirm with the user before invoking it.
  */
 @HiltViewModel
 class ExamStatisticsViewModel @Inject constructor(
@@ -41,6 +50,9 @@ class ExamStatisticsViewModel @Inject constructor(
     private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
     val syncState: StateFlow<SyncOperationUiState> = _syncState.asStateFlow()
 
+    private val _clearCacheState = MutableStateFlow<ClearCacheUiState>(ClearCacheUiState.Idle)
+    val clearCacheState: StateFlow<ClearCacheUiState> = _clearCacheState.asStateFlow()
+
     init {
         refresh()
     }
@@ -55,16 +67,42 @@ class ExamStatisticsViewModel @Inject constructor(
         if (_syncState.value is SyncOperationUiState.Syncing) return
         _syncState.value = SyncOperationUiState.Syncing
         viewModelScope.launch {
-            syncExamRecords()
+            val result = syncExamRecords()
             refresh()
-            _syncState.value = SyncOperationUiState.Idle
+            _syncState.value = SyncOperationUiState.Result(
+                succeeded = result.succeeded,
+                failed = result.failed,
+            )
         }
     }
 
-    fun onClearCached() {
+    fun onSyncResultDismissed() {
+        _syncState.value = SyncOperationUiState.Idle
+    }
+
+    fun onClearCachedClicked() {
+        if (_clearCacheState.value !is ClearCacheUiState.Clearing) {
+            _clearCacheState.value = ClearCacheUiState.WarningShown
+        }
+    }
+
+    fun onClearCacheConfirmed() {
+        if (_clearCacheState.value is ClearCacheUiState.Clearing) return
+        _clearCacheState.value = ClearCacheUiState.Clearing
         viewModelScope.launch {
-            clearExamCache()
-            refresh()
+            _clearCacheState.value = when (val result = clearExamCache()) {
+                SaveResult.Success -> {
+                    refresh()
+                    ClearCacheUiState.Success
+                }
+                is SaveResult.Error -> ClearCacheUiState.Error(result.message)
+            }
+        }
+    }
+
+    fun onClearCacheDismissed() {
+        if (_clearCacheState.value !is ClearCacheUiState.Clearing) {
+            _clearCacheState.value = ClearCacheUiState.Idle
         }
     }
 
@@ -117,11 +155,27 @@ class ExamStatisticsViewModel @Inject constructor(
 }
 
 /**
- * State of a manual sync-now operation. The cross-feature
- * [SyncBatchResult] from the use case isn't surfaced to the UI today —
- * the screen just renders Syncing while it runs, then drops back to Idle.
+ * State of a manual sync-now operation. [Result] carries the outcome
+ * counts from the cross-feature `SyncBatchResult` so the screen can tell
+ * the officer how many rows synced vs. failed; [onSyncResultDismissed]
+ * returns to [Idle].
  */
 sealed interface SyncOperationUiState {
     data object Idle : SyncOperationUiState
     data object Syncing : SyncOperationUiState
+    data class Result(val succeeded: Int, val failed: Int) : SyncOperationUiState
+}
+
+/**
+ * State of the destructive clear-cache action. [WarningShown] gates the
+ * actual [ClearExamCacheUseCase] call behind a confirm dialog per its own
+ * doc contract; [onClearCacheDismissed] returns [Success]/[Error]/
+ * [WarningShown] to [Idle].
+ */
+sealed interface ClearCacheUiState {
+    data object Idle : ClearCacheUiState
+    data object WarningShown : ClearCacheUiState
+    data object Clearing : ClearCacheUiState
+    data object Success : ClearCacheUiState
+    data class Error(val message: String) : ClearCacheUiState
 }

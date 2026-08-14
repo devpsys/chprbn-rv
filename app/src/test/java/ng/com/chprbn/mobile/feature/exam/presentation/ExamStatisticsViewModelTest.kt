@@ -108,31 +108,82 @@ class ExamStatisticsViewModelTest {
     }
 
     @Test
-    fun `onSyncNow invokes sync then refresh`() = runTest {
+    fun `onSyncNow invokes sync then refresh and surfaces the result counts`() = runTest {
         coEvery { getStatistics() } returnsMany listOf(
             stats(),
             stats(syncedCount = 1),
         )
-        coEvery { syncExamRecords() } returns SyncBatchResult.Empty
+        coEvery { syncExamRecords() } returns SyncBatchResult(attempted = 5, succeeded = 4, failed = 1)
 
         val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
         viewModel.onSyncNow()
 
         coVerify(exactly = 1) { syncExamRecords() }
         coVerify(exactly = 2) { getStatistics() }
+        assertEquals(SyncOperationUiState.Result(succeeded = 4, failed = 1), viewModel.syncState.value)
+    }
+
+    @Test
+    fun `onSyncResultDismissed returns sync state to idle`() = runTest {
+        coEvery { getStatistics() } returns stats()
+        coEvery { syncExamRecords() } returns SyncBatchResult.Empty
+
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
+        viewModel.onSyncNow()
+        viewModel.onSyncResultDismissed()
+
         assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
     }
 
     @Test
-    fun `onClearCached invokes clear then refresh`() = runTest {
+    fun `onClearCachedClicked shows the warning dialog without clearing yet`() = runTest {
+        coEvery { getStatistics() } returns stats()
+
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
+        viewModel.onClearCachedClicked()
+
+        assertEquals(ClearCacheUiState.WarningShown, viewModel.clearCacheState.value)
+        coVerify(exactly = 0) { clearExamCache() }
+    }
+
+    @Test
+    fun `onClearCacheConfirmed invokes clear then refresh on success`() = runTest {
         coEvery { getStatistics() } returnsMany listOf(stats(), stats())
         coEvery { clearExamCache() } returns SaveResult.Success
 
         val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
-        viewModel.onClearCached()
+        viewModel.onClearCachedClicked()
+        viewModel.onClearCacheConfirmed()
 
         coVerify(exactly = 1) { clearExamCache() }
         coVerify(exactly = 2) { getStatistics() }
+        assertEquals(ClearCacheUiState.Success, viewModel.clearCacheState.value)
+    }
+
+    @Test
+    fun `onClearCacheConfirmed surfaces the error message on failure`() = runTest {
+        coEvery { getStatistics() } returns stats()
+        coEvery { clearExamCache() } returns SaveResult.Error("Disk write failed.")
+
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
+        viewModel.onClearCachedClicked()
+        viewModel.onClearCacheConfirmed()
+
+        coVerify(exactly = 1) { clearExamCache() }
+        // Error means the transaction rolled back — no need to re-fetch stats.
+        coVerify(exactly = 1) { getStatistics() }
+        assertEquals(ClearCacheUiState.Error("Disk write failed."), viewModel.clearCacheState.value)
+    }
+
+    @Test
+    fun `onClearCacheDismissed returns clear state to idle`() = runTest {
+        coEvery { getStatistics() } returns stats()
+
+        val viewModel = ExamStatisticsViewModel(getStatistics, syncExamRecords, clearExamCache, context)
+        viewModel.onClearCachedClicked()
+        viewModel.onClearCacheDismissed()
+
+        assertEquals(ClearCacheUiState.Idle, viewModel.clearCacheState.value)
     }
 
     private fun stats(

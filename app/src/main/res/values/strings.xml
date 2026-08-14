@@ -436,6 +436,21 @@
     <string name="exam_statistics_caption_total">Total</string>
     <string name="exam_statistics_status_pending_sync">Records Pending Sync</string>
     <string name="exam_statistics_status_successfully_synced">Successfully Synced</string>
+    <string name="exam_statistics_clear_warning_title">Clear Cached Records?</string>
+    <string name="exam_statistics_clear_warning_message">This erases every cached exam record on this device — centres, papers, candidates, attendance, and remarks. Make sure everything is synced first; unsynced records will be lost.</string>
+    <string name="exam_statistics_clear_warning_confirm">Clear Records</string>
+    <string name="exam_statistics_clear_warning_cancel">Cancel</string>
+    <string name="exam_statistics_clear_loading_title">Clearing Cached Records…</string>
+    <string name="exam_statistics_clear_loading_subtitle">Removing local exam data from this device.</string>
+    <string name="exam_statistics_clear_success_title">Cache Cleared</string>
+    <string name="exam_statistics_clear_success_message">All cached exam records have been removed from this device.</string>
+    <string name="exam_statistics_clear_error_title">Clear Failed</string>
+    <string name="exam_statistics_clear_error_action_retry">Try Again</string>
+    <string name="exam_statistics_clear_error_action_close">Close</string>
+    <string name="exam_statistics_sync_result_title">Sync Complete</string>
+    <string name="exam_statistics_sync_result_message_all_synced_format">%1$d record(s) synced successfully.</string>
+    <string name="exam_statistics_sync_result_message_partial_format">%1$d record(s) synced, %2$d failed. Failed records will retry automatically.</string>
+    <string name="exam_statistics_sync_result_message_nothing_to_sync">Everything is already up to date — nothing to sync.</string>
 
     <!-- ============== Assessment — examination schedules ============== -->
     <string name="assessment_schedules_header_title">Schedules</string>
