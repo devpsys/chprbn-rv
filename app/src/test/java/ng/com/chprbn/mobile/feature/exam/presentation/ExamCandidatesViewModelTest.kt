@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -21,15 +22,26 @@ class ExamCandidatesViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getCandidates = mockk<GetExamCandidatesUseCase>()
+    private val savedState = SavedStateHandle(mapOf("paperId" to "p1"))
+
+    private fun viewModel() = ExamCandidatesViewModel(savedState, getCandidates)
 
     @Test
-    fun `empty cohort keeps the placeholder candidates so the screen isn't blank`() = runTest {
+    fun `reads paperId from the nav arg and forwards it to the use case`() = runTest {
         coEvery { getCandidates(any(), any(), any()) } returns emptyList()
 
-        val viewModel = ExamCandidatesViewModel(getCandidates)
+        viewModel()
 
-        // Initial placeholder data, untouched.
-        assertEquals(ExamCandidatesUiState.placeholder().candidates, viewModel.uiState.value.candidates)
+        io.mockk.coVerify { getCandidates("p1", any(), any()) }
+    }
+
+    @Test
+    fun `empty cohort surfaces a real empty roster, not the placeholder forever`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns emptyList()
+
+        val viewModel = viewModel()
+
+        assertEquals(emptyList<ExamCandidateUiState>(), viewModel.uiState.value.candidates)
     }
 
     @Test
@@ -40,7 +52,7 @@ class ExamCandidatesViewModelTest {
             row("c3", "Mia Smith", AttendanceStatus.Flagged),
         )
 
-        val viewModel = ExamCandidatesViewModel(getCandidates)
+        val viewModel = viewModel()
 
         val byName = viewModel.uiState.value.candidates.associateBy { it.name }
         // The pill is now a pure attendance signal — Bob has no attendance,
@@ -60,7 +72,7 @@ class ExamCandidatesViewModelTest {
             row("c2", "Bob Jones", attendance = null),
             row("c3", "Mia Smith", AttendanceStatus.Flagged),
         )
-        val viewModel = ExamCandidatesViewModel(getCandidates)
+        val viewModel = viewModel()
 
         viewModel.onFilterChange("Flagged")
 
@@ -69,8 +81,7 @@ class ExamCandidatesViewModelTest {
         assertEquals(listOf("Mia Smith"), visibleNames)
         // Regression: the pre-fix VM re-called the use case with an
         // AttendanceFilter and wiped the visible list when the DAO returned
-        // empty (E10 audit — paperId is blank until OfficerSession wires it
-        // up). We now filter the in-memory source client-side, so the use
+        // empty. We now filter the in-memory source client-side, so the use
         // case is invoked exactly once (in init).
         io.mockk.coVerify(exactly = 1) { getCandidates(any(), any(), any()) }
     }
@@ -81,7 +92,7 @@ class ExamCandidatesViewModelTest {
             row("c1", "Jane Doe", AttendanceStatus.SignedIn),
             row("c2", "Bob Jones", AttendanceStatus.SignedOut),
         )
-        val viewModel = ExamCandidatesViewModel(getCandidates)
+        val viewModel = viewModel()
 
         viewModel.onFilterChange("Signed In")
         assertEquals(1, viewModel.uiState.value.candidates.size)
@@ -97,7 +108,7 @@ class ExamCandidatesViewModelTest {
             row("c1", "Jane Doe", AttendanceStatus.SignedIn),
             row("c2", "Bob Jones", AttendanceStatus.SignedIn),
         )
-        val viewModel = ExamCandidatesViewModel(getCandidates)
+        val viewModel = viewModel()
 
         viewModel.onQueryChange("JONES")
 
@@ -107,7 +118,7 @@ class ExamCandidatesViewModelTest {
     @Test
     fun `placeholder filter labels include All and Flagged`() = runTest {
         coEvery { getCandidates(any(), any(), any()) } returns emptyList()
-        val state = ExamCandidatesViewModel(getCandidates).uiState.value
+        val state = viewModel().uiState.value
 
         assertTrue("All" in state.filterLabels)
         assertTrue("Flagged" in state.filterLabels)

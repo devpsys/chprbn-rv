@@ -52,4 +52,24 @@ class ExamPapersContentRenderTest {
 
         composeRule.onNodeWithText("Monday, June 12").assertExists()
     }
+
+    @Test
+    fun real_empty_state_shows_empty_message_instead_of_placeholder_cards() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamPapersContent(
+                    uiState = ExamPapersUiState.placeholder().copy(
+                        papers = emptyList(),
+                        hasDownloadedData = true,
+                    ),
+                    onBack = {},
+                    onOpenPaper = {},
+                    onSyncNow = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("No Papers Found").assertExists()
+        composeRule.onNodeWithText("Paper I (P1)").assertDoesNotExist()
+    }
 }

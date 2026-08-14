@@ -62,9 +62,9 @@ class ApiExamDossierRemoteSourceTest {
                             PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
                         ),
                         candidates = listOf(
-                            CandidateDto(id = "can_1", indexing = "B/1", fullname = "A"),
+                            CandidateDto(id = "can_1", examNumber = "B/1", fullName = "A"),
                             // in the roster but not assigned to any paper in this sample
-                            CandidateDto(id = "can_2", indexing = "B/2", fullname = "B"),
+                            CandidateDto(id = "can_2", examNumber = "B/2", fullName = "B"),
                         ),
                     ),
                 ),
@@ -121,8 +121,8 @@ class ApiExamDossierRemoteSourceTest {
             envelope(
                 center = CenterDto(id = "ctr_1"),
                 schedules = listOf(
-                    ScheduleDto(id = "sch_1", candidates = listOf(CandidateDto(id = "can_1", fullname = "First"))),
-                    ScheduleDto(id = "sch_2", candidates = listOf(CandidateDto(id = "can_1", fullname = "First"))),
+                    ScheduleDto(id = "sch_1", candidates = listOf(CandidateDto(id = "can_1", fullName = "First"))),
+                    ScheduleDto(id = "sch_2", candidates = listOf(CandidateDto(id = "can_1", fullName = "First"))),
                 ),
             ),
         )

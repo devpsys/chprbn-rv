@@ -316,9 +316,13 @@
     <string name="candidate_scan_identity_verified_headline">Identity Verified</string>
     <string name="candidate_scan_match_label">MATCH 98%</string>
     <string name="candidate_scan_exam_date_caption">Exam Date</string>
-    <string name="candidate_scan_default_exam_date">Oct 24, 2023</string>
+    <!-- No wire data exists for a candidate's exam date/testing center on
+         this device (confirmed against the live dossier contract — paper
+         timing/hall fields are always blank), so this stays a plain "not
+         available" rather than a specific-looking but fake value. -->
+    <string name="candidate_scan_default_exam_date">Not available</string>
     <string name="candidate_scan_testing_center_caption">Testing Center</string>
-    <string name="candidate_scan_default_testing_center">Hall B - Room 12</string>
+    <string name="candidate_scan_default_testing_center">Not available</string>
 
     <!-- ============== Exam — papers list ============== -->
     <!-- VM-side labels surfaced from ExamPapersViewModel. -->
@@ -335,6 +339,8 @@
     <string name="exam_papers_status_completed">COMPLETED</string>
     <string name="exam_papers_status_active">ACTIVE</string>
     <string name="exam_papers_status_upcoming">UPCOMING</string>
+    <string name="exam_papers_empty_title">No Papers Found</string>
+    <string name="exam_papers_empty_subtitle">There are no exam papers cached for today. Download the dossier from the dashboard first.</string>
 
     <!-- ============== Exam — single paper detail ============== -->
     <!-- VM-side labels surfaced from ExamPaperViewModel. -->
@@ -351,6 +357,9 @@
     <string name="exam_paper_action_view_candidates">View Candidates</string>
     <string name="exam_paper_action_sync_data">Sync Data</string>
     <string name="exam_paper_action_scan_qr">Scan QR Code</string>
+    <string name="exam_paper_session_label_today">Today\'s Session</string>
+    <string name="exam_paper_info_message_verification_ongoing">Please ensure all biometric data and QR codes are scanned before the session start time.</string>
+    <string name="exam_paper_error_not_found">This paper isn\'t cached on this device yet — download the dossier to view details.</string>
 
     <!-- ============== Exam — dashboard ============== -->
     <string name="exam_dashboard_action_download">Download Records</string>
@@ -361,8 +370,6 @@
     <string name="exam_dashboard_label_code">Code: </string>
     <string name="exam_dashboard_label_location">Location: </string>
     <string name="exam_dashboard_notifications_cd">Notifications</string>
-    <string name="exam_dashboard_stat_attendance_rate">Attendance Rate</string>
-    <string name="exam_dashboard_stat_current_gpa">Current GPA</string>
     <string name="exam_dashboard_empty_title">No Records Downloaded</string>
     <string name="exam_dashboard_empty_subtitle">Download today\'s dossier to see your centre, papers, and candidate roster.</string>
     <string name="exam_dashboard_no_schedules_title">No Papers Scheduled Today</string>

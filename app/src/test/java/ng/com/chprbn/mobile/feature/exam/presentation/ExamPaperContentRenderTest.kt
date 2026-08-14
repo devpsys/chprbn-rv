@@ -40,6 +40,27 @@ class ExamPaperContentRenderTest {
     }
 
     @Test
+    fun error_message_renders_a_banner_above_the_still_visible_content() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamPaperContent(
+                    uiState = ExamPaperUiState.placeholder().copy(
+                        errorMessage = "This paper isn't cached yet.",
+                    ),
+                    onBack = {},
+                    onViewCandidates = {},
+                    onSyncData = {},
+                    onScanQr = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("This paper isn't cached yet.").assertExists()
+        // The rest of the (placeholder) content still renders underneath.
+        composeRule.onNodeWithText("Mathematics - Paper II").assertExists()
+    }
+
+    @Test
     fun pending_sync_label_surfaces_in_state() {
         composeRule.setContent {
             ChprbnTheme {

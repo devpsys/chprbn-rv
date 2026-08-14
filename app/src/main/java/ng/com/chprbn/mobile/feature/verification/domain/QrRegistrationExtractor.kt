@@ -12,7 +12,8 @@ private val registrationAfterHashLine = Regex("""#\s*:\s*(\S+)""", RegexOption.I
  * Returns the token after `#:` (e.g. `B2320135`).
  *
  * If the payload is a single-line plain id (no `#`), returns the trimmed string when it looks like an id
- * (alphanumeric plus `_`, `.`, `-`) for compatibility with manual-style values.
+ * (alphanumeric plus `_`, `.`, `-`, `/`) for compatibility with manual-style values and slash-delimited
+ * candidate registration numbers (e.g. `B/213/105/24`).
  */
 fun extractRegistrationFromQrPayload(raw: String): String? {
     val text = raw.trim()
@@ -23,7 +24,7 @@ fun extractRegistrationFromQrPayload(raw: String): String? {
         ?.let { return it }
 
     if (!text.contains('#') && !text.contains('\n') && !text.contains('\r')) {
-        if (text.matches(Regex("^[A-Za-z0-9][A-Za-z0-9_.-]*$"))) return text
+        if (text.matches(Regex("^[A-Za-z0-9][A-Za-z0-9_./-]*$"))) return text
     }
 
     return null

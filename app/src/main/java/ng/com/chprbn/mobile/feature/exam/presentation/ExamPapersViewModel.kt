@@ -26,8 +26,12 @@ import javax.inject.Inject
  * design's card list. Picks the first paper as `Active` so the "Mark
  * Attendance" CTA renders on the right card.
  *
- * When the cache is empty (cold start before dossier download), the VM
- * falls back to the original placeholder content so the screen isn't blank.
+ * [ExamPapersUiState.hasDownloadedData] flips true once a real load
+ * completes — an empty cache renders the real "no papers" empty state
+ * (see `ExamPapersContent`), not the fake placeholder roster forever
+ * (that used to be a silent bug: `refresh()` returned early on an empty
+ * list, so the initial `placeholder()` content — including its fake
+ * "Monday, June 12" date — never cleared).
  *
  * [syncState] toggles while [onSyncNow] runs so the screen renders the
  * blocking sync overlay during the cross-feature batch.
@@ -52,9 +56,7 @@ class ExamPapersViewModel @Inject constructor(
 
     private fun refresh() {
         viewModelScope.launch {
-            val papers = getPapers()
-            if (papers.isEmpty()) return@launch
-            _uiState.value = papers.toUiState()
+            _uiState.value = getPapers().toUiState()
         }
     }
 
@@ -88,13 +90,12 @@ class ExamPapersViewModel @Inject constructor(
         }
         return ExamPapersUiState(
             dailyOverviewTitle = context.getString(R.string.exam_papers_daily_overview_title),
-            dailyDateLabel = DATE_FORMATTER.format(
-                Instant.ofEpochMilli(firstOrNull()?.startAt ?: 0L),
-            ),
+            dailyDateLabel = DATE_FORMATTER.format(Instant.ofEpochMilli(now)),
             totalPapersLabel = size.toString().padStart(2, '0'),
             studentsLabel = sumOf { it.totalCandidates }.toString(),
             statusPillLabel = context.getString(R.string.exam_papers_status_pill_in_progress),
             papers = cards,
+            hasDownloadedData = true,
         )
     }
 

@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetail
@@ -25,8 +26,12 @@ import javax.inject.Inject
  * `pendingSyncCount`; "last updated" is the most recent attendance
  * `markedAt` relative to wall-clock.
  *
- * NotFound / Error fall back to the placeholder content so the screen
- * stays usable until the dossier is downloaded.
+ * NotFound / Error keep whatever content was already showing (placeholder
+ * on first load, stale real data on a later failed refresh) but now also
+ * set [ExamPaperUiState.errorMessage], rendered as a banner by
+ * `ExamPaperContent` (mirrors `AssessmentPaperDetailContent`'s A-S7
+ * pattern) — previously this failed silently with no indication to the
+ * officer.
  *
  * [syncState] toggles while [onSyncData] runs so the screen renders the
  * blocking sync overlay during the cross-feature batch.
@@ -55,8 +60,12 @@ class ExamPaperViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = getPaperDetail(paperId)) {
                 is ExamPaperDetailResult.Success -> _uiState.value = result.detail.toUiState()
-                ExamPaperDetailResult.NotFound,
-                is ExamPaperDetailResult.Error -> Unit
+                ExamPaperDetailResult.NotFound -> _uiState.update {
+                    it.copy(errorMessage = context.getString(R.string.exam_paper_error_not_found))
+                }
+                is ExamPaperDetailResult.Error -> _uiState.update {
+                    it.copy(errorMessage = result.message)
+                }
             }
         }
     }
@@ -80,7 +89,7 @@ class ExamPaperViewModel @Inject constructor(
             institutionCodeLabel = context.getString(R.string.exam_paper_institution_code_label),
             institutionName = center.name,
             institutionLocation = center.location,
-            sessionLabel = "Today's Session",
+            sessionLabel = context.getString(R.string.exam_paper_session_label_today),
             paperTitle = paper.title,
             totalCandidates = totalCandidates.toString(),
             verifiedPresent = checkedInCount.toString(),
@@ -94,7 +103,7 @@ class ExamPaperViewModel @Inject constructor(
                 context.getString(R.string.exam_paper_sync_status_cloud_synced)
             },
             infoTitle = context.getString(R.string.exam_paper_info_title_verification_ongoing),
-            infoMessage = "Please ensure all biometric data and QR codes are scanned before the session start time.",
+            infoMessage = context.getString(R.string.exam_paper_info_message_verification_ongoing),
         )
     }
 

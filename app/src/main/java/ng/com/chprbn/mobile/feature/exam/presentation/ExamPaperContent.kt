@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -84,6 +85,11 @@ fun ExamPaperContent(
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 200.dp)
             ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                uiState.errorMessage?.let { message ->
+                    PaperErrorBanner(message = message)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 InstitutionPaperCard(uiState = uiState)
                 Spacer(modifier = Modifier.height(8.dp))
                 PaperSessionCard(uiState = uiState)
@@ -100,6 +106,41 @@ fun ExamPaperContent(
                 onViewCandidates = onViewCandidates,
                 onSyncData = onSyncData,
                 onScanQr = onScanQr
+            )
+        }
+    }
+}
+
+/**
+ * Mirrors `AssessmentPaperDetailContent`'s `PaperDetailErrorBanner` (A-S7)
+ * — kept small on purpose, the rest of the screen still renders below
+ * (placeholder on first load, or stale real data on a later failed
+ * refresh) so this just tells the officer why the numbers might be off.
+ */
+@Composable
+private fun PaperErrorBanner(message: String) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = scheme.errorContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, scheme.error.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.WarningAmber,
+                contentDescription = null,
+                tint = scheme.error,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onErrorContainer,
             )
         }
     }

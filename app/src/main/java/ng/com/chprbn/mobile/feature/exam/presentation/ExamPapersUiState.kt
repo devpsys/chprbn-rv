@@ -29,7 +29,9 @@ data class ExamPapersUiState(
     val totalPapersLabel: String,
     val studentsLabel: String,
     val statusPillLabel: String,
-    val papers: List<ExamPaperCardUiState>
+    val papers: List<ExamPaperCardUiState>,
+    /** True once a real load has completed — gates the "no papers" empty state vs. this placeholder. */
+    val hasDownloadedData: Boolean = false,
 ) {
     companion object {
         fun placeholder(): ExamPapersUiState = ExamPapersUiState(

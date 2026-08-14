@@ -53,8 +53,9 @@ object Routes {
     @Serializable
     data class ExamPaper(val paperId: String)
 
+    /** Candidate roster for [paperId] — see the paper's own [ExamPaper] route. */
     @Serializable
-    data object ExamCandidates
+    data class ExamCandidates(val paperId: String)
 
     @Serializable
     data object ExamScan

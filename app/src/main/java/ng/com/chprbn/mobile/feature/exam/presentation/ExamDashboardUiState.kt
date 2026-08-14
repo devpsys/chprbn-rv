@@ -15,8 +15,6 @@ data class ExamDashboardUiState(
     val institutionName: String,
     val institutionCode: String,
     val institutionLocation: String,
-    val attendanceRatePercent: String,
-    val currentGpa: String,
     val heroImageUrl: String,
     val attendanceTask: ExamTaskCardUiState,
     val practicalTask: ExamTaskCardUiState,
@@ -33,8 +31,6 @@ data class ExamDashboardUiState(
             institutionName = "National Institute of Health Sciences",
             institutionCode = "#NIH-2024",
             institutionLocation = "Lagos Central Campus",
-            attendanceRatePercent = "94%",
-            currentGpa = "3.72",
             heroImageUrl = HERO_IMAGE_URL,
             attendanceTask = ExamTaskCardUiState(
                 imageUrl = ATTENDANCE_CARD_IMAGE_URL,

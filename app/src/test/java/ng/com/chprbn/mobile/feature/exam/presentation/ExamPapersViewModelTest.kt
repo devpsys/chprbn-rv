@@ -16,8 +16,13 @@ import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamPapersUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.SyncExamRecordsUseCase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class ExamPapersViewModelTest {
 
@@ -37,12 +42,35 @@ class ExamPapersViewModelTest {
     }
 
     @Test
-    fun `empty use case result keeps the placeholder state`() = runTest {
+    fun `empty use case result surfaces a real empty state, not the placeholder forever`() = runTest {
         coEvery { getPapers() } returns emptyList()
 
         val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
-        assertEquals(ExamPapersUiState.placeholder(), viewModel.uiState.value)
+        val state = viewModel.uiState.value
+        assertTrue(state.hasDownloadedData)
+        assertEquals(emptyList<ExamPaperCardUiState>(), state.papers)
+        assertEquals("00", state.totalPapersLabel)
+        assertEquals("0", state.studentsLabel)
+    }
+
+    @Test
+    fun `dailyDateLabel reflects the injected clock, not a paper's startAt`() = runTest {
+        // The fixture paper's startAt is 1_730_000_000_000L — deliberately
+        // different from the clock below, so a passing assertion proves
+        // the date comes from Clock.nowMillis(), not firstOrNull()?.startAt
+        // (the bug this pinned: the summary used to show whatever epoch
+        // millis the first cached paper happened to carry, not today).
+        coEvery { getPapers() } returns listOf(paper("p1", "Paper I", PaperKind.Theory))
+        val fixedClock = Clock { 1_700_000_000_000L }
+        val expectedDate = DateTimeFormatter
+            .ofPattern("EEEE, MMMM d", Locale.US)
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.ofEpochMilli(1_700_000_000_000L))
+
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, fixedClock, context)
+
+        assertEquals(expectedDate, viewModel.uiState.value.dailyDateLabel)
     }
 
     @Test

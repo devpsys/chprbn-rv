@@ -35,24 +35,33 @@ class ExamPaperViewModelTest {
         every { getString(R.string.exam_paper_sync_status_cloud_synced) } returns "Cloud Synced"
         every { getString(R.string.exam_paper_info_title_verification_ongoing) } returns "Verification ongoing"
         every { getString(R.string.exam_paper_no_data_yet) } returns "No data yet"
+        every { getString(R.string.exam_paper_session_label_today) } returns "Today's Session"
+        every { getString(R.string.exam_paper_info_message_verification_ongoing) } returns "Please ensure..."
+        every { getString(R.string.exam_paper_error_not_found) } returns "This paper isn't cached yet."
     }
 
     @Test
-    fun `NotFound keeps the placeholder state`() = runTest {
+    fun `NotFound keeps existing content but sets an error banner message`() = runTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
 
         val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
-        assertEquals(ExamPaperUiState.placeholder(), viewModel.uiState.value)
+        val state = viewModel.uiState.value
+        assertEquals("This paper isn't cached yet.", state.errorMessage)
+        // Content underneath the banner is untouched — still the placeholder,
+        // since Success never ran.
+        assertEquals(ExamPaperUiState.placeholder(), state.copy(errorMessage = null))
     }
 
     @Test
-    fun `Error keeps the placeholder state`() = runTest {
+    fun `Error keeps existing content but surfaces the use case message as the banner`() = runTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.Error("boom")
 
         val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
 
-        assertEquals(ExamPaperUiState.placeholder(), viewModel.uiState.value)
+        val state = viewModel.uiState.value
+        assertEquals("boom", state.errorMessage)
+        assertEquals(ExamPaperUiState.placeholder(), state.copy(errorMessage = null))
     }
 
     @Test

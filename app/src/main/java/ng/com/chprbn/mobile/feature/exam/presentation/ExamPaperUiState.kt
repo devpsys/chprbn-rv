@@ -16,7 +16,9 @@ data class ExamPaperUiState(
     val lastUpdatedLabel: String,
     val syncStatusLabel: String,
     val infoTitle: String,
-    val infoMessage: String
+    val infoMessage: String,
+    /** Non-null when the last load failed (NotFound/Error) — renders a banner over the (possibly stale) content below. */
+    val errorMessage: String? = null,
 ) {
     companion object {
         fun placeholder(): ExamPaperUiState = ExamPaperUiState(

@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,21 +19,23 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
- * Candidates list for the user's currently-active paper.
+ * Candidates list for [paperId], read off the `Routes.ExamCandidates` nav
+ * arg the same way [ExamPaperViewModel] reads `paperId` for the paper
+ * detail screen. Previously hardcoded to `""` (E10 audit ticket) — the
+ * use case silently returns empty for a blank paper id, so the VM only
+ * ever showed [ExamCandidatesUiState.placeholder]'s fake roster
+ * regardless of dossier state. Fixed alongside the same class of bug on
+ * `ExamPapersViewModel`/`ExamDashboardViewModel`: a real (possibly
+ * empty) result always replaces [source] now; an empty roster renders
+ * `ExamCandidatesContent`'s existing empty state instead of fake data.
  *
- * v1 wiring: [paperId] is blank until the auth / session layer surfaces a
- * real active-paper signal (E10 audit ticket). Because the use case returns
- * empty for a blank paper id, the VM keeps the [ExamCandidatesUiState.placeholder]
- * roster as the visible source when no real data comes back — otherwise the
- * screen would go blank the moment the officer taps a filter chip.
- *
- * Filter + search are applied **client-side** against the source list. This
- * lets both placeholder mode and real-data mode share one code path; when
- * the roster later grows past a few hundred candidates the DAO's SQL-side
- * filter can be reintroduced as a fast path.
+ * Filter + search are applied **client-side** against the source list —
+ * cheap at today's roster size (bounded ~200/day per centre); revisit
+ * with a SQL-side filter if that changes.
  */
 @HiltViewModel
 class ExamCandidatesViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val getCandidates: GetExamCandidatesUseCase,
 ) : ViewModel() {
 
@@ -40,22 +43,16 @@ class ExamCandidatesViewModel @Inject constructor(
     val uiState: StateFlow<ExamCandidatesUiState> = _uiState.asStateFlow()
 
     // Unfiltered source of truth for the currently-loaded roster. Replaced
-    // once at init when the DAO returns data; otherwise stays seeded from
-    // the placeholder. Every filter/search re-derives from this list.
+    // once at init with the real (possibly empty) result. Every
+    // filter/search re-derives from this list.
     private var source: List<ExamCandidateUiState> = _uiState.value.candidates
 
-    // TODO(E10): replace with the active paper id from OfficerSession once
-    // the auth feature exposes one. v1 leaves it blank, so the use case
-    // returns empty and we keep the placeholder roster as the source.
-    private val paperId: String = ""
+    private val paperId: String = savedStateHandle.get<String>("paperId").orEmpty()
 
     init {
         viewModelScope.launch {
-            val rows = getCandidates(paperId)
-            if (rows.isNotEmpty()) {
-                source = rows.map { it.toCardUi() }
-                emitVisible()
-            }
+            source = getCandidates(paperId).map { it.toCardUi() }
+            emitVisible()
         }
     }
 

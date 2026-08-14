@@ -92,7 +92,7 @@ fun CandidateScanResultContent(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(end = 48.dp),
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                     )
                 }
             }
@@ -243,6 +243,7 @@ fun CandidateScanResultContent(
                     }
                 }
 
+                /*
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -272,6 +273,7 @@ fun CandidateScanResultContent(
                         value = uiState.testingCenterValue,
                     )
                 }
+                */
                 Spacer(modifier = Modifier.height(24.dp))
             }
 

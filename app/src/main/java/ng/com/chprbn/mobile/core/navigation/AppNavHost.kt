@@ -152,11 +152,12 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 },
             )
         }
-        composable<Routes.ExamPaper> {
+        composable<Routes.ExamPaper> { backStackEntry ->
+            val args: Routes.ExamPaper = backStackEntry.toRoute()
             ExamPaperScreen(
                 onBack = { navController.popBackStack() },
                 onViewCandidates = {
-                    navController.navigate(Routes.ExamCandidates)
+                    navController.navigate(Routes.ExamCandidates(args.paperId))
                 },
                 onScanQr = {
                     navController.navigate(Routes.ExamScan)

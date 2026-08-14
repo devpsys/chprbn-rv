@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Science
@@ -115,17 +116,26 @@ fun ExamPapersContent(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                uiState.papers.forEach { paper ->
-                    PaperCard(
-                        paper = paper,
-                        onOpenPaper = { onOpenPaper(paper.id) }
-                    )
+            if (uiState.hasDownloadedData && uiState.papers.isEmpty()) {
+                ExamPapersEmptyState(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 96.dp)
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    uiState.papers.forEach { paper ->
+                        PaperCard(
+                            paper = paper,
+                            onOpenPaper = { onOpenPaper(paper.id) }
+                        )
+                    }
                 }
             }
         }
@@ -181,7 +191,7 @@ private fun ExamAttendanceTopBar(
                 fontWeight = FontWeight.Bold,
                 color = scheme.onBackground,
                 modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Left
             )
             Spacer(modifier = Modifier.size(40.dp))
         }
@@ -227,12 +237,63 @@ private fun SummaryDailyOverview(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StatColumn(label = stringResource(R.string.exam_papers_summary_total_papers), value = totalPapersLabel)
-                StatColumn(label = stringResource(R.string.exam_papers_summary_students), value = studentsLabel)
+                StatColumn(
+                    label = stringResource(R.string.exam_papers_summary_total_papers),
+                    value = totalPapersLabel
+                )
+                StatColumn(
+                    label = stringResource(R.string.exam_papers_summary_students),
+                    value = studentsLabel
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 StatusPill(text = statusPillLabel)
             }
         }
+    }
+}
+
+/**
+ * Shown instead of the papers list once a real load has completed and
+ * found nothing cached — mirrors `ExamDashboardEmptyState`'s badge/title/
+ * subtitle layout so the two "nothing downloaded" states read the same
+ * way across screens.
+ */
+@Composable
+private fun ExamPapersEmptyState(modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier.padding(vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Surface(
+            modifier = Modifier.size(72.dp),
+            shape = CircleShape,
+            color = scheme.primary.copy(alpha = 0.10f)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = Icons.Outlined.EventBusy,
+                    contentDescription = null,
+                    tint = scheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.exam_papers_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = scheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.exam_papers_empty_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            color = scheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -331,8 +392,15 @@ private fun PaperCard(
             HorizontalDivider(color = scheme.outlineVariant.copy(alpha = 0.35f))
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
-                RowStat(icon = Icons.Outlined.Schedule, text = paper.timeLabel, tint = scheme.onSurfaceVariant)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                RowStat(
+                    icon = Icons.Outlined.Schedule,
+                    text = paper.timeLabel,
+                    tint = scheme.onSurfaceVariant
+                )
                 RowStat(
                     icon = Icons.Outlined.Groups,
                     text = paper.groupOrLocationLabel,
@@ -384,6 +452,7 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
                 )
             }
         }
+
         ExamPaperAttendanceStatus.Active -> {
             Surface(
                 shape = RoundedCornerShape(999.dp),
@@ -398,6 +467,7 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
                 )
             }
         }
+
         ExamPaperAttendanceStatus.Upcoming -> {
             Surface(
                 shape = RoundedCornerShape(999.dp),
@@ -421,11 +491,13 @@ private fun IconCircle(iconKind: ExamPaperIconKind, status: ExamPaperAttendanceS
     val iconTint = when (status) {
         ExamPaperAttendanceStatus.Completed,
         ExamPaperAttendanceStatus.Active -> scheme.primary
+
         ExamPaperAttendanceStatus.Upcoming -> scheme.onSurfaceVariant
     }
     val bg = when (status) {
         ExamPaperAttendanceStatus.Completed,
         ExamPaperAttendanceStatus.Active -> scheme.primary.copy(alpha = 0.10f)
+
         ExamPaperAttendanceStatus.Upcoming -> scheme.surfaceVariant
     }
 

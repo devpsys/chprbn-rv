@@ -292,11 +292,6 @@ internal fun ExamDashboardScreenContent(
                                 ExamDashboardNoSchedulesMessage()
                             }
                             Spacer(modifier = Modifier.height(88.dp))
-//                        ExamQuickStatsRow(
-//                            attendanceRate = uiState.attendanceRatePercent,
-//                            gpa = uiState.currentGpa,
-//                            modifier = Modifier.padding(top = 24.dp, bottom = 24.dp)
-//                        )
                         }
                     }
                 }
@@ -811,57 +806,6 @@ private fun ExamChip(text: String, container: Color, textColor: Color) {
             .background(container)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
-}
-
-@Composable
-private fun ExamQuickStatsRow(
-    attendanceRate: String,
-    gpa: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        ExamStatTile(
-            label = stringResource(R.string.exam_dashboard_stat_attendance_rate),
-            value = attendanceRate,
-            modifier = Modifier.weight(1f)
-        )
-        ExamStatTile(
-            label = stringResource(R.string.exam_dashboard_stat_current_gpa),
-            value = gpa,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun ExamStatTile(label: String, value: String, modifier: Modifier = Modifier) {
-    val scheme = MaterialTheme.colorScheme
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = scheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, scheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = scheme.onSurfaceVariant,
-                letterSpacing = 1.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = scheme.onSurface
-            )
-        }
-    }
 }
 
 @Preview(showBackground = true, name = "Empty — nothing downloaded")
