@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -48,15 +49,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.CircularProgressIndicator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.designsystem.components.ErrorDialog
 
 @Composable
 fun CandidateScanResultContent(
     uiState: CandidateScanResultUiState,
+    markAttendanceState: MarkAttendanceUiState = MarkAttendanceUiState.Idle,
     onBack: () -> Unit,
     onMarkAttendance: () -> Unit,
+    onDismissMarkAttendanceError: () -> Unit = {},
     onCancel: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -88,14 +93,14 @@ fun CandidateScanResultContent(
                     }
                     Text(
                         text = stringResource(R.string.candidate_scan_header_title),
-                        style = typography.titleLarge.copy(
+                        style = typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.015).sp,
                         ),
                         color = scheme.onSurface,
                         modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(end = 48.dp),
+                            .align(Alignment.CenterStart)
+                            .padding(start = 56.dp, end = 16.dp),
                         textAlign = TextAlign.Start,
                     )
                 }
@@ -323,10 +328,11 @@ fun CandidateScanResultContent(
                         )
                     }
                 }
+                val isMarking = markAttendanceState is MarkAttendanceUiState.Marking
                 ExtendedFloatingActionButton(
-                    onClick = onMarkAttendance,
-                    containerColor = scheme.primary,
-                    contentColor = scheme.onPrimary,
+                    onClick = { if (!isMarking) onMarkAttendance() },
+                    containerColor = if (uiState.isSignedIn) scheme.error else scheme.primary,
+                    contentColor = if (uiState.isSignedIn) scheme.onError else scheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(
                         defaultElevation = 10.dp,
                         pressedElevation = 12.dp,
@@ -336,20 +342,52 @@ fun CandidateScanResultContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.PersonAdd,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                        )
+                        if (isMarking) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = if (uiState.isSignedIn) scheme.onError else scheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (uiState.isSignedIn) {
+                                    Icons.AutoMirrored.Filled.Logout
+                                } else {
+                                    Icons.Filled.PersonAdd
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = stringResource(R.string.candidate_scan_action_mark_attendance),
+                            text = if (uiState.isSignedIn) {
+                                stringResource(R.string.candidate_scan_action_sign_out)
+                            } else {
+                                stringResource(R.string.candidate_scan_action_mark_attendance)
+                            },
                             style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         )
                     }
                 }
             }
         }
+    }
+
+    val errorState = markAttendanceState as? MarkAttendanceUiState.Error
+    if (errorState != null) {
+        ErrorDialog(
+            title = stringResource(R.string.candidate_scan_mark_attendance_error_title),
+            message = errorState.message,
+            primaryButtonText = stringResource(R.string.candidate_scan_mark_attendance_retry),
+            secondaryButtonText = stringResource(R.string.candidate_scan_action_cancel),
+            onPrimary = {
+                onDismissMarkAttendanceError()
+                onMarkAttendance()
+            },
+            onSecondary = onDismissMarkAttendanceError,
+            onDismiss = onDismissMarkAttendanceError,
+        )
     }
 }
 

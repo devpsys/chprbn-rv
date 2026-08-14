@@ -160,7 +160,7 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                     navController.navigate(Routes.ExamCandidates(args.paperId))
                 },
                 onScanQr = {
-                    navController.navigate(Routes.ExamScan)
+                    navController.navigate(Routes.ExamScan(args.paperId))
                 }
             )
         }
@@ -322,7 +322,12 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                         ScanSource.Verification ->
                             navController.navigate(Routes.RecordDetail(enteredLicense))
                         ScanSource.ExamAttendance ->
-                            navController.navigate(Routes.CandidateScanResult(enteredLicense))
+                            navController.navigate(
+                                Routes.CandidateScanResult(
+                                    paperId = args.paperId.orEmpty(),
+                                    scannedPayload = enteredLicense,
+                                ),
+                            )
                         ScanSource.AssessmentScoring ->
                             navController.navigate(
                                 Routes.AssessmentPracticalSections(
@@ -349,17 +354,26 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 }
             )
         }
-        composable<Routes.ExamScan> {
+        composable<Routes.ExamScan> { backStackEntry ->
+            val args: Routes.ExamScan = backStackEntry.toRoute()
             QrScanScreen(
                 manualEntryButtonLabel = stringResource(R.string.scan_manual_entry_exam_action),
                 onManualEntry = {
                     navController.navigate(
-                        Routes.ManualLicenseEntry(source = ScanSource.ExamAttendance),
+                        Routes.ManualLicenseEntry(
+                            source = ScanSource.ExamAttendance,
+                            paperId = args.paperId,
+                        ),
                     )
                 },
                 qrValidator = { extractRegistrationFromQrPayload(it) },
                 onQrScanned = { registrationNumber ->
-                    navController.navigate(Routes.CandidateScanResult(registrationNumber))
+                    navController.navigate(
+                        Routes.CandidateScanResult(
+                            paperId = args.paperId,
+                            scannedPayload = registrationNumber,
+                        ),
+                    )
                 }
             )
         }

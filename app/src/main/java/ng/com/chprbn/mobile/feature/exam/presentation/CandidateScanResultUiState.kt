@@ -15,6 +15,8 @@ data class CandidateScanResultUiState(
     val testingCenterValue: String,
     /** `data:image/...;base64,...` URI from the resolved candidate, null until lookup resolves (or no photo on file). */
     val photoUrl: String? = null,
+    /** True when the candidate's current attendance row is SignedIn — flips the FAB to a "Sign Out" action. */
+    val isSignedIn: Boolean = false,
 ) {
     companion object {
         /**

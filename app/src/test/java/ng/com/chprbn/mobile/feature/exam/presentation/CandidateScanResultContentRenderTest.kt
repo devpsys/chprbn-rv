@@ -46,7 +46,9 @@ class CandidateScanResultContentRenderTest {
         composeRule.onNodeWithText("Exam Number: ABC-12345-XY").assertExists()
         composeRule.onNodeWithText("Identity Verified").assertExists()
         composeRule.onNodeWithText("MATCH 98%").assertExists()
-        composeRule.onNodeWithText("Hall B - Room 12").assertExists()
+        // Testing-center DetailRow is commented out in CandidateScanResultContent
+        // (no wire data exists for it), so it deliberately does not render.
+        composeRule.onNodeWithText("Hall B - Room 12").assertDoesNotExist()
     }
 
     @Test
@@ -63,5 +65,41 @@ class CandidateScanResultContentRenderTest {
         }
 
         composeRule.onNodeWithText("Exam Number: ZZZ-99999-AA").assertExists()
+    }
+
+    @Test
+    fun mark_attendance_error_state_shows_a_retry_dialog_with_the_use_case_message() {
+        composeRule.setContent {
+            ChprbnTheme {
+                CandidateScanResultContent(
+                    uiState = sampleUiState(),
+                    markAttendanceState = MarkAttendanceUiState.Error("Paper and candidate are required."),
+                    onBack = {},
+                    onMarkAttendance = {},
+                    onCancel = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Couldn't Mark Attendance").assertExists()
+        composeRule.onNodeWithText("Paper and candidate are required.").assertExists()
+        composeRule.onNodeWithText("Try Again").assertExists()
+    }
+
+    @Test
+    fun idle_mark_attendance_state_shows_no_error_dialog() {
+        composeRule.setContent {
+            ChprbnTheme {
+                CandidateScanResultContent(
+                    uiState = sampleUiState(),
+                    markAttendanceState = MarkAttendanceUiState.Idle,
+                    onBack = {},
+                    onMarkAttendance = {},
+                    onCancel = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Couldn't Mark Attendance").assertDoesNotExist()
     }
 }

@@ -57,8 +57,9 @@ object Routes {
     @Serializable
     data class ExamCandidates(val paperId: String)
 
+    /** QR scan for exam attendance check-in against [paperId]'s roster. */
     @Serializable
-    data object ExamScan
+    data class ExamScan(val paperId: String)
 
     @Serializable
     data object Verification
@@ -75,12 +76,16 @@ object Routes {
      * QR scan screens hand off to different screens per source.
      *
      * [scheduleId] is only meaningful for [ScanSource.AssessmentScoring]
-     * (carried through to the practical-sections destination).
+     * (carried through to the practical-sections destination). [paperId] is
+     * only meaningful for [ScanSource.ExamAttendance] (carried through to
+     * [CandidateScanResult] so a manually-entered candidate can still be
+     * checked in against the right paper).
      */
     @Serializable
     data class ManualLicenseEntry(
         val source: ScanSource = ScanSource.Verification,
         val scheduleId: String? = null,
+        val paperId: String? = null,
     )
 
     @Serializable
@@ -103,8 +108,9 @@ object Routes {
     @Serializable
     data class RecordDetail(val registrationNumber: String)
 
+    /** [paperId] is the paper being checked into; empty when reached from a source without one. */
     @Serializable
-    data class CandidateScanResult(val scannedPayload: String)
+    data class CandidateScanResult(val paperId: String, val scannedPayload: String)
 
     // ============== Assessment ==============
     /** Examination Schedules — first screen of the assessment feature. */

@@ -79,11 +79,11 @@ fun ExamPapersContent(
                 onBack = onBack
             )
         },
-        floatingActionButton = {
-            FloatingSyncFab(
-                onClick = onSyncNow
-            )
-        }
+//        floatingActionButton = {
+//            FloatingSyncFab(
+//                onClick = onSyncNow
+//            )
+//        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -104,7 +104,7 @@ fun ExamPapersContent(
             ) {
                 Text(
                     text = stringResource(R.string.exam_papers_section_title),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onBackground
                 )
@@ -224,7 +224,7 @@ private fun SummaryDailyOverview(
             )
             Text(
                 text = dailyDateLabel,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onPrimary
             )
@@ -310,7 +310,7 @@ private fun StatColumn(label: String, value: String) {
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = scheme.onPrimary
         )
@@ -374,7 +374,7 @@ private fun PaperCard(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = paper.title,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.onSurface
                         )
@@ -410,24 +410,24 @@ private fun PaperCard(
 
             if (paper.status == ExamPaperAttendanceStatus.Active && paper.primaryActionLabel != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    color = scheme.primary,
-                    tonalElevation = 2.dp
-                ) {
-                    Text(
-                        text = paper.primaryActionLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = scheme.onPrimary,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onOpenPaper)
-                            .padding(vertical = 10.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
+//                Surface(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    shape = RoundedCornerShape(10.dp),
+//                    color = scheme.primary,
+//                    tonalElevation = 2.dp
+//                ) {
+//                    Text(
+//                        text = paper.primaryActionLabel,
+//                        style = MaterialTheme.typography.labelLarge,
+//                        fontWeight = FontWeight.Bold,
+//                        color = scheme.onPrimary,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .clickable(onClick = onOpenPaper)
+//                            .padding(vertical = 10.dp),
+//                        textAlign = TextAlign.Center
+//                    )
+//                }
             }
         }
     }
@@ -445,8 +445,8 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
             ) {
                 Text(
                     text = stringResource(R.string.exam_papers_status_completed),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
                     color = scheme.primary,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
@@ -460,8 +460,8 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
             ) {
                 Text(
                     text = stringResource(R.string.exam_papers_status_active),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
                     color = scheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
@@ -475,8 +475,8 @@ private fun StatusPillForCard(status: ExamPaperAttendanceStatus) {
             ) {
                 Text(
                     text = stringResource(R.string.exam_papers_status_upcoming),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
                     color = scheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )

@@ -78,15 +78,28 @@ class AttendanceDaoTest {
     }
 
     @Test
-    fun countByStatusForPaperMatches() = runTest {
+    fun countMarkedForPaperCountsEveryRowRegardlessOfStatus() = runTest {
         dao.upsert(attendance(candidateId = "c1", status = AttendanceStatus.SignedIn))
-        dao.upsert(attendance(candidateId = "c2", status = AttendanceStatus.SignedIn))
+        dao.upsert(attendance(candidateId = "c2", status = AttendanceStatus.SignedOut))
         dao.upsert(attendance(candidateId = "c3", status = AttendanceStatus.Flagged))
         dao.upsert(attendance(paperId = "p2", candidateId = "c1", status = AttendanceStatus.SignedIn))
 
-        assertEquals(2, dao.countByStatusForPaper("p1", AttendanceStatus.SignedIn.name))
-        assertEquals(1, dao.countByStatusForPaper("p1", AttendanceStatus.Flagged.name))
-        assertEquals(1, dao.countByStatusForPaper("p2", AttendanceStatus.SignedIn.name))
+        assertEquals(3, dao.countMarkedForPaper("p1"))
+        assertEquals(1, dao.countMarkedForPaper("p2"))
+    }
+
+    @Test
+    fun countMarkedForPaperDoesNotDropWhenACandidateIsSignedOut() = runTest {
+        // Reproduces the reported bug: signing a candidate out (REPLACE on the
+        // same paperId/candidateId PK) must not shrink the paper's checked-in
+        // count — the row's existence, not its live status, is what counts.
+        dao.upsert(attendance(candidateId = "c1", status = AttendanceStatus.SignedIn))
+        val before = dao.countMarkedForPaper("p1")
+
+        dao.upsert(attendance(candidateId = "c1", status = AttendanceStatus.SignedOut))
+        val after = dao.countMarkedForPaper("p1")
+
+        assertEquals(before, after)
     }
 
     @Test

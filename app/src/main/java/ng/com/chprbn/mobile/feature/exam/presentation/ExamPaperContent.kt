@@ -98,6 +98,7 @@ fun ExamPaperContent(
                     title = uiState.infoTitle,
                     message = uiState.infoMessage
                 )
+                Spacer(modifier = Modifier.height(12.dp))
             }
             PaperFloatingActions(
                 modifier = Modifier
@@ -178,13 +179,13 @@ private fun ExamPaperTopBar(onBack: () -> Unit) {
             }
             Text(
                 text = stringResource(R.string.exam_paper_header_title),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onSurface,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 40.dp),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Left
             )
         }
     }
@@ -246,7 +247,7 @@ private fun InstitutionPaperCard(uiState: ExamPaperUiState) {
                 }
                 Text(
                     text = uiState.institutionName,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = scheme.onSurface,
                     modifier = Modifier.padding(top = 4.dp)
@@ -303,7 +304,7 @@ private fun PaperSessionCard(uiState: ExamPaperUiState) {
                     )
                     Text(
                         text = uiState.paperTitle,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = scheme.onSurface
                     )

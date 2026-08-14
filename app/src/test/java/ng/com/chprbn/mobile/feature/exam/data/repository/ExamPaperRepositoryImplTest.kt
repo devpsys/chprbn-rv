@@ -10,7 +10,6 @@ import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperDao
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperEntity
-import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamDashboardResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamPaperDetailResult
 import org.junit.Assert.assertEquals
@@ -55,9 +54,7 @@ class ExamPaperRepositoryImplTest {
     fun `dashboard builds summary with checked-in count, total candidates, and papers count`() = runTest {
         coEvery { centerDao.getFirst() } returns centerEntity
         coEvery { paperDao.getForCenter("c1") } returns listOf(paperEntity)
-        coEvery {
-            attendanceDao.countByStatusForPaper("p1", AttendanceStatus.SignedIn.name)
-        } returns 12
+        coEvery { attendanceDao.countMarkedForPaper("p1") } returns 12
 
         val result = repository.getDashboardSummary()
 
@@ -123,9 +120,7 @@ class ExamPaperRepositoryImplTest {
     fun `getPaperDetail derives counters from attendance dao aggregates`() = runTest {
         coEvery { paperDao.getById("p1") } returns paperEntity
         coEvery { centerDao.getById("c1") } returns centerEntity
-        coEvery {
-            attendanceDao.countByStatusForPaper("p1", AttendanceStatus.SignedIn.name)
-        } returns 8
+        coEvery { attendanceDao.countMarkedForPaper("p1") } returns 8
         coEvery { attendanceDao.countBySyncStatus(SyncStatus.Pending.name) } returns 5
         coEvery { attendanceDao.countBySyncStatus(SyncStatus.Failed.name) } returns 2
         coEvery { attendanceDao.mostRecentMarkedAt() } returns 1_700L

@@ -7,7 +7,6 @@ import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperDao
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toDomain
-import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.Center
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamDashboardResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamDashboardSummary
@@ -49,10 +48,7 @@ class ExamPaperRepositoryImpl @Inject constructor(
                 val papers = paperDao.getForCenter(centerEntity.id)
                 val totalCandidates = papers.sumOf { it.totalCandidates }
                 val checkedIn = papers.firstOrNull()?.let {
-                    attendanceDao.countByStatusForPaper(
-                        paperId = it.id,
-                        status = AttendanceStatus.SignedIn.name,
-                    )
+                    attendanceDao.countMarkedForPaper(paperId = it.id)
                 } ?: 0
 
                 ExamDashboardResult.Success(
@@ -95,9 +91,7 @@ class ExamPaperRepositoryImpl @Inject constructor(
                 val center = centerDao.getById(paper.centerId)
                     ?: return@withContext ExamPaperDetailResult.NotFound
 
-                val checkedIn = attendanceDao.countByStatusForPaper(
-                    paperId, AttendanceStatus.SignedIn.name,
-                )
+                val checkedIn = attendanceDao.countMarkedForPaper(paperId)
                 val pending = attendanceDao.countBySyncStatus(SyncStatus.Pending.name) +
                     attendanceDao.countBySyncStatus(SyncStatus.Failed.name)
                 val lastMarked = attendanceDao.mostRecentMarkedAt()

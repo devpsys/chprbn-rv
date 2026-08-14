@@ -303,6 +303,10 @@
     <string name="candidate_scan_action_back">Back</string>
     <string name="candidate_scan_action_cancel">Cancel</string>
     <string name="candidate_scan_action_mark_attendance">Mark Attendance</string>
+    <string name="candidate_scan_action_sign_out">Sign Out</string>
+    <string name="candidate_scan_mark_attendance_error_title">Couldn\'t Mark Attendance</string>
+    <string name="candidate_scan_mark_attendance_error_no_candidate">This candidate isn\'t in the local roster for this paper. Sync the dossier and try again.</string>
+    <string name="candidate_scan_mark_attendance_retry">Try Again</string>
     <!--
         Demo / placeholder content for the candidate scan result UiState. These
         are still hardcoded copy because the screen is not yet wired to a real

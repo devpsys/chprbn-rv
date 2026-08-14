@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -16,10 +17,18 @@ fun CandidateScanResultScreen(
     onCancel: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val markAttendanceState by viewModel.markAttendanceState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel) {
+        viewModel.attendanceMarked.collect { onMarkAttendance() }
+    }
+
     CandidateScanResultContent(
         uiState = uiState,
+        markAttendanceState = markAttendanceState,
         onBack = onBack,
-        onMarkAttendance = onMarkAttendance,
+        onMarkAttendance = viewModel::onMarkAttendance,
+        onDismissMarkAttendanceError = viewModel::dismissMarkAttendanceError,
         onCancel = onCancel,
     )
 }

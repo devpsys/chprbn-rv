@@ -9,6 +9,7 @@ import ng.com.chprbn.mobile.core.sync.SyncJobDao
 import ng.com.chprbn.mobile.core.sync.SyncJobEntity
 import ng.com.chprbn.mobile.core.sync.SyncWorkScheduler
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
+import ng.com.chprbn.mobile.feature.exam.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceKey
 import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
@@ -71,4 +72,9 @@ class AttendanceRepositoryImpl @Inject constructor(
             MarkAttendanceResult.Error(t.message ?: "Unable to save attendance.")
         }
     }
+
+    override suspend fun getAttendance(paperId: String, candidateId: String): Attendance? =
+        withContext(Dispatchers.IO) {
+            attendanceDao.getOne(paperId, candidateId)?.toDomain()
+        }
 }

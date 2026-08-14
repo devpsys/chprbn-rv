@@ -56,7 +56,8 @@ class ExamPaperViewModel @Inject constructor(
         refresh()
     }
 
-    private fun refresh() {
+    /** Public so [ExamPaperScreen] can re-invoke it on `LifecycleResumeEffect` (e.g. returning from the scan flow). */
+    fun refresh() {
         viewModelScope.launch {
             when (val result = getPaperDetail(paperId)) {
                 is ExamPaperDetailResult.Success -> _uiState.value = result.detail.toUiState()

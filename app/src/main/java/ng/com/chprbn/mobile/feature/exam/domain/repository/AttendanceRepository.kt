@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.domain.repository
 
+import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.MarkAttendanceResult
 
@@ -16,4 +17,7 @@ interface AttendanceRepository {
         candidateId: String,
         status: AttendanceStatus,
     ): MarkAttendanceResult
+
+    /** Null when the candidate has no attendance row yet for this paper. */
+    suspend fun getAttendance(paperId: String, candidateId: String): Attendance?
 }
