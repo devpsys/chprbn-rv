@@ -21,7 +21,7 @@ fun ExamPapersScreen(
         onOpenPaper = onOpenPaper,
         onSyncNow = viewModel::onSyncNow
     )
-    SyncOverlay(state = syncState)
+    SyncOverlay(state = syncState, onDismissResult = viewModel::onSyncResultDismissed)
 }
 
 @Preview(showBackground = true)

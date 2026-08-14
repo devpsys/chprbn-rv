@@ -2,8 +2,11 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,5 +74,24 @@ class ExamPapersContentRenderTest {
 
         composeRule.onNodeWithText("No Papers Found").assertExists()
         composeRule.onNodeWithText("Paper I (P1)").assertDoesNotExist()
+    }
+
+    @Test
+    fun sync_fab_is_visible_and_invokes_onSyncNow() {
+        var syncClicked = false
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamPapersContent(
+                    uiState = ExamPapersUiState.placeholder(),
+                    onBack = {},
+                    onOpenPaper = {},
+                    onSyncNow = { syncClicked = true },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Sync").performClick()
+
+        assertTrue("tapping the sync FAB should invoke onSyncNow", syncClicked)
     }
 }

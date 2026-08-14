@@ -79,11 +79,11 @@ fun ExamPapersContent(
                 onBack = onBack
             )
         },
-//        floatingActionButton = {
-//            FloatingSyncFab(
-//                onClick = onSyncNow
-//            )
-//        }
+        floatingActionButton = {
+            FloatingSyncFab(
+                onClick = onSyncNow
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier

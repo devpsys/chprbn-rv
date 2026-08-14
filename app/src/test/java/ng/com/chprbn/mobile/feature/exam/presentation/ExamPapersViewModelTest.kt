@@ -107,9 +107,9 @@ class ExamPapersViewModelTest {
     }
 
     @Test
-    fun `onSyncNow toggles sync state and re-runs getPapers`() = runTest {
+    fun `onSyncNow toggles sync state, re-runs getPapers, and surfaces the sync result`() = runTest {
         coEvery { getPapers() } returns emptyList()
-        coEvery { syncExamRecords() } returns SyncBatchResult.Empty
+        coEvery { syncExamRecords() } returns SyncBatchResult(attempted = 3, succeeded = 2, failed = 1)
 
         val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
 
@@ -117,9 +117,24 @@ class ExamPapersViewModelTest {
 
         viewModel.onSyncNow()
 
-        assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
+        assertEquals(
+            SyncOperationUiState.Result(succeeded = 2, failed = 1),
+            viewModel.syncState.value,
+        )
         coVerify(exactly = 1) { syncExamRecords() }
         coVerify(exactly = 2) { getPapers() }
+    }
+
+    @Test
+    fun `onSyncResultDismissed resets sync state to Idle`() = runTest {
+        coEvery { getPapers() } returns emptyList()
+        coEvery { syncExamRecords() } returns SyncBatchResult.Empty
+        val viewModel = ExamPapersViewModel(getPapers, syncExamRecords, clock, context)
+        viewModel.onSyncNow()
+
+        viewModel.onSyncResultDismissed()
+
+        assertEquals(SyncOperationUiState.Idle, viewModel.syncState.value)
     }
 
     private fun paper(id: String, title: String, kind: PaperKind) = Paper(

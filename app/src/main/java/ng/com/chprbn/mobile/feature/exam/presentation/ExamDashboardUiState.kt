@@ -35,10 +35,10 @@ data class ExamDashboardUiState(
             attendanceTask = ExamTaskCardUiState(
                 imageUrl = ATTENDANCE_CARD_IMAGE_URL,
                 imageContentDescription = "Workspace with calendar and tablet",
-                chipPrimaryLabel = "Theory",
+                chipPrimaryLabel = "CBT",
                 chipSecondaryLabel = "Active Session",
                 title = "Attendance Monitoring",
-                description = "Verify and log the candidate's presence for the current theory examination. View historical attendance logs for compliance checks.",
+                description = "Verify and log the candidate's presence for the current CBT. View historical attendance logs for compliance checks.",
                 primaryActionLabel = "Log Attendance"
             ),
             practicalTask = ExamTaskCardUiState(

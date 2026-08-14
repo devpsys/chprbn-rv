@@ -33,8 +33,10 @@ import javax.inject.Inject
  * pattern) — previously this failed silently with no indication to the
  * officer.
  *
- * [syncState] toggles while [onSyncData] runs so the screen renders the
- * blocking sync overlay during the cross-feature batch.
+ * [syncState] toggles to [SyncOperationUiState.Syncing] while [onSyncData]
+ * runs, then to [SyncOperationUiState.Result] so the officer sees how many
+ * rows synced vs. failed instead of the [ng.com.chprbn.mobile.core.domain.model.SyncBatchResult]
+ * being silently discarded.
  */
 @HiltViewModel
 class ExamPaperViewModel @Inject constructor(
@@ -75,10 +77,17 @@ class ExamPaperViewModel @Inject constructor(
         if (_syncState.value is SyncOperationUiState.Syncing) return
         _syncState.value = SyncOperationUiState.Syncing
         viewModelScope.launch {
-            syncExamRecords()
+            val result = syncExamRecords()
             refresh()
-            _syncState.value = SyncOperationUiState.Idle
+            _syncState.value = SyncOperationUiState.Result(
+                succeeded = result.succeeded,
+                failed = result.failed,
+            )
         }
+    }
+
+    fun onSyncResultDismissed() {
+        _syncState.value = SyncOperationUiState.Idle
     }
 
     private fun ExamPaperDetail.toUiState(): ExamPaperUiState {

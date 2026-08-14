@@ -34,7 +34,7 @@ fun ExamPaperScreen(
         onSyncData = viewModel::onSyncData,
         onScanQr = onScanQr
     )
-    SyncOverlay(state = syncState)
+    SyncOverlay(state = syncState, onDismissResult = viewModel::onSyncResultDismissed)
 }
 
 @Preview(showBackground = true)
