@@ -8,11 +8,14 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.LookupCandidateByExamNumberUseCase
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -122,5 +125,29 @@ class CandidateScanResultViewModelTest {
         assertEquals("Identity Verified", state.identityVerifiedHeadline)
         assertTrue("Match label should be a percentage", state.matchLabel.endsWith("%"))
         assertEquals("MATCH 98%", state.matchLabel)
+    }
+
+    @Test
+    fun `state carries the resolved candidate's photoUrl once lookup resolves`() = runTest {
+        coEvery { lookupCandidate("REG-123") } returns Candidate(
+            id = "can_1",
+            examNumber = "REG-123",
+            fullName = "Johnathan Doe",
+            photoUrl = "data:image/jpeg;base64,AAAA",
+        )
+        val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "REG-123"))
+
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
+
+        assertEquals("data:image/jpeg;base64,AAAA", viewModel.uiState.value.photoUrl)
+    }
+
+    @Test
+    fun `state has no photoUrl when lookup finds no candidate`() {
+        val savedStateHandle = SavedStateHandle(mapOf("scannedPayload" to "REG-123"))
+
+        val viewModel = CandidateScanResultViewModel(savedStateHandle, context, lookupCandidate)
+
+        assertNull(viewModel.uiState.value.photoUrl)
     }
 }

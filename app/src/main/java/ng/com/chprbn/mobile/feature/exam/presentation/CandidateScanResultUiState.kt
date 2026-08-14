@@ -13,6 +13,8 @@ data class CandidateScanResultUiState(
     val examDateValue: String,
     val testingCenterCaption: String,
     val testingCenterValue: String,
+    /** `data:image/...;base64,...` URI from the resolved candidate, null until lookup resolves (or no photo on file). */
+    val photoUrl: String? = null,
 ) {
     companion object {
         /**

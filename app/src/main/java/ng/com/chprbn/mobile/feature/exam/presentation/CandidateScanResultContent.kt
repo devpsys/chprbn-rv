@@ -44,8 +44,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
 
 @Composable
@@ -132,12 +136,26 @@ fun CandidateScanResultContent(
                                     .background(scheme.surfaceVariant),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Person,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = scheme.onSurfaceVariant,
-                                )
+                                if (uiState.photoUrl.isNullOrBlank()) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Person,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = scheme.onSurfaceVariant,
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(uiState.photoUrl)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(128.dp)
+                                            .clip(CircleShape),
+                                    )
+                                }
                             }
                             Box(
                                 modifier = Modifier

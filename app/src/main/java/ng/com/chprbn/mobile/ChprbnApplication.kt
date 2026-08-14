@@ -3,12 +3,15 @@ package ng.com.chprbn.mobile
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
+import ng.com.chprbn.mobile.core.network.DataUriFetcher
 import ng.com.chprbn.mobile.core.persistence.encryption.DatabaseMigrationGuard
 import javax.inject.Inject
 
 @HiltAndroidApp
-class ChprbnApplication : Application(), Configuration.Provider {
+class ChprbnApplication : Application(), Configuration.Provider, ImageLoaderFactory {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
 
@@ -38,5 +41,13 @@ class ChprbnApplication : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .build()
+
+    // Registers DataUriFetcher so every `data:image/...;base64,...` photo
+    // string (candidate photos, exam candidates, verification records) is
+    // actually fetchable — Coil has no built-in fetcher for the `data` scheme.
+    override fun newImageLoader(): ImageLoader =
+        ImageLoader.Builder(this)
+            .components { add(DataUriFetcher.Factory()) }
             .build()
 }

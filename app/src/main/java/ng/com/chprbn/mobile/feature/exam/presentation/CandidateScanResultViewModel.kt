@@ -54,6 +54,7 @@ class CandidateScanResultViewModel @Inject constructor(
                             ng.com.chprbn.mobile.R.string.candidate_scan_exam_number_format,
                             candidate.examNumber,
                         ),
+                        photoUrl = candidate.photoUrl,
                     )
                 }
             }
