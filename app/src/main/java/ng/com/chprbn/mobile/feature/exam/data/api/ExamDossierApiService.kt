@@ -11,9 +11,12 @@ import retrofit2.http.GET
  * Scope: the officer's currently-active centre + day. The server
  * resolves "which dossier" from the bearer token + date; the mobile
  * client doesn't send those explicitly.
+ *
+ * `x-location` is attached transparently by [ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor]
+ * from the officer's `adhoc/profile` location — no param needed here.
  */
 interface ExamDossierApiService {
 
-    @GET("exam/dossier")
+    @GET("attendance/fetch-record")
     suspend fun fetchDossier(): Response<ExamDossierEnvelopeDto>
 }

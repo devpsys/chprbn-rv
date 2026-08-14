@@ -90,7 +90,7 @@ All paths in this document are **relative** to the base URL. Where a path is wri
 
 ### 1.7 Pagination conventions
 
-**Status: NOT IMPLEMENTED.** No endpoint in the current client paginates. The Assessment + Examination read endpoints (`exam/dossier`, `assessments/schedules`, `assessments/schedules/{id}/package`) are designed as single-shot fetches because the per-officer payload size is bounded (≤ ~200 candidates per centre per day).
+**Status: NOT IMPLEMENTED.** No endpoint in the current client paginates. The Assessment + Examination read endpoints (`attendance/fetch-record`, `assessments/schedules`, `assessments/schedules/{id}/package`) are designed as single-shot fetches because the per-officer payload size is bounded (≤ ~200 candidates per centre per day).
 
 When pagination becomes necessary (e.g. a future "all schedules history" endpoint), the convention is:
 
@@ -245,7 +245,7 @@ Every endpoint returns a JSON object with this exact top-level shape:
 
 ### 3.2 Batch idempotency header
 
-Every batched write endpoint (`exam/attendance/batch`, `exam/remarks/batch`,
+Every batched write endpoint (`attendance/push-record`, `attendance-remarks`,
 `practical-scores/batch`, `project-scores/batch`, and future
 `practitioners/verified-sync/batch`) accepts an `Idempotency-Key` request
 header. The mobile client generates a fresh UUIDv4 per batch attempt and
@@ -255,7 +255,7 @@ re-applying — combined with the row-level idempotency on the composite
 key, this eliminates both mid-flight duplicates and second-attempt races.
 
 ```
-POST /api/v1/mobile/exam/attendance/batch
+POST /api/v1/mobile/attendance/push-record
 Authorization: Bearer <token>
 Idempotency-Key: 5f3c98e2-8a9d-4a2b-9df1-3e6e6a0c1b21
 Content-Type: application/json; charset=UTF-8
@@ -1048,7 +1048,7 @@ No query, path, or body parameters.
 | **Authentication required** | Yes |
 | **Authorization / roles** | Adhoc officer with an active centre assignment for the current day. |
 | **HTTP method** | `GET` |
-| **URL path** | `/exam/dossier` |
+| **URL path** | `/attendance/fetch-record` |
 | **API version** | v1 |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamDossierApiService.fetchDossier` |
@@ -1059,6 +1059,7 @@ No query, path, or body parameters.
 |---|---|---|
 | `Authorization` | Yes | `Bearer <token>` |
 | `Accept` | Yes | `application/json` |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location` (e.g. `"mchst213"`). Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request
 
@@ -1171,9 +1172,17 @@ See §10.1.
 | **Purpose** | Upload N attendance rows in one HTTP request. One auth check + one DB transaction per batch. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/exam/attendance/batch` |
+| **URL path** | `/attendance/push-record` |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamSyncApiService.uploadAttendanceBatch` |
+
+#### Headers
+
+| Name | Required | Value |
+|---|---|---|
+| `Authorization` | Yes | `Bearer <token>` |
+| `Idempotency-Key` | Yes | See §3.2. |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location`. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request Body Schema
 
@@ -1258,9 +1267,17 @@ See §10.3 for the shared batch-result schema.
 | **Purpose** | Upload N remarks in one HTTP request. |
 | **Authentication required** | Yes |
 | **HTTP method** | `POST` |
-| **URL path** | `/exam/remarks/batch` |
+| **URL path** | `/attendance-remarks` |
 | **Status** | **To Be Implemented** |
 | **Mobile source** | `ExamSyncApiService.uploadRemarkBatch` |
+
+#### Headers
+
+| Name | Required | Value |
+|---|---|---|
+| `Authorization` | Yes | `Bearer <token>` |
+| `Idempotency-Key` | Yes | See §3.2. |
+| `x-location` | Yes | The officer's `location` from §6.1 `data.location`. Attached automatically by the mobile client's `LocationHeaderInterceptor`. |
 
 #### Request Body Schema
 
@@ -1643,7 +1660,7 @@ Cross-feature candidate identity. The exam dossier and the assessment package us
 | `full_name` | string | No | Display name. |
 | `photo_url` | string | Yes | **Raw Base64 image bytes (no `data:` prefix).** Despite the field name, the dossier and assessment-package endpoints embed the photo inline rather than serving a URL — backend keeps the dossier self-contained for offline use after a single download. Mobile routes the value through `core/network/ImageUrlNormalization.normalizeApiPhotoToDataUri` which wraps it as `data:image/jpeg;base64,…` for Compose `AsyncImage`. Values that already begin with `data:image` pass through unchanged. |
 
-**Invariant:** for any candidate served by both `/exam/dossier` and `/assessments/schedules/{id}/package`, the `id`, `exam_number`, and `full_name` MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
+**Invariant:** for any candidate served by both `/attendance/fetch-record` and `/assessments/schedules/{id}/package`, the `id`, `exam_number`, and `full_name` MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
 
 ### 10.2 Enums
 
@@ -1734,15 +1751,15 @@ POST /practitioners/license-irregularity-reports  (one per report — multipart,
 POST /adhoc/login ──▶ token
             │
             ▼
-GET  /exam/dossier
+GET  /attendance/fetch-record
             │
             ├─▶ data.center
             ├─▶ data.papers[]            ──┐
             ├─▶ data.candidates[]         │  (officer marks attendance, adds remarks)
             └─▶ data.assignments[]        │
                                           ▼
-POST /exam/attendance/batch  (items: N attendance rows per request)
-POST /exam/remarks/batch     (items: N remark rows per request)
+POST /attendance/push-record  (items: N attendance rows per request)
+POST /attendance-remarks     (items: N remark rows per request)
 ```
 
 ### 11.4 Assessment module
@@ -1910,7 +1927,7 @@ The canonical envelope flag is `success` (boolean). Mobile prefers `success` but
 
 ### 14.2 New-endpoint rollout order
 
-1. **First:** `/exam/dossier` + `/exam/attendance/batch` + `/exam/remarks/batch` — exam day blocks on these.
+1. **First:** `/attendance/fetch-record` + `/attendance/push-record` + `/attendance-remarks` — exam day blocks on these.
 2. **Second:** `/assessments/schedules` + `/assessments/schedules/{id}/package` — assessment day needs reference data.
 3. **Third:** `/assessments/practical-scores/batch` + `/assessments/project-scores/batch` — scoring is the write half of the assessment flow.
 4. **Fourth (verification cutover):** `/practitioners/verified-sync/batch` — replaces the legacy per-row endpoint (§7.2). Both run side-by-side during the cutover window so existing client builds keep working.
@@ -1921,8 +1938,8 @@ The mobile client already wires Composite remote sources that prefer the live AP
 
 1. PR #1 — Ensure every response envelope emits `success` (boolean). Mobile no longer reads `status`; the field can be dropped from responses whenever convenient.
 2. PR #2 — `POST /adhoc/logout` and `POST /logout` token revocation (§5.3 + §5.4).
-3. PR #3 — `GET /exam/dossier` (read-only; simplest to land first).
-4. PR #4 — `POST /exam/attendance/batch` + `POST /exam/remarks/batch` (batched idempotent writes; per-row results).
+3. PR #3 — `GET /attendance/fetch-record` (read-only; simplest to land first).
+4. PR #4 — `POST /attendance/push-record` + `POST /attendance-remarks` (batched idempotent writes; per-row results).
 5. PR #5 — `GET /assessments/schedules`.
 6. PR #6 — `GET /assessments/schedules/{id}/package`.
 7. PR #7 — `POST /assessments/practical-scores/batch` + `POST /assessments/project-scores/batch` (batched idempotent writes).
@@ -1956,9 +1973,9 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Verification | `POST` | `/practitioners/license-irregularity-reports` | Existing | `IrregularityReportApiService.submitIrregularityReport` | §7.3 |
 | Verification | `POST` | `/practitioners/verified-sync/batch` | To Be Implemented | — (TBI) | §7.4 |
 | Verification | `GET` | `/practitioners/officer-remark-options` | To Be Implemented | `OfficerRemarkOptionsApiService.getOfficerRemarkOptions` | §7.5 |
-| Examination | `GET` | `/exam/dossier` | To Be Implemented | `ExamDossierApiService.fetchDossier` | §8.1 |
-| Examination | `POST` | `/exam/attendance/batch` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
-| Examination | `POST` | `/exam/remarks/batch` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |
+| Examination | `GET` | `/attendance/fetch-record` | To Be Implemented | `ExamDossierApiService.fetchDossier` | §8.1 |
+| Examination | `POST` | `/attendance/push-record` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
+| Examination | `POST` | `/attendance-remarks` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |
 | Assessment | `GET` | `/assessments/schedules` | To Be Implemented | `AssessmentPackageApiService.fetchSchedules` | §9.1 |
 | Assessment | `GET` | `/assessments/schedules/{schedule_id}/package` | To Be Implemented | `AssessmentPackageApiService.fetchPackage` | §9.2 |
 | Assessment | `POST` | `/assessments/practical-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScoreBatch` | §9.3 |

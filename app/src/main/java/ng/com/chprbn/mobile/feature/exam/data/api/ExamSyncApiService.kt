@@ -18,6 +18,9 @@ import retrofit2.http.POST
  *
  * Replaces the legacy per-row template; the legacy verified-sync endpoint
  * still ships per-row pending its own batch upgrade.
+ *
+ * `x-location` is attached transparently by [ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor]
+ * from the officer's `adhoc/profile` location — no param needed here.
  */
 interface ExamSyncApiService {
 
@@ -27,13 +30,13 @@ interface ExamSyncApiService {
      * per-row `client_id`s so a retry (same key + same items) returns the
      * original result rather than re-applying (X3 audit).
      */
-    @POST("exam/attendance/batch")
+    @POST("attendance/push-record")
     suspend fun uploadAttendanceBatch(
         @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: AttendanceSyncBatchRequestDto,
     ): Response<AttendanceSyncBatchEnvelopeDto>
 
-    @POST("exam/remarks/batch")
+    @POST("attendance-remarks")
     suspend fun uploadRemarkBatch(
         @Header("Idempotency-Key") idempotencyKey: String,
         @Body body: RemarkSyncBatchRequestDto,

@@ -32,14 +32,14 @@ All paths are relative to the production base URL `https://app.chprbn.gov.ng/api
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| E1 | `GET` | `exam/dossier` | Bearer | `ExamDossierApiService.fetchDossier` | Pull the officer's currently-active centre + papers + candidate roster + paper↔candidate assignments in one call. Server resolves "which dossier" from the bearer token + today's date. |
+| E1 | `GET` | `attendance/fetch-record` | Bearer | `ExamDossierApiService.fetchDossier` | Pull the officer's currently-active centre + papers + candidate roster + paper↔candidate assignments in one call. Server resolves "which dossier" from the bearer token + today's date. |
 
 #### Exam feature — write
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| E2 | `POST` | `exam/attendance/batch` | Bearer | `ExamSyncApiService.uploadAttendanceBatch` | Batched upload of attendance marks (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
-| E3 | `POST` | `exam/remarks/batch` | Bearer | `ExamSyncApiService.uploadRemarkBatch` | Batched upload of officer remarks (`items[]` in request; per-row `results[]` in response). Idempotent on `(remarkId)` recommended. |
+| E2 | `POST` | `attendance/push-record` | Bearer | `ExamSyncApiService.uploadAttendanceBatch` | Batched upload of attendance marks (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId, markedAt)` recommended. |
+| E3 | `POST` | `attendance-remarks` | Bearer | `ExamSyncApiService.uploadRemarkBatch` | Batched upload of officer remarks (`items[]` in request; per-row `results[]` in response). Idempotent on `(remarkId)` recommended. |
 
 #### Assessment feature — read
 
@@ -75,7 +75,7 @@ All read envelopes (auth, verification, exam, assessment) have cut over to `succ
 
 - **Q1.** Do the exam + assessment endpoints accept the **same bearer token** the verification endpoints accept? If yes, no client change.
 - **Q2.** Is the token Sanctum-personal or a JWT? Mobile is agnostic but the backend should confirm the lifecycle (does the token expire? if yes, how long?). The current mobile implementation has **no refresh path** — token expiry forces a re-login. If exam/assessment tokens have a different TTL, surface it before launch.
-- **Q3.** If `exam/dossier` resolves "today's centre" from the bearer token + date, what does the response look like when the officer has no active assignment for today? Empty `data`? `data: null`? HTTP 404? Mobile currently degrades all three to "no dossier" — confirm that's the desired UX.
+- **Q3.** If `attendance/fetch-record` resolves "today's centre" from the bearer token + date, what does the response look like when the officer has no active assignment for today? Empty `data`? `data: null`? HTTP 404? Mobile currently degrades all three to "no dossier" — confirm that's the desired UX.
 
 ### 2.5 What backend needs to confirm or change
 
@@ -83,7 +83,7 @@ Concrete checklist to put to the backend team. Each row gates the corresponding 
 
 | # | Question / sign-off | Blocks |
 |---|---|---|
-| Q-C1.E1 | Confirm exact path for E1 (`exam/dossier`) and that it returns the full dossier in one response. | Exam dashboard |
+| Q-C1.E1 | Confirm exact path for E1 (`attendance/fetch-record`) and that it returns the full dossier in one response. | Exam dashboard |
 | Q-C1.E2 | Confirm path + idempotency story for attendance upload (E2). | Attendance sync |
 | Q-C1.E3 | Confirm path + idempotency story for remark upload (E3). | Remark sync |
 | Q-C1.A1 | Confirm path for schedule list (A1). | Assessment schedule list |

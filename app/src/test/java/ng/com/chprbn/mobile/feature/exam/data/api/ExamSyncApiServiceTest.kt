@@ -67,7 +67,7 @@ class ExamSyncApiServiceTest {
 
         val recorded = server.takeRequest()
         assertEquals("POST", recorded.method)
-        assertEquals("/exam/attendance/batch", recorded.path)
+        assertEquals("/attendance/push-record", recorded.path)
         assertEquals("application/json; charset=UTF-8", recorded.getHeader("Content-Type"))
 
         val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonObject
@@ -178,7 +178,7 @@ class ExamSyncApiServiceTest {
 
         val recorded = server.takeRequest()
         assertEquals("POST", recorded.method)
-        assertEquals("/exam/remarks/batch", recorded.path)
+        assertEquals("/attendance-remarks", recorded.path)
 
         val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonObject
         val item = body.getAsJsonArray("items").single().asJsonObject
