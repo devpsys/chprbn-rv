@@ -2,8 +2,16 @@ package ng.com.chprbn.mobile.feature.exam.data.source
 
 import android.util.Log
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamDossierApiService
+import ng.com.chprbn.mobile.feature.exam.data.dto.ScheduleDto
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toDomain
 import java.io.IOException
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -29,6 +37,9 @@ import javax.inject.Inject
  * candidates by id (the same person can appear in more than one
  * schedule) and deriving each paper's [Paper.totalCandidates] from the
  * assignment list, since the wire never provides that count directly.
+ * [Paper.startAt]/[Paper.endAt] are similarly derived — from whichever
+ * schedule's `paper_candidates` first assigns a candidate to that paper,
+ * via [parsedTimeWindow].
  *
  * Unmappable rows are dropped — logged via [Log.w] with before/after
  * counts (better to persist the partial dossier than to fail the whole
@@ -84,11 +95,25 @@ class ApiExamDossierRemoteSource @Inject constructor(
         logDroppedRows("assignments", rawAssignmentCount, assignments.size)
         val assignmentCountByPaperId = assignments.groupingBy { it.paperId }.eachCount()
 
+        val timeWindowByPaperId = mutableMapOf<String, Pair<Long, Long>>()
+        schedules.forEach { schedule ->
+            val window = schedule.parsedTimeWindow() ?: return@forEach
+            schedule.paperCandidates.orEmpty().forEach { assignment ->
+                val paperId = assignment.paperId ?: return@forEach
+                timeWindowByPaperId.putIfAbsent(paperId, window)
+            }
+        }
+
         val rawPapers = data.papers.orEmpty()
         val papers = rawPapers.mapNotNull {
             it.toDomain(centerId = center.id)
         }.map { paper ->
-            paper.copy(totalCandidates = assignmentCountByPaperId[paper.id] ?: 0)
+            val window = timeWindowByPaperId[paper.id]
+            paper.copy(
+                totalCandidates = assignmentCountByPaperId[paper.id] ?: 0,
+                startAt = window?.first ?: paper.startAt,
+                endAt = window?.second ?: paper.endAt,
+            )
         }
         logDroppedRows("papers", rawPapers.size, papers.size)
 
@@ -112,6 +137,47 @@ class ApiExamDossierRemoteSource @Inject constructor(
         )
     }
 
+    /**
+     * Combines [ScheduleDto.testDate] with [ScheduleDto.startTime]/
+     * [ScheduleDto.endTime] (confirmed `HH:mm`, 24h, e.g. `"08:00"`) into
+     * an epoch-millis start/end pair. Returns `null` (and logs a warning)
+     * rather than a guessed value on anything unparseable, or when any of
+     * the three fields is absent.
+     */
+    private fun ScheduleDto.parsedTimeWindow(): Pair<Long, Long>? {
+        val date = testDate ?: return null
+        val start = startTime ?: return null
+        val end = endTime ?: return null
+        val zone = ZoneId.systemDefault()
+        return try {
+            val day = parseTestDate(date)
+            val startAt = LocalDateTime.of(day, LocalTime.parse(start))
+                .atZone(zone).toInstant().toEpochMilli()
+            val endAt = LocalDateTime.of(day, LocalTime.parse(end))
+                .atZone(zone).toInstant().toEpochMilli()
+            startAt to endAt
+        } catch (e: DateTimeParseException) {
+            Log.w(
+                TAG,
+                "Unable to parse schedule '$id' time window " +
+                    "(test_date=$date, start_time=$start, end_time=$end): ${e.message}",
+            )
+            null
+        }
+    }
+
+    /**
+     * `test_date` is confirmed against a real device response (2026-08-14)
+     * to be a human-readable string with an ordinal day suffix, e.g.
+     * `"Friday, 14th Aug 2026"` — not ISO `yyyy-MM-dd`. [ORDINAL_SUFFIX]
+     * strips the `st`/`nd`/`rd`/`th` before parsing since [DateTimeFormatter]
+     * has no built-in ordinal-day pattern letter.
+     */
+    private fun parseTestDate(raw: String): LocalDate {
+        val normalized = ORDINAL_SUFFIX.replace(raw) { it.groupValues[1] }
+        return LocalDate.parse(normalized, TEST_DATE_FORMATTER)
+    }
+
     private fun logDroppedRows(label: String, rawCount: Int, mappedCount: Int) {
         if (mappedCount < rawCount) {
             Log.w(
@@ -124,5 +190,8 @@ class ApiExamDossierRemoteSource @Inject constructor(
 
     private companion object {
         const val TAG = "ExamDossier"
+        val ORDINAL_SUFFIX = Regex("(\\d+)(st|nd|rd|th)", RegexOption.IGNORE_CASE)
+        val TEST_DATE_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("EEEE, d MMM yyyy", Locale.ENGLISH)
     }
 }

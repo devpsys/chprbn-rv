@@ -51,12 +51,21 @@ data class ExamDossierDataDto(
  * (`test_code`, e.g. `"CHEW"`) carrying its own candidate roster and
  * paper assignments. Not the same concept as [PaperDto] — a schedule can
  * reference multiple papers via [paperCandidates].
+ *
+ * Confirmed against a real device response (2026-08-14): [testDate] is a
+ * human-readable string with an ordinal day suffix, e.g.
+ * `"Friday, 14th Aug 2026"` — not ISO `yyyy-MM-dd`. [startTime]/[endTime]
+ * are 24h `HH:mm` time-of-day strings, e.g. `"08:00"`. Combined, they
+ * build each assigned paper's start/end instant — see
+ * `ApiExamDossierRemoteSource.parsedTimeWindow`.
  */
 data class ScheduleDto(
     @SerializedName("id") val id: String? = null,
     @SerializedName("test_date") val testDate: String? = null,
     @SerializedName("test_code") val testCode: String? = null,
     @SerializedName("test_type") val testType: String? = null,
+    @SerializedName("start_time") val startTime: String? = null,
+    @SerializedName("end_time") val endTime: String? = null,
     @SerializedName("paper_candidates") val paperCandidates: List<PaperCandidateAssignmentDto>? = null,
     @SerializedName("candidates") val candidates: List<CandidateDto>? = null,
 )

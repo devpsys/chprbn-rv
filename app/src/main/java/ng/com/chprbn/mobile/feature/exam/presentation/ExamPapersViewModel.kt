@@ -149,7 +149,7 @@ class ExamPapersViewModel @Inject constructor(
             .ofPattern("EEEE, MMMM d", Locale.US)
             .withZone(ZoneId.systemDefault())
         val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter
-            .ofPattern("h:mm a", Locale.US)
+            .ofPattern("hh:mm a", Locale.US)
             .withZone(ZoneId.systemDefault())
     }
 }

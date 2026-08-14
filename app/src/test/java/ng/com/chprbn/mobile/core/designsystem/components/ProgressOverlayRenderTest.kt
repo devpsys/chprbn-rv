@@ -66,6 +66,25 @@ class ProgressOverlayRenderTest {
     }
 
     @Test
+    fun downloading_overlay_without_a_progress_fraction_renders_no_bar_or_status_label() {
+        composeRule.setContent {
+            ChprbnTheme {
+                DownloadingOverlay(
+                    title = "Downloading Candidate Records…",
+                    subtitle = "Hang tight — this can take a few minutes.",
+                    encryptedLabel = "End-to-End Encrypted",
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Downloading Candidate Records…").assertExists()
+        composeRule.onNodeWithText("Hang tight — this can take a few minutes.").assertExists()
+        composeRule.onNodeWithText("END-TO-END ENCRYPTED").assertExists()
+        // Determinate-only UI must not render in indeterminate (spinner) mode.
+        composeRule.onNodeWithText("0%").assertDoesNotExist()
+    }
+
+    @Test
     fun syncing_overlay_renders_title_subtitle_and_badge() {
         composeRule.setContent {
             ChprbnTheme {

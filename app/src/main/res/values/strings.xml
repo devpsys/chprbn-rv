@@ -386,8 +386,7 @@
     <string name="exam_download_warning_confirm">Download &amp; Erase</string>
     <string name="exam_download_warning_cancel">Cancel</string>
     <string name="exam_download_loading_title">Downloading Candidate Records…</string>
-    <string name="exam_download_loading_subtitle">Please do not close the app. Fetching data from secure registry.</string>
-    <string name="exam_download_loading_status">Synchronizing…</string>
+    <string name="exam_download_loading_subtitle">Hang tight — this can take a few minutes depending on how many records there are. Please don\'t close the app.</string>
     <string name="exam_download_success_title">Dossier Downloaded</string>
     <string name="exam_download_success_message_format">%1$d papers and %2$d candidates are now cached on this device.</string>
     <string name="exam_download_error_title">Download Failed</string>

@@ -249,16 +249,19 @@ private fun EncryptedBadge(label: String) {
 
 /**
  * Convenience shape for the dossier / package download flow. Matches
- * `ui-designs/exams/download_loading_screen_1`: static cloud_download
- * glyph + determinate progress bar.
+ * `ui-designs/exams/download_loading_screen_1`: cloud_download glyph.
+ * Pass [progressFraction] for the determinate bar; omit it (the default)
+ * for the same spinning-icon indeterminate look [SyncingOverlay] uses —
+ * the right choice whenever the download use case doesn't report real
+ * progress, since a bar stuck at a fake fraction reads as stalled/broken.
  */
 @Composable
 fun DownloadingOverlay(
     title: String,
     subtitle: String,
     encryptedLabel: String,
-    statusLabel: String,
-    progressFraction: Float,
+    statusLabel: String? = null,
+    progressFraction: Float? = null,
 ) {
     ProgressOverlay(
         icon = Icons.Filled.CloudDownload,

@@ -22,6 +22,10 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * Regression coverage for flattening the live wire shape — candidates
@@ -174,6 +178,148 @@ class ApiExamDossierRemoteSourceTest {
         )
 
         assertNull(source.fetchDossier())
+    }
+
+    @Test
+    fun `derives a paper's start and end instant from its schedule's test_date, start_time, and end_time`() =
+        runTest {
+            coEvery { api.fetchDossier() } returns Response.success(
+                envelope(
+                    center = CenterDto(id = "ctr_1"),
+                    papers = listOf(PaperDto(id = "pap_1", code = "P1", name = "PAPER 1")),
+                    schedules = listOf(
+                        ScheduleDto(
+                            id = "sch_1",
+                            testDate = "Friday, 14th Aug 2026",
+                            startTime = "09:00",
+                            endTime = "17:00",
+                            paperCandidates = listOf(
+                                PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            ),
+                            candidates = listOf(CandidateDto(id = "can_1")),
+                        ),
+                    ),
+                ),
+            )
+
+            val paper = source.fetchDossier()?.papers?.single()
+
+            val zone = ZoneId.systemDefault()
+            val expectedStart = LocalDateTime.of(LocalDate.of(2026, 8, 14), LocalTime.of(9, 0))
+                .atZone(zone).toInstant().toEpochMilli()
+            val expectedEnd = LocalDateTime.of(LocalDate.of(2026, 8, 14), LocalTime.of(17, 0))
+                .atZone(zone).toInstant().toEpochMilli()
+            assertEquals(expectedStart, paper?.startAt)
+            assertEquals(expectedEnd, paper?.endAt)
+        }
+
+    @Test
+    fun `leaves a paper's time window unset when its schedule has no test_date or times`() = runTest {
+        coEvery { api.fetchDossier() } returns Response.success(
+            envelope(
+                center = CenterDto(id = "ctr_1"),
+                papers = listOf(PaperDto(id = "pap_1", code = "P1", name = "PAPER 1")),
+                schedules = listOf(
+                    ScheduleDto(
+                        id = "sch_1",
+                        paperCandidates = listOf(
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                        ),
+                        candidates = listOf(CandidateDto(id = "can_1")),
+                    ),
+                ),
+            ),
+        )
+
+        val paper = source.fetchDossier()?.papers?.single()
+
+        assertEquals(0L, paper?.startAt)
+        assertEquals(0L, paper?.endAt)
+    }
+
+    @Test
+    fun `leaves a paper's time window unset and logs a warning when start_time is unparseable`() = runTest {
+        coEvery { api.fetchDossier() } returns Response.success(
+            envelope(
+                center = CenterDto(id = "ctr_1"),
+                papers = listOf(PaperDto(id = "pap_1", code = "P1", name = "PAPER 1")),
+                schedules = listOf(
+                    ScheduleDto(
+                        id = "sch_1",
+                        testDate = "Friday, 14th Aug 2026",
+                        startTime = "not-a-time",
+                        endTime = "17:00",
+                        paperCandidates = listOf(
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                        ),
+                        candidates = listOf(CandidateDto(id = "can_1")),
+                    ),
+                ),
+            ),
+        )
+
+        val paper = source.fetchDossier()?.papers?.single()
+
+        assertEquals(0L, paper?.startAt)
+        assertEquals(0L, paper?.endAt)
+    }
+
+    @Test
+    fun `parses test_date ordinal-day suffixes other than 'th'`() = runTest {
+        coEvery { api.fetchDossier() } returns Response.success(
+            envelope(
+                center = CenterDto(id = "ctr_1"),
+                papers = listOf(PaperDto(id = "pap_1", code = "P1", name = "PAPER 1")),
+                schedules = listOf(
+                    ScheduleDto(
+                        id = "sch_1",
+                        // 1st (not 1th) — the ordinal-suffix regex must
+                        // strip whichever suffix the day actually has.
+                        testDate = "Saturday, 1st Aug 2026",
+                        startTime = "09:00",
+                        endTime = "17:00",
+                        paperCandidates = listOf(
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                        ),
+                        candidates = listOf(CandidateDto(id = "can_1")),
+                    ),
+                ),
+            ),
+        )
+
+        val paper = source.fetchDossier()?.papers?.single()
+
+        val zone = ZoneId.systemDefault()
+        val expectedStart = LocalDateTime.of(LocalDate.of(2026, 8, 1), LocalTime.of(9, 0))
+            .atZone(zone).toInstant().toEpochMilli()
+        assertEquals(expectedStart, paper?.startAt)
+    }
+
+    @Test
+    fun `leaves a paper's time window unset when test_date doesn't match the expected shape`() = runTest {
+        coEvery { api.fetchDossier() } returns Response.success(
+            envelope(
+                center = CenterDto(id = "ctr_1"),
+                papers = listOf(PaperDto(id = "pap_1", code = "P1", name = "PAPER 1")),
+                schedules = listOf(
+                    ScheduleDto(
+                        id = "sch_1",
+                        testDate = "2026-08-14",
+                        startTime = "09:00",
+                        endTime = "17:00",
+                        paperCandidates = listOf(
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                        ),
+                        candidates = listOf(CandidateDto(id = "can_1")),
+                    ),
+                ),
+            ),
+        )
+
+        val paper = source.fetchDossier()?.papers?.single()
+
+        assertEquals(0L, paper?.startAt)
+        assertEquals(0L, paper?.endAt)
     }
 
     @Test

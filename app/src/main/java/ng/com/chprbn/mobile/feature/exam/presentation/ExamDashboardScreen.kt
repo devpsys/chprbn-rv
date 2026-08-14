@@ -134,11 +134,9 @@ private fun ExamDownloadDossierOverlay(
             title = stringResource(R.string.exam_download_loading_title),
             subtitle = stringResource(R.string.exam_download_loading_subtitle),
             encryptedLabel = stringResource(R.string.download_loading_encrypted_badge),
-            statusLabel = stringResource(R.string.exam_download_loading_status),
-            // The use case currently doesn't surface progress, so we show
-            // an indeterminate-feeling small fraction until completion
-            // flips us to Success or Error.
-            progressFraction = 0.1f,
+            // The use case doesn't surface real progress, so this renders
+            // the same spinning-icon indeterminate look SyncingOverlay uses
+            // (no progressFraction) instead of a bar frozen at a fake value.
         )
         is DownloadDossierUiState.Success -> SuccessDialog(
             title = stringResource(R.string.exam_download_success_title),
