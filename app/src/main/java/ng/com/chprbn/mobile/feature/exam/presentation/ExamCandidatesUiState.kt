@@ -32,10 +32,13 @@ data class ExamCandidatesUiState(
     val searchQuery: String,
     val activeFilterLabel: String,
     val filterLabels: List<String>,
-    val candidates: List<ExamCandidateUiState>
+    val candidates: List<ExamCandidateUiState>,
+    /** True until the first [ExamCandidatesViewModel.refresh] completes — gates the loading spinner. */
+    val hasLoaded: Boolean = false,
 ) {
     companion object {
         fun placeholder(): ExamCandidatesUiState = ExamCandidatesUiState(
+            hasLoaded = true,
             searchQuery = "",
             activeFilterLabel = "All",
             filterLabels = listOf("All", "Signed In", "Signed Out", "Flagged"),

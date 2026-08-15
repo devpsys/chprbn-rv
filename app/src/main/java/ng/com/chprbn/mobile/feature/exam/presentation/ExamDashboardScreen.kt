@@ -63,6 +63,7 @@ import ng.com.chprbn.mobile.core.designsystem.components.AppTopBar
 import ng.com.chprbn.mobile.core.designsystem.components.DownloadWarningDialog
 import ng.com.chprbn.mobile.core.designsystem.components.DownloadingOverlay
 import ng.com.chprbn.mobile.core.designsystem.components.ErrorDialog
+import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 import ng.com.chprbn.mobile.core.designsystem.components.SuccessDialog
 
 @Composable
@@ -220,10 +221,17 @@ internal fun ExamDashboardScreenContent(
                     onNotifications = onNotifications,
                     onLogout = onLogout
                 )
-                Column(
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                ) {
+                if (uiState.isLoading) {
+                    LoadingState()
+                } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (!uiState.hasDownloadedData) {
@@ -243,7 +251,7 @@ internal fun ExamDashboardScreenContent(
                         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                             Text(
                                 text = stringResource(R.string.exam_dashboard_section_admin_tasks),
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = scheme.onBackground,
                                 modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
@@ -292,6 +300,8 @@ internal fun ExamDashboardScreenContent(
                             Spacer(modifier = Modifier.height(88.dp))
                         }
                     }
+                }
+                }
                 }
             }
         }

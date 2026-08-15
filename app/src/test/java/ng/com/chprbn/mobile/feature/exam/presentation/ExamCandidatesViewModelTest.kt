@@ -78,6 +78,15 @@ class ExamCandidatesViewModelTest {
     }
 
     @Test
+    fun `hasLoaded flips to true once the first refresh resolves`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns emptyList()
+
+        val viewModel = viewModel()
+
+        assertTrue(viewModel.uiState.value.hasLoaded)
+    }
+
+    @Test
     fun `populated cohort maps attendance to the pill and keeps remark count separate`() = runTest {
         coEvery { getCandidates(any(), any(), any()) } returns listOf(
             row("c1", "Jane Doe", AttendanceStatus.SignedIn),

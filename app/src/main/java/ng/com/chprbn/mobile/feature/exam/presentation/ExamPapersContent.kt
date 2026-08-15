@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.rememberScrollState
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.platform.LocalDensity
@@ -85,6 +86,10 @@ fun ExamPapersContent(
             )
         }
     ) { paddingValues ->
+        if (!uiState.hasDownloadedData) {
+            LoadingState(modifier = Modifier.padding(paddingValues))
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -116,7 +121,7 @@ fun ExamPapersContent(
                 )
             }
 
-            if (uiState.hasDownloadedData && uiState.papers.isEmpty()) {
+            if (uiState.papers.isEmpty()) {
                 ExamPapersEmptyState(
                     modifier = Modifier
                         .fillMaxWidth()

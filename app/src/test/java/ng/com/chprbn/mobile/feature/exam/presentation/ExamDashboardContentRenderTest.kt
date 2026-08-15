@@ -4,9 +4,11 @@ import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.components.LOADING_STATE_TEST_TAG
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -23,6 +25,21 @@ class ExamDashboardContentRenderTest {
     val composeRule = createComposeRule()
 
     private fun loadedPlaceholder() = ExamDashboardUiState.placeholder().copy(hasDownloadedData = true)
+
+    @Test
+    fun loading_state_shows_the_spinner_instead_of_the_empty_state_or_placeholder_content() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = ExamDashboardUiState.placeholder().copy(isLoading = true),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LOADING_STATE_TEST_TAG).assertExists()
+        composeRule.onNodeWithText("No Records Downloaded").assertDoesNotExist()
+        composeRule.onNodeWithText("National Institute of Health Sciences").assertDoesNotExist()
+    }
 
     @Test
     fun no_data_downloaded_renders_the_empty_state_instead_of_institution_card() {

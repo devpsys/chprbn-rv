@@ -19,9 +19,12 @@ data class ExamPaperUiState(
     val infoMessage: String,
     /** Non-null when the last load failed (NotFound/Error) — renders a banner over the (possibly stale) content below. */
     val errorMessage: String? = null,
+    /** True until the first [ExamPaperViewModel.refresh] completes — gates the loading spinner. */
+    val isLoading: Boolean = true,
 ) {
     companion object {
         fun placeholder(): ExamPaperUiState = ExamPaperUiState(
+            isLoading = false,
             institutionHeroImageUrl = EXAM_PAPER_HERO_IMAGE_URL,
             institutionShortCode = "NIT-405",
             institutionCodeLabel = "Institution Code",

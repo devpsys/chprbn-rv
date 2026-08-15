@@ -3,8 +3,10 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.components.LOADING_STATE_TEST_TAG
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -18,6 +20,23 @@ class ExamCandidatesContentRenderTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun loading_state_shows_the_spinner_instead_of_placeholder_content() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamCandidatesContent(
+                    uiState = ExamCandidatesUiState.placeholder().copy(hasLoaded = false),
+                    onBack = {},
+                    onAddRemark = {},
+                    onViewProfile = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LOADING_STATE_TEST_TAG).assertExists()
+        composeRule.onNodeWithText("Marcus Thompson").assertDoesNotExist()
+    }
 
     @Test
     fun placeholder_renders_filter_chips_and_each_candidate() {

@@ -38,6 +38,27 @@ class ExamDashboardViewModelTest {
     }
 
     @Test
+    fun `isLoading flips to false once the first refresh resolves, regardless of outcome`() = runTest {
+        coEvery { getDashboard() } returns ExamDashboardResult.Error("offline")
+
+        val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
+
+        assertEquals(false, viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `isLoading stays false across a resume-triggered refresh`() = runTest {
+        coEvery { getDashboard() } returns ExamDashboardResult.Empty
+
+        val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
+        assertEquals(false, viewModel.uiState.value.isLoading)
+
+        viewModel.refresh()
+
+        assertEquals(false, viewModel.uiState.value.isLoading)
+    }
+
+    @Test
     fun `Loading result keeps the placeholder state`() = runTest {
         coEvery { getDashboard() } returns ExamDashboardResult.Loading
 

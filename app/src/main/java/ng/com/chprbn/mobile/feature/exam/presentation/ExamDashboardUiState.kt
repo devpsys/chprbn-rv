@@ -20,6 +20,8 @@ data class ExamDashboardUiState(
     val practicalTask: ExamTaskCardUiState,
     /** True once a dossier has been successfully downloaded to this device. */
     val hasDownloadedData: Boolean = false,
+    /** True until the first [ExamDashboardViewModel.refresh] completes — gates the loading spinner. */
+    val isLoading: Boolean = true,
     /** True when the downloaded center has at least one paper scheduled today. */
     val hasSchedules: Boolean = true,
     /** True when the dossier's `sections` array was non-empty — gates the Practical Assessment card. */
@@ -27,6 +29,7 @@ data class ExamDashboardUiState(
 ) {
     companion object {
         fun placeholder(): ExamDashboardUiState = ExamDashboardUiState(
+            isLoading = false,
             institutionSectionLabel = "Institution Details",
             institutionName = "National Institute of Health Sciences",
             institutionCode = "#NIH-2024",

@@ -124,6 +124,27 @@ class ExamPaperViewModelTest {
     }
 
     @Test
+    fun `isLoading flips to false once the first refresh resolves, regardless of outcome`() = runTest {
+        coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
+
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
+
+        assertEquals(false, viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `isLoading stays false across a resume-triggered refresh`() = runTest {
+        coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
+
+        val viewModel = ExamPaperViewModel(savedState, getPaperDetail, syncExamRecords, context)
+        assertEquals(false, viewModel.uiState.value.isLoading)
+
+        viewModel.refresh()
+
+        assertEquals(false, viewModel.uiState.value.isLoading)
+    }
+
+    @Test
     fun `onSyncResultDismissed resets sync state to Idle`() = runTest {
         coEvery { getPaperDetail("p1") } returns ExamPaperDetailResult.NotFound
         coEvery { syncExamRecords() } returns SyncBatchResult.Empty

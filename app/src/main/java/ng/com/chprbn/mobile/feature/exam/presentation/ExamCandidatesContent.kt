@@ -56,6 +56,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
+import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 
 /**
  * Filter-label constant that means "no attendance filter applied". Kept in
@@ -108,6 +109,10 @@ fun ExamCandidatesContent(
             )
         },
     ) { paddingValues ->
+        if (!uiState.hasLoaded) {
+            LoadingState(modifier = Modifier.padding(paddingValues))
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -160,7 +160,7 @@ class ExamCandidatesViewModel @Inject constructor(
             .filter { it.matchesFilter(filter) }
             .filter { it.matchesQuery(query) }
             .toList()
-        _uiState.update { it.copy(candidates = visible) }
+        _uiState.update { it.copy(candidates = visible, hasLoaded = true) }
     }
 
     private fun ExamCandidateUiState.matchesFilter(filterLabel: String): Boolean =

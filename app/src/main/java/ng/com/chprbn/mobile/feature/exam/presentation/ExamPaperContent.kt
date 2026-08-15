@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 
 @Composable
 fun ExamPaperContent(
@@ -76,6 +77,10 @@ fun ExamPaperContent(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (uiState.isLoading) {
+                LoadingState()
+                return@Scaffold
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

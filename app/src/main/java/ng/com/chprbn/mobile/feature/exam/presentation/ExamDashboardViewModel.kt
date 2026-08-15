@@ -87,6 +87,10 @@ class ExamDashboardViewModel @Inject constructor(
                 ExamDashboardResult.Loading,
                 is ExamDashboardResult.Error -> Unit
             }
+            // Only the very first call matters — isLoading is already false
+            // on every resume-triggered refresh() after that, so this never
+            // re-shows the spinner over already-loaded content.
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

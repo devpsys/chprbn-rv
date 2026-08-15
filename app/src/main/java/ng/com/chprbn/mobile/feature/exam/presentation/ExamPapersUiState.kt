@@ -35,6 +35,7 @@ data class ExamPapersUiState(
 ) {
     companion object {
         fun placeholder(): ExamPapersUiState = ExamPapersUiState(
+            hasDownloadedData = true,
             dailyOverviewTitle = "Daily Overview",
             dailyDateLabel = "Monday, June 12",
             totalPapersLabel = "03",

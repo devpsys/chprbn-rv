@@ -2,8 +2,10 @@ package ng.com.chprbn.mobile.feature.exam.presentation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.components.LOADING_STATE_TEST_TAG
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +18,24 @@ class ExamPaperContentRenderTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun loading_state_shows_the_spinner_instead_of_placeholder_content() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamPaperContent(
+                    uiState = ExamPaperUiState.placeholder().copy(isLoading = true),
+                    onBack = {},
+                    onViewCandidates = {},
+                    onSyncData = {},
+                    onScanQr = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LOADING_STATE_TEST_TAG).assertExists()
+        composeRule.onNodeWithText("Mathematics - Paper II").assertDoesNotExist()
+    }
 
     @Test
     fun placeholder_renders_paper_title_institution_and_progress() {
