@@ -60,7 +60,7 @@ import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 
 /**
  * Filter-label constant that means "no attendance filter applied". Kept in
- * sync with `ExamCandidatesUiState.placeholder()` and `ExamCandidatesViewModel`.
+ * sync with `ExamCandidatesUiState.initial()`/`preview()` and `ExamCandidatesViewModel`.
  */
 private const val FILTER_ALL_LABEL = "All"
 

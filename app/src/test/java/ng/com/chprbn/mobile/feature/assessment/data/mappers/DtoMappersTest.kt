@@ -1,10 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
-import ng.com.chprbn.mobile.core.domain.model.PaperKind
-import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentCandidateDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentPaperDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.AssessmentScheduleDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalSectionDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.SectionQuestionDto
 import org.junit.Assert.assertEquals
@@ -21,38 +18,11 @@ import org.junit.Test
  */
 class DtoMappersTest {
 
-    @Test
-    fun `schedule dto maps to domain with Synced default status`() {
-        val dto = AssessmentScheduleDto(
-            id = "PE-2024",
-            title = "PE-2024 / Practical Exam",
-            date = 1_700_000_000_000L,
-            paperKind = "Practical",
-            centerId = "C-1",
-        )
-
-        val domain = dto.toDomain()!!
-
-        assertEquals("PE-2024", domain.id)
-        assertEquals("PE-2024 / Practical Exam", domain.title)
-        assertEquals(1_700_000_000_000L, domain.date)
-        assertEquals(PaperKind.Practical, domain.paperKind)
-        assertEquals("C-1", domain.centerId)
-        assertEquals(SyncStatus.Synced, domain.syncStatus)
-    }
-
-    @Test
-    fun `schedule dto missing id returns null`() {
-        assertNull(AssessmentScheduleDto(id = null).toDomain())
-        assertNull(AssessmentScheduleDto(id = "   ").toDomain())
-    }
-
-    @Test
-    fun `schedule dto with unknown paper kind degrades to Theory`() {
-        val domain = AssessmentScheduleDto(id = "x", paperKind = "garbage").toDomain()!!
-
-        assertEquals(PaperKind.Theory, domain.paperKind)
-    }
+    // `AssessmentScheduleDto` was removed along with the dedicated
+    // `/assessments/schedules` endpoint — schedules are now the PE/PA
+    // subset of the exam dossier, adapted by
+    // `AssessmentScheduleRepositoryImpl.getSchedules`. Its mapper tests
+    // were dropped alongside the DTO.
 
     @Test
     fun `paper dto maps to domain`() {

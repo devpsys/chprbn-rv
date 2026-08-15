@@ -28,11 +28,15 @@ import javax.inject.Inject
  * arg the same way [ExamPaperViewModel] reads `paperId` for the paper
  * detail screen. Previously hardcoded to `""` (E10 audit ticket) — the
  * use case silently returns empty for a blank paper id, so the VM only
- * ever showed [ExamCandidatesUiState.placeholder]'s fake roster
- * regardless of dossier state. Fixed alongside the same class of bug on
+ * ever showed [ExamCandidatesUiState.preview]'s fake roster regardless
+ * of dossier state. Fixed alongside the same class of bug on
  * `ExamPapersViewModel`/`ExamDashboardViewModel`: a real (possibly
  * empty) result always replaces [source] now; an empty roster renders
  * `ExamCandidatesContent`'s existing empty state instead of fake data.
+ * [_uiState] itself now starts from [ExamCandidatesUiState.initial] (no
+ * candidates, `hasLoaded = false`) rather than the fake roster, so the
+ * loading spinner — not made-up names — is what a real officer briefly
+ * sees before the first [refresh] resolves.
  *
  * Filter + search are applied **client-side** against the source list —
  * cheap at today's roster size (bounded ~200/day per centre); revisit
@@ -54,7 +58,7 @@ class ExamCandidatesViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ExamCandidatesUiState.placeholder())
+    private val _uiState = MutableStateFlow(ExamCandidatesUiState.initial())
     val uiState: StateFlow<ExamCandidatesUiState> = _uiState.asStateFlow()
 
     private val _remarkDialogState = MutableStateFlow<AddRemarkUiState>(AddRemarkUiState.Closed)

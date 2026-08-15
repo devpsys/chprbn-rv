@@ -13,7 +13,21 @@ interface ExamPaperRepository {
 
     suspend fun getDashboardSummary(): ExamDashboardResult
 
+    /**
+     * Papers scheduled today whose kind is NOT `Practical` / `Project`.
+     * PE/PA papers are surfaced by the assessment feature (see
+     * [getAssessmentPapers]) — same source table, different filter.
+     */
     suspend fun getPapersForToday(): List<Paper>
+
+    /**
+     * Papers scheduled today whose kind IS `Practical` / `Project` — the
+     * source rows the assessment feature adapts into `AssessmentSchedule`
+     * for its schedules list. Kept on this repository (not duplicated
+     * server-side) so both features read from the single `/exam/dossier`
+     * download instead of a dedicated `/assessments/schedules` endpoint.
+     */
+    suspend fun getAssessmentPapers(): List<Paper>
 
     suspend fun getPaperDetail(paperId: String): ExamPaperDetailResult
 }

@@ -15,6 +15,7 @@ import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreEntity
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentPackageBundle
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentPackageRemoteSource
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
+import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamPaperRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
@@ -39,6 +40,7 @@ class AssessmentScheduleRepositoryImplTest {
     private lateinit var db: AssessmentDatabase
     private lateinit var repository: AssessmentScheduleRepositoryImpl
     private lateinit var remoteSource: AssessmentPackageRemoteSource
+    private lateinit var examPaperRepository: ExamPaperRepository
 
     @Before
     fun setUp() {
@@ -47,9 +49,12 @@ class AssessmentScheduleRepositoryImplTest {
             .allowMainThreadQueries()
             .build()
         remoteSource = mockk()
+        // getSchedules isn't exercised in this test file — the mocked exam
+        // repo is here only to satisfy the constructor. downloadPackage /
+        // getPaperDetail don't touch it.
+        examPaperRepository = mockk()
         repository = AssessmentScheduleRepositoryImpl(
             db = db,
-            scheduleDao = db.scheduleDao(),
             paperDao = db.paperDao(),
             sectionDao = db.sectionDao(),
             questionDao = db.questionDao(),
@@ -57,6 +62,7 @@ class AssessmentScheduleRepositoryImplTest {
             practicalScoreDao = db.practicalScoreDao(),
             projectScoreDao = db.projectScoreDao(),
             remoteSource = remoteSource,
+            examPaperRepository = examPaperRepository,
         )
     }
 

@@ -15,7 +15,7 @@
 
 ### 2.1 Status
 
-The Android client has already implemented **eight HTTP endpoints** that the backend has **never confirmed**. The Retrofit interfaces, DTOs, mappers, and Hilt wiring are all in place — but every one of those endpoints is marked **`SPECULATIVE`** in source comments. On a live device today, the `Composite*RemoteSource` falls back silently to the in-memory `Fake*RemoteSource` whenever the live API returns `null`, so:
+The Android client has already implemented **seven HTTP endpoints** that the backend has **never confirmed**. The Retrofit interfaces, DTOs, mappers, and Hilt wiring are all in place — but every one of those endpoints is marked **`SPECULATIVE`** in source comments. On a live device today, the `Composite*RemoteSource` falls back silently to the in-memory `Fake*RemoteSource` whenever the live API returns `null`, so:
 
 - Exam dashboards render fake centres + fake candidate rosters.
 - Assessment schedules + papers are synthetic.
@@ -26,7 +26,7 @@ This is acceptable for development; it is **not acceptable for production**. The
 
 **Update, 2026-08-14:** the Composite/Fake fallback for the exam dossier (E1) has been disabled outright — `ExamDataModule` now binds the live API source in every build type, no exceptions. This was forced by exactly the failure mode described above: a debug build silently served fake data (3 papers, 3 candidates) that looked identical to a real download. E1 is also now **confirmed live** against a real device response — see §8.1 of `docs/api/full-api-documentation.md`, whose shape turned out to diverge substantially from what §2.2 below originally speculated (`centre` not `center`, candidates/assignments nested per-schedule rather than flat top-level arrays, minimal `papers[]` with no kind/timing/hall). E2/E3 remain unconfirmed.
 
-### 2.2 The eight speculative endpoints
+### 2.2 The seven speculative endpoints
 
 Assessment + verification paths are relative to the production base URL
 `https://app.chprbn.gov.ng/api/v1/mobile/`. **Exam endpoints (E1–E3) are on a
@@ -48,17 +48,25 @@ separate backend**, `https://jarabawa.chprbn.gov.ng/api/v1/mobile/`, and take
 
 #### Assessment feature — read
 
+> **Schedule discovery is not a separate endpoint.** Assessment schedules
+> are the PE (`paper_kind = "practical"`) + PA (`paper_kind = "project"`)
+> subset of the exam dossier (E1). Mobile filters the dossier's `papers[]`
+> and adapts each into an `AssessmentSchedule` in
+> `AssessmentScheduleRepositoryImpl.getSchedules`. Backend only needs to
+> ensure the dossier already emits PE/PA rows — see
+> `docs/api/full-api-documentation.md` §9 for the removed endpoint's
+> history.
+
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| A1 | `GET` | `assessments/schedules` | Bearer | `AssessmentPackageApiService.fetchSchedules` | List the schedules the officer is assigned to. |
-| A2 | `GET` | `assessments/schedules/{scheduleId}/package` | Bearer | `AssessmentPackageApiService.fetchPackage` | Pull a schedule's full reference data: paper + practical sections + questions + candidates + assignments. |
+| A1 | `GET` | `assessments/schedules/{scheduleId}/package` | Bearer | `AssessmentPackageApiService.fetchPackage` | Pull a schedule's full reference data: paper + practical sections + questions + candidates + assignments. `scheduleId` matches the exam dossier's `papers[].id` for a PE/PA paper. |
 
 #### Assessment feature — write
 
 | # | Method | Path | Auth | Mobile source | Purpose |
 |---|---|---|---|---|---|
-| A3 | `POST` | `assessments/practical-scores/batch` | Bearer | `AssessmentSyncApiService.uploadPracticalScoreBatch` | Batched upload of practical (section-level) scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, sectionId)` recommended. |
-| A4 | `POST` | `assessments/project-scores/batch` | Bearer | `AssessmentSyncApiService.uploadProjectScoreBatch` | Batched upload of project scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId)` recommended. |
+| A2 | `POST` | `assessments/practical-scores/batch` | Bearer | `AssessmentSyncApiService.uploadPracticalScoreBatch` | Batched upload of practical (section-level) scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, sectionId)` recommended. |
+| A3 | `POST` | `assessments/project-scores/batch` | Bearer | `AssessmentSyncApiService.uploadProjectScoreBatch` | Batched upload of project scores (`items[]` in request; per-row `results[]` in response). Idempotent on `(candidateId, paperId)` recommended. |
 
 ### 2.3 Envelope convention (audit C3 — decided)
 
@@ -95,10 +103,10 @@ Concrete checklist to put to the backend team. Each row gates the corresponding 
 | Q-C1.E1 | Confirm exact path for E1 (`attendance/fetch-record`) and that it returns the full dossier in one response. | Exam dashboard |
 | Q-C1.E2 | Confirm path + idempotency story for attendance upload (E2). | Attendance sync |
 | Q-C1.E3 | Confirm path + idempotency story for remark upload (E3). | Remark sync |
-| Q-C1.A1 | Confirm path for schedule list (A1). | Assessment schedule list |
-| Q-C1.A2 | Confirm path for per-schedule package (A2) and `scheduleId` URL-encoding rules. | Assessment paper detail |
-| Q-C1.A3 | Confirm path + idempotency story for practical-score upload (A3). | Practical scoring |
-| Q-C1.A4 | Confirm path + idempotency story for project-score upload (A4). | Project scoring |
+| Q-C1.A1 | Confirm path for per-schedule package (A1) and `scheduleId` URL-encoding rules. `scheduleId` must equal the exam dossier's `papers[].id` for the PE/PA paper. | Assessment paper detail |
+| Q-C1.A2 | Confirm path + idempotency story for practical-score upload (A2). | Practical scoring |
+| Q-C1.A3 | Confirm path + idempotency story for project-score upload (A3). | Project scoring |
+| Q-C1.DOSSIER-PA | Confirm the exam dossier (E1) already emits PE (`paper_kind = "practical"`) + PA (`paper_kind = "project"`) papers alongside theory papers. Mobile filters them into the assessment schedules list — no separate schedules endpoint. | Assessment schedule list |
 | Q-C2 | Bearer token + scope. Same token as verification? Different TTL? | Every protected assessment/verification endpoint |
 | Q-C4 | `X-Location`-only access control on the jarabawa backend: behavior on unrecognized/missing location. | Every exam endpoint (E1–E3) |
 | Q-C3 | ~~Standard envelope: `{status, message, data}` vs flat?~~ **Decided:** `{success, message, data}` for every endpoint. | — |
@@ -110,7 +118,7 @@ Concrete checklist to put to the backend team. Each row gates the corresponding 
 
 The contract is closed and mobile can ship "real" exam + assessment when:
 
-1. All 8 endpoints exist in staging with the agreed envelope + auth.
+1. All 7 endpoints exist in staging with the agreed envelope + auth, and the exam dossier (E1) already emits PE/PA papers alongside theory papers so the assessment schedules list works without a separate endpoint.
 2. A staging base URL is available so mobile can run `:app:assembleDebug` against real responses without crossing into production.
 3. One end-to-end test pass: officer logs in → fetches dossier → marks attendance for ≥ 1 candidate → goes offline → marks another → comes online → sync completes → server shows both rows. Same pattern for an assessment schedule.
 4. Mobile then flips the `CompositeExamDossierRemoteSource` + `CompositeAssessmentPackageRemoteSource` wiring **or keeps the Composite** if the Fake source is still useful for dev. The Composite already prefers the API, so no flip is required — the silent-fallback risk just goes away once the API succeeds.

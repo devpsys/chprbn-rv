@@ -63,10 +63,35 @@ class DtoMappersTest {
     }
 
     @Test
-    fun `paper dto has no wire signal for kind, timing, or hall, so those default`() {
+    fun `paper dto with a missing or unknown code defaults paperKind to Theory`() {
+        val missing = PaperDto(id = "p1").toDomain(centerId = "C-1")!!
+        val unknown = PaperDto(id = "p2", code = "XYZ").toDomain(centerId = "C-1")!!
+
+        assertEquals(PaperKind.Theory, missing.paperKind)
+        assertEquals(PaperKind.Theory, unknown.paperKind)
+    }
+
+    @Test
+    fun `paper dto derives paperKind from wire code — PE=Practical, PA=Project, everything else Theory`() {
+        // Regression: this mapping was broken (paperKind = "".toPaperKind()
+        // always returned Theory), so PE papers were showing on the exam
+        // papers screen and never on the assessment schedules list.
+        val pe = PaperDto(id = "p-pe", code = "PE", name = "PRACTICAL").toDomain(centerId = "C-1")!!
+        val pa = PaperDto(id = "p-pa", code = "PA", name = "PROJECT").toDomain(centerId = "C-1")!!
+        val p3 = PaperDto(id = "p-p3", code = "P3", name = "PAPER 3").toDomain(centerId = "C-1")!!
+        val peLower = PaperDto(id = "p-pe2", code = "pe").toDomain(centerId = "C-1")!!
+
+        assertEquals(PaperKind.Practical, pe.paperKind)
+        assertEquals(PaperKind.Project, pa.paperKind)
+        assertEquals(PaperKind.Theory, p3.paperKind)
+        // fromWireCode uppercases before comparing.
+        assertEquals(PaperKind.Practical, peLower.paperKind)
+    }
+
+    @Test
+    fun `paper dto has no wire signal for timing or hall, so those default`() {
         val paper = PaperDto(id = "p1").toDomain(centerId = "C-1")!!
 
-        assertEquals(PaperKind.Theory, paper.paperKind)
         assertEquals(0L, paper.startAt)
         assertEquals(0L, paper.endAt)
         assertEquals("", paper.hall)

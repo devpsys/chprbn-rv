@@ -3,10 +3,10 @@ package ng.com.chprbn.mobile.feature.assessment.data.repository
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentPaperDao
-import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentScheduleDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
@@ -21,6 +21,8 @@ import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSchedule
 import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
 import ng.com.chprbn.mobile.feature.assessment.domain.model.SaveResult
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentScheduleRepository
+import ng.com.chprbn.mobile.feature.exam.domain.model.Paper as ExamPaper
+import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamPaperRepository
 import java.io.IOException
 import javax.inject.Inject
 
@@ -33,10 +35,17 @@ import javax.inject.Inject
  * Critically, [downloadPackage] never touches `practical_scores` /
  * `project_scores` — pending writes survive a re-download (the explicit
  * UX contract behind the download-warning prompt).
+ *
+ * **Schedules are not a separate wire concept.** They're just the PE
+ * (`Practical`) + PA (`Project`) subset of the exam dossier — the same
+ * `/exam/dossier` payload the exam feature reads. [getSchedules] adapts
+ * `ExamPaperRepository.getAssessmentPapers()` into [AssessmentSchedule]
+ * rows and computes each schedule's aggregate `syncStatus` on read from
+ * the score DAOs (was previously a persisted column on the removed
+ * `assessment_schedules` table).
  */
 class AssessmentScheduleRepositoryImpl @Inject constructor(
     private val db: AssessmentDatabase,
-    private val scheduleDao: AssessmentScheduleDao,
     private val paperDao: AssessmentPaperDao,
     private val sectionDao: PracticalSectionDao,
     private val questionDao: SectionQuestionDao,
@@ -44,19 +53,38 @@ class AssessmentScheduleRepositoryImpl @Inject constructor(
     private val practicalScoreDao: PracticalScoreDao,
     private val projectScoreDao: ProjectScoreDao,
     private val remoteSource: AssessmentPackageRemoteSource,
+    private val examPaperRepository: ExamPaperRepository,
 ) : AssessmentScheduleRepository {
 
     override suspend fun getSchedules(): List<AssessmentSchedule> = withContext(Dispatchers.IO) {
-        val cached = scheduleDao.getAll()
-        if (cached.isNotEmpty()) {
-            return@withContext cached.map { it.toDomain() }
+        examPaperRepository.getAssessmentPapers().map { it.toAssessmentSchedule() }
+    }
+
+    /**
+     * Priority: `Failed > Pending > Synced`. A schedule with no score rows
+     * is vacuously `Synced` — the UI already suppresses the pill in that
+     * case via row counts on the candidates list.
+     */
+    private suspend fun ExamPaper.toAssessmentSchedule(): AssessmentSchedule {
+        val scheduleId = id
+        val failed = practicalScoreDao.countByStatusForSchedule(scheduleId, SyncStatus.Failed.name) +
+            projectScoreDao.countByStatusForSchedule(scheduleId, SyncStatus.Failed.name)
+        val syncStatus = when {
+            failed > 0 -> SyncStatus.Failed
+            else -> {
+                val pending = practicalScoreDao.countByStatusForSchedule(scheduleId, SyncStatus.Pending.name) +
+                    projectScoreDao.countByStatusForSchedule(scheduleId, SyncStatus.Pending.name)
+                if (pending > 0) SyncStatus.Pending else SyncStatus.Synced
+            }
         }
-        // First-launch path: pull from remote, write through, return.
-        val fetched = runCatching { remoteSource.fetchSchedules() }.getOrNull().orEmpty()
-        if (fetched.isNotEmpty()) {
-            scheduleDao.upsertAll(fetched.map { it.toEntity() })
-        }
-        fetched
+        return AssessmentSchedule(
+            id = scheduleId,
+            title = title.ifBlank { subtitle },
+            date = startAt,
+            paperKind = paperKind,
+            centerId = centerId,
+            syncStatus = syncStatus,
+        )
     }
 
     override suspend fun getPaperDetail(scheduleId: String): AssessmentPaperDetailResult =

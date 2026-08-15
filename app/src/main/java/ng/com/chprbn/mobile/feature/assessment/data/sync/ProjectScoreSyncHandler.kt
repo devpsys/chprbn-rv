@@ -6,7 +6,6 @@ import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.projectScoreClientId
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
-import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentScheduleSyncStatusUpdater
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
 import javax.inject.Inject
 
@@ -14,7 +13,6 @@ import javax.inject.Inject
 class ProjectScoreSyncHandler @Inject constructor(
     private val projectScoreDao: ProjectScoreDao,
     private val remoteSource: AssessmentSyncRemoteSource,
-    private val statusUpdater: AssessmentScheduleSyncStatusUpdater,
 ) : SyncEntityHandler {
 
     override suspend fun uploadBatch(entityKeys: List<String>): Map<String, SyncOutcome> {
@@ -47,7 +45,6 @@ class ProjectScoreSyncHandler @Inject constructor(
         if (toUpload.isEmpty()) return outcomes
 
         val remoteResults = remoteSource.uploadProjectScoreBatch(toUpload.map { it.domain })
-        val touchedSchedules = mutableSetOf<String>()
 
         for (row in toUpload) {
             val result = remoteResults[row.clientId]
@@ -60,7 +57,6 @@ class ProjectScoreSyncHandler @Inject constructor(
                         syncStatus = SyncStatus.Synced.name,
                         syncError = null,
                     )
-                    touchedSchedules += row.domain.scheduleId
                     SyncOutcome.Success
                 },
                 onFailure = { t ->
@@ -71,14 +67,9 @@ class ProjectScoreSyncHandler @Inject constructor(
                         syncStatus = SyncStatus.Failed.name,
                         syncError = message,
                     )
-                    touchedSchedules += row.domain.scheduleId
                     SyncOutcome.Failure(message)
                 },
             )
-        }
-
-        for (scheduleId in touchedSchedules) {
-            statusUpdater.refresh(scheduleId)
         }
 
         return outcomes

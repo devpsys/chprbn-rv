@@ -37,13 +37,34 @@ data class ExamCandidatesUiState(
     val hasLoaded: Boolean = false,
 ) {
     companion object {
-        fun placeholder(): ExamCandidatesUiState = ExamCandidatesUiState(
+        private val DEFAULT_FILTER_LABELS = listOf("All", "Signed In", "Signed Out", "Flagged")
+
+        /**
+         * Real starting state — no candidates, [hasLoaded] false so
+         * [ExamCandidatesContent] renders the loading spinner until
+         * [ExamCandidatesViewModel.refresh] resolves. The ViewModel never
+         * shows [preview]'s made-up names to a real officer, not even
+         * momentarily.
+         */
+        fun initial(): ExamCandidatesUiState = ExamCandidatesUiState(
+            hasLoaded = false,
+            searchQuery = "",
+            activeFilterLabel = "All",
+            filterLabels = DEFAULT_FILTER_LABELS,
+            candidates = emptyList(),
+        )
+
+        /**
+         * Sample data for the Compose `@Preview` and content-render tests —
+         * never wired into the real [ExamCandidatesViewModel] flow (see
+         * [initial]). Uses null avatars so the card renders the bundled
+         * Icon fallback rather than a hotlinked stock photo.
+         */
+        fun preview(): ExamCandidatesUiState = ExamCandidatesUiState(
             hasLoaded = true,
             searchQuery = "",
             activeFilterLabel = "All",
-            filterLabels = listOf("All", "Signed In", "Signed Out", "Flagged"),
-            // Placeholder candidates use null avatars so the card renders the
-            // bundled Icon fallback — never a hotlinked stock photo.
+            filterLabels = DEFAULT_FILTER_LABELS,
             candidates = listOf(
                 ExamCandidateUiState(
                     avatarUrl = null,

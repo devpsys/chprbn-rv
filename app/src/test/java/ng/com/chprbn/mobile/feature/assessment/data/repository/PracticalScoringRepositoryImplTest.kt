@@ -44,14 +44,13 @@ class PracticalScoringRepositoryImplTest {
         coEvery { enqueue(any()) } returns 1L
     }
     private val workScheduler = mockk<SyncWorkScheduler>(relaxUnitFun = true)
-    private val statusUpdater = mockk<AssessmentScheduleSyncStatusUpdater>(relaxUnitFun = true)
 
     private val repository = PracticalScoringRepositoryImpl(
-        sectionDao, questionDao, practicalScoreDao, syncJobDao, workScheduler, statusUpdater,
+        sectionDao, questionDao, practicalScoreDao, syncJobDao, workScheduler,
     )
 
     @Test
-    fun `recordScore upserts, enqueues a sync job with composite key, refreshes status, and schedules work`() = runTest {
+    fun `recordScore upserts, enqueues a sync job with composite key, and schedules work`() = runTest {
         val captured = slot<SyncJobEntity>()
         coEvery { syncJobDao.enqueue(capture(captured)) } returns 1L
 
@@ -69,7 +68,8 @@ class PracticalScoringRepositoryImplTest {
         assertEquals(SaveResult.Success, result)
 
         coVerify(exactly = 1) { practicalScoreDao.upsert(any()) }
-        coVerify(exactly = 1) { statusUpdater.refresh("PE-2024") }
+        // No status-updater refresh anymore — schedules-list sync-status is
+        // derived at read time in AssessmentScheduleRepositoryImpl.getSchedules.
         coVerify(exactly = 1) { workScheduler.scheduleSyncWork() }
 
         val job = captured.captured

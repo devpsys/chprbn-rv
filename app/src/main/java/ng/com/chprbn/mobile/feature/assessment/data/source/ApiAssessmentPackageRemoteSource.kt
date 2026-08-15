@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile.feature.assessment.data.source
 
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentPackageApiService
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
-import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSchedule
 import java.io.IOException
 import javax.inject.Inject
 
@@ -25,24 +24,6 @@ import javax.inject.Inject
 class ApiAssessmentPackageRemoteSource @Inject constructor(
     private val api: AssessmentPackageApiService,
 ) : AssessmentPackageRemoteSource {
-
-    override suspend fun fetchSchedules(): List<AssessmentSchedule>? {
-        val response = try {
-            api.fetchSchedules()
-        } catch (e: IOException) {
-            error("Network error fetching assessment schedules: ${e.message ?: e.javaClass.simpleName}")
-        }
-        if (!response.isSuccessful) {
-            error("Assessment schedules request failed: HTTP ${response.code()} ${response.message()}")
-        }
-        val envelope = response.body()
-            ?: error("Assessment schedules response had an empty body.")
-        if (!envelope.success) {
-            error(envelope.message ?: "Assessment schedules request was rejected.")
-        }
-        val rows = envelope.data ?: return null
-        return rows.mapNotNull { it.toDomain() }
-    }
 
     override suspend fun fetchPackage(scheduleId: String): AssessmentPackageBundle? {
         val response = try {

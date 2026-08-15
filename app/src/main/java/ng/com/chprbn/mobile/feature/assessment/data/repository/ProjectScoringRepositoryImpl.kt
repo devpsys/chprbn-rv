@@ -20,7 +20,6 @@ class ProjectScoringRepositoryImpl @Inject constructor(
     private val projectScoreDao: ProjectScoreDao,
     private val syncJobDao: SyncJobDao,
     private val workScheduler: SyncWorkScheduler,
-    private val statusUpdater: AssessmentScheduleSyncStatusUpdater,
 ) : ProjectScoringRepository {
 
     override suspend fun getProjectScore(
@@ -49,7 +48,6 @@ class ProjectScoringRepositoryImpl @Inject constructor(
                     ),
                 )
                 projectScoreDao.upsert(score.toEntity())
-                statusUpdater.refresh(score.scheduleId)
                 workScheduler.scheduleSyncWork()
                 SaveResult.Success
             } catch (t: Throwable) {

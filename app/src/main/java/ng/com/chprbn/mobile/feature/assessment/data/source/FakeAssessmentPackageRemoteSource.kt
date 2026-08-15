@@ -2,10 +2,7 @@ package ng.com.chprbn.mobile.feature.assessment.data.source
 
 import kotlinx.coroutines.delay
 import ng.com.chprbn.mobile.core.domain.model.Candidate
-import ng.com.chprbn.mobile.core.domain.model.PaperKind
-import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
-import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSchedule
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
@@ -25,11 +22,6 @@ import javax.inject.Inject
 class FakeAssessmentPackageRemoteSource @Inject constructor() :
     AssessmentPackageRemoteSource {
 
-    override suspend fun fetchSchedules(): List<AssessmentSchedule> {
-        delay(SIMULATED_LATENCY_MS)
-        return SCHEDULES
-    }
-
     override suspend fun fetchPackage(scheduleId: String): AssessmentPackageBundle? {
         delay(SIMULATED_LATENCY_MS)
         return PACKAGE_BY_SCHEDULE[scheduleId]
@@ -37,25 +29,6 @@ class FakeAssessmentPackageRemoteSource @Inject constructor() :
 
     private companion object {
         const val SIMULATED_LATENCY_MS = 200L
-
-        val SCHEDULES = listOf(
-            AssessmentSchedule(
-                id = "PE-2024",
-                title = "PE-2024 / Practical Exam",
-                date = 1_730_000_000_000L,
-                paperKind = PaperKind.Practical,
-                centerId = "C-1",
-                syncStatus = SyncStatus.Synced,
-            ),
-            AssessmentSchedule(
-                id = "MD-801",
-                title = "MD-801 / Medical Diagnostics",
-                date = 1_731_000_000_000L,
-                paperKind = PaperKind.Practical,
-                centerId = "C-1",
-                syncStatus = SyncStatus.Pending,
-            ),
-        )
 
         private val SECTION_A = PracticalSection(
             id = "PE-2024-sec-A",

@@ -26,7 +26,7 @@ class ExamCandidatesContentRenderTest {
         composeRule.setContent {
             ChprbnTheme {
                 ExamCandidatesContent(
-                    uiState = ExamCandidatesUiState.placeholder().copy(hasLoaded = false),
+                    uiState = ExamCandidatesUiState.preview().copy(hasLoaded = false),
                     onBack = {},
                     onAddRemark = {},
                     onViewProfile = {},
@@ -43,7 +43,7 @@ class ExamCandidatesContentRenderTest {
         composeRule.setContent {
             ChprbnTheme {
                 ExamCandidatesContent(
-                    uiState = ExamCandidatesUiState.placeholder(),
+                    uiState = ExamCandidatesUiState.preview(),
                     onBack = {},
                     onAddRemark = {},
                     onViewProfile = {},
@@ -72,7 +72,7 @@ class ExamCandidatesContentRenderTest {
         composeRule.setContent {
             ChprbnTheme {
                 ExamCandidatesContent(
-                    uiState = ExamCandidatesUiState.placeholder().copy(candidates = emptyList()),
+                    uiState = ExamCandidatesUiState.preview().copy(candidates = emptyList()),
                     onBack = {},
                     onAddRemark = {},
                     onViewProfile = {},

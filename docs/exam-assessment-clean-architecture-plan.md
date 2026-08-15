@@ -294,10 +294,12 @@ feature/assessment/
 │   │                       ProjectScoringModule, AssessmentSyncModule
 │   ├── dto/                AssessmentPackageEnvelopeDto + …DataDto,
 │   │                       PracticalScoreSyncRequestDto, ProjectScoreSyncRequestDto, …
-│   ├── local/              AssessmentDatabase, AssessmentScheduleEntity,
+│   ├── local/              AssessmentDatabase, AssessmentPaperEntity,
 │   │                       PracticalSectionEntity, SectionQuestionEntity,
 │   │                       PracticalScoreEntity, ProjectScoreEntity,
 │   │                       AssessmentCandidateEntity, *Dao
+│   │                       (Schedules are derived from the exam dossier's
+│   │                       PE/PA papers — no dedicated schedules table.)
 │   ├── mappers/            PackageMappers.kt, PracticalScoreMappers.kt, ProjectScoreMappers.kt
 │   ├── repository/         AssessmentScheduleRepositoryImpl,
 │   │                       AssessmentCandidateRepositoryImpl,

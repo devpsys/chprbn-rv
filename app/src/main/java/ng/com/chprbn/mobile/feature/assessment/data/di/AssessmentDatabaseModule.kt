@@ -11,7 +11,6 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentPaperDao
-import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentScheduleDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
@@ -23,11 +22,10 @@ import javax.inject.Singleton
  * `SupportOpenHelperFactory` from `core.persistence.encryption.EncryptionModule`,
  * and exposes every DAO as a singleton.
  *
- * Schema version 1; no migrations registered. Future schema bumps MUST add
- * explicit `Migration(n, n+1)` objects to [AssessmentDatabase] and pass them
- * to `addMigrations(...)`. The destructive fallback was deliberately removed —
- * losing pending score writes to a missed migration is unacceptable, so a
- * missing migration now fails loudly at startup instead of silently wiping.
+ * Schema history + migrations live in [AssessmentDatabase]'s annotation. The
+ * destructive fallback was deliberately removed — losing pending score writes
+ * to a missed migration is unacceptable, so a missing migration now fails
+ * loudly at startup instead of silently wiping.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -42,9 +40,6 @@ object AssessmentDatabaseModule {
         Room.databaseBuilder(context, AssessmentDatabase::class.java, "assessment.db")
             .openHelperFactory(supportFactory)
             .build()
-
-    @Provides
-    fun provideScheduleDao(db: AssessmentDatabase): AssessmentScheduleDao = db.scheduleDao()
 
     @Provides
     fun providePaperDao(db: AssessmentDatabase): AssessmentPaperDao = db.paperDao()

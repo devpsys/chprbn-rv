@@ -80,7 +80,13 @@ class ExamPaperRepositoryImpl @Inject constructor(
         }
 
     override suspend fun getPapersForToday(): List<Paper> = withContext(Dispatchers.IO) {
-        paperDao.getAll().map { it.toDomain() }
+        // SQL-side filter: PE/PA go to the assessment feature, everything
+        // else shows on the exam-papers screen. Same source table.
+        paperDao.getExamPapers().map { it.toDomain() }
+    }
+
+    override suspend fun getAssessmentPapers(): List<Paper> = withContext(Dispatchers.IO) {
+        paperDao.getAssessmentPapers().map { it.toDomain() }
     }
 
     override suspend fun getPaperDetail(paperId: String): ExamPaperDetailResult =

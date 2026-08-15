@@ -8,7 +8,6 @@ import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreEntity
-import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentScheduleSyncStatusUpdater
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,8 +20,7 @@ class ProjectScoreSyncHandlerTest {
         coEvery { updateSyncMetadata(any(), any(), any(), any()) } returns 1
     }
     private val remote = mockk<AssessmentSyncRemoteSource>()
-    private val statusUpdater = mockk<AssessmentScheduleSyncStatusUpdater>(relaxUnitFun = true)
-    private val handler = ProjectScoreSyncHandler(dao, remote, statusUpdater)
+    private val handler = ProjectScoreSyncHandler(dao, remote)
 
     @Test
     fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
@@ -44,7 +42,7 @@ class ProjectScoreSyncHandlerTest {
     }
 
     @Test
-    fun `successful upload flips score to Synced and refreshes schedule once`() = runTest {
+    fun `successful upload flips score to Synced`() = runTest {
         coEvery { dao.getOne("s", "c") } returns scoreEntity()
         coEvery { remote.uploadProjectScoreBatch(any()) } returns mapOf(
             "s:c" to Result.success(Unit),
@@ -61,11 +59,12 @@ class ProjectScoreSyncHandlerTest {
                 syncError = null,
             )
         }
-        coVerify(exactly = 1) { statusUpdater.refresh("s") }
+        // No per-schedule status refresh anymore — the schedules-list pill
+        // is derived at read time in AssessmentScheduleRepositoryImpl.
     }
 
     @Test
-    fun `failed upload flips score to Failed with error message and refreshes schedule`() = runTest {
+    fun `failed upload flips score to Failed with error message`() = runTest {
         coEvery { dao.getOne("s", "c") } returns scoreEntity()
         coEvery { remote.uploadProjectScoreBatch(any()) } returns mapOf(
             "s:c" to Result.failure(IOException("offline")),
@@ -83,7 +82,6 @@ class ProjectScoreSyncHandlerTest {
                 syncError = "offline",
             )
         }
-        coVerify(exactly = 1) { statusUpdater.refresh("s") }
     }
 
     private fun scoreEntity() = ProjectScoreEntity(

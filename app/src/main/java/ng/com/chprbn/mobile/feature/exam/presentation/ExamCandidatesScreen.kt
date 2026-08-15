@@ -51,7 +51,7 @@ fun ExamCandidatesScreen(
 private fun ExamCandidatesScreenPreview() {
     ChprbnTheme {
         ExamCandidatesContent(
-            uiState = ExamCandidatesUiState.placeholder(),
+            uiState = ExamCandidatesUiState.preview(),
             onBack = {},
             onAddRemark = {},
             onViewProfile = {}

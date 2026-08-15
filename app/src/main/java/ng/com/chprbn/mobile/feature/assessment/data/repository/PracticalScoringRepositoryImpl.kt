@@ -35,11 +35,13 @@ import javax.inject.Inject
  * 1. Upserts the local score (entity stamped `syncStatus = Pending`).
  * 2. Enqueues a `SyncJobEntity` keyed by the entity's composite triple
  *    so the cross-feature [SyncWorkScheduler] knows there's work to do.
- * 3. Re-derives the parent schedule's `syncStatus` via
- *    [AssessmentScheduleSyncStatusUpdater] so the Examination Schedules
- *    pill stays accurate.
- * 4. Asks [SyncWorkScheduler] to schedule a sync run (idempotent — uses
+ * 3. Asks [SyncWorkScheduler] to schedule a sync run (idempotent — uses
  *    KEEP policy, so rapid taps collapse to one worker run).
+ *
+ * The schedules-list "sync status" pill is now derived at read time in
+ * `AssessmentScheduleRepositoryImpl.getSchedules` (the persisted status
+ * column was removed alongside `assessment_schedules`) — no explicit
+ * refresh step here.
  */
 class PracticalScoringRepositoryImpl @Inject constructor(
     private val sectionDao: PracticalSectionDao,
@@ -47,7 +49,6 @@ class PracticalScoringRepositoryImpl @Inject constructor(
     private val practicalScoreDao: PracticalScoreDao,
     private val syncJobDao: SyncJobDao,
     private val workScheduler: SyncWorkScheduler,
-    private val statusUpdater: AssessmentScheduleSyncStatusUpdater,
 ) : PracticalScoringRepository {
 
     override suspend fun getSections(
@@ -146,7 +147,6 @@ class PracticalScoringRepositoryImpl @Inject constructor(
                     ),
                 )
                 practicalScoreDao.upsert(score.toEntity())
-                statusUpdater.refresh(score.scheduleId)
                 workScheduler.scheduleSyncWork()
                 SaveResult.Success
             } catch (t: Throwable) {

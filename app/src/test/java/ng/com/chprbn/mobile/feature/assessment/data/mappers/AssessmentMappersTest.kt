@@ -1,11 +1,9 @@
 package ng.com.chprbn.mobile.feature.assessment.data.mappers
 
 import ng.com.chprbn.mobile.core.domain.model.Candidate
-import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentCandidateRowProjection
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
-import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSchedule
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
@@ -25,19 +23,10 @@ import org.junit.Test
  */
 class AssessmentMappersTest {
 
-    @Test
-    fun `schedule round-trips`() {
-        val domain = AssessmentSchedule(
-            id = "PE-2024",
-            title = "PE-2024 / Practical Exam",
-            date = 1_700_000_000_000L,
-            paperKind = PaperKind.Practical,
-            centerId = "C-1",
-            syncStatus = SyncStatus.Pending,
-        )
-
-        assertEquals(domain, domain.toEntity().toDomain())
-    }
+    // `AssessmentSchedule` no longer round-trips through Room —
+    // `AssessmentScheduleEntity` was removed alongside the dedicated
+    // schedules endpoint. Schedules are now adapted at read time from the
+    // exam-side dossier by `AssessmentScheduleRepositoryImpl.getSchedules`.
 
     @Test
     fun `paper round-trips`() {

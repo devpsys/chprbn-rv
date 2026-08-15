@@ -93,7 +93,7 @@ All paths in this document are **relative** to the base URL. Where a path is wri
 
 ### 1.7 Pagination conventions
 
-**Status: NOT IMPLEMENTED.** No endpoint in the current client paginates. The Assessment + Examination read endpoints (`attendance/fetch-record`, `assessments/schedules`, `assessments/schedules/{id}/package`) are designed as single-shot fetches because the per-officer payload size is bounded (≤ ~200 candidates per centre per day).
+**Status: NOT IMPLEMENTED.** No endpoint in the current client paginates. The Assessment + Examination read endpoints (`attendance/fetch-record`, `assessments/schedules/{id}/package`) are designed as single-shot fetches because the per-officer payload size is bounded (≤ ~200 candidates per centre per day).
 
 When pagination becomes necessary (e.g. a future "all schedules history" endpoint), the convention is:
 
@@ -1352,70 +1352,20 @@ Same as §8.2.
 
 ## 9. Assessment Module
 
-> **Status: To Be Implemented.** None of the endpoints below exist server-side yet. See `docs/BACKEND_CONTRACT_AND_CERT_PINNING.md` §2.5.
+> **Status: To Be Implemented.** The single endpoint below (§9.1) doesn't
+> exist server-side yet. See `docs/BACKEND_CONTRACT_AND_CERT_PINNING.md` §2.5.
+>
+> **Schedule discovery is not a dedicated endpoint.** Assessment schedules
+> are the PE (`paper_kind = "practical"`) + PA (`paper_kind = "project"`)
+> subset of the exam dossier (§8.1). Mobile filters the dossier's
+> `data.papers[]` in the assessment repository —
+> `AssessmentScheduleRepositoryImpl.getSchedules` reads
+> `ExamPaperRepository.getAssessmentPapers()` and adapts each PE/PA
+> paper into an `AssessmentSchedule` with an aggregate `syncStatus`
+> derived from the local score tables. Backend only needs to ensure the
+> dossier already emits these PE/PA rows.
 
-### 9.1 List Schedules
-
-| Property | Value |
-|---|---|
-| **Module** | Assessment |
-| **Feature** | Schedule discovery |
-| **Purpose** | List the assessment schedules the officer is assigned to. |
-| **Authentication required** | Yes |
-| **HTTP method** | `GET` |
-| **URL path** | `/assessments/schedules` |
-| **Status** | **To Be Implemented** |
-| **Mobile source** | `AssessmentPackageApiService.fetchSchedules` |
-
-#### Request
-
-No params. Server scopes by token.
-
-#### Success Response — `200 OK`
-
-```json
-{
-  "success": true,
-  "message": "OK",
-  "data": [
-    {
-      "id": "sch_001",
-      "title": "Cardiology Practical — Cohort A",
-      "date": 1768501800000,
-      "paper_kind": "practical",
-      "center_id": "ctr_001"
-    },
-    {
-      "id": "sch_002",
-      "title": "Surgery Project Defence",
-      "date": 1768588200000,
-      "paper_kind": "project",
-      "center_id": "ctr_001"
-    }
-  ]
-}
-```
-
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| `data[].id` | string | No | Opaque schedule id. |
-| `data[].title` | string | No | Display title. |
-| `data[].date` | int64 | No | Epoch millis (UTC) at the schedule's start. |
-| `data[].paper_kind` | enum string | No | See §2.7. |
-| `data[].center_id` | string | Yes | Owning centre, when applicable. |
-
-#### Error Responses
-
-| Code | Cause |
-|---|---|
-| `401` | Invalid token. |
-| `5xx` | Generic. |
-
-Empty list returns `200` with `data: []`.
-
----
-
-### 9.2 Get Schedule Package
+### 9.1 Get Schedule Package
 
 | Property | Value |
 |---|---|
@@ -1432,7 +1382,7 @@ Empty list returns `200` with `data: []`.
 
 | Name | Type | Required | Description |
 |---|---|---|---|
-| `schedule_id` | string | Yes | From §9.1 `data[].id`. |
+| `schedule_id` | string | Yes | Matches the exam dossier's `data.papers[].id` for a PE/PA paper (§8.1). Mobile derives the assessment schedules list from the dossier — there is no dedicated `/assessments/schedules` list endpoint. |
 
 #### Success Response — `200 OK`
 
@@ -1528,7 +1478,7 @@ See §10.1.
 
 ---
 
-### 9.3 Submit Practical Scores — batch
+### 9.2 Submit Practical Scores — batch
 
 | Property | Value |
 |---|---|
@@ -1603,7 +1553,7 @@ Same set as §8.2. A `score > question.max_score` returns HTTP 200 with `accepte
 
 ---
 
-### 9.4 Submit Project Scores — batch
+### 9.3 Submit Project Scores — batch
 
 | Property | Value |
 |---|---|
@@ -1652,11 +1602,11 @@ Same set as §8.2. A `score > question.max_score` returns HTTP 200 with `accepte
 
 #### Success Response — `200 OK`
 
-Same shape as §9.3.
+Same shape as §9.2.
 
 #### Error Responses
 
-Same set as §9.3.
+Same set as §9.2.
 
 #### Business Rules
 
@@ -1668,7 +1618,7 @@ Same set as §9.3.
 
 ## 10. Cross-Endpoint Data Models
 
-### 10.1 `Candidate` (shared by §8.1, §9.2)
+### 10.1 `Candidate` (shared by §8.1, §9.1)
 
 Cross-feature candidate identity. The exam dossier and the assessment package use nearly the same shape so the local Room `candidates` table holds one canonical row per person — **but the exam dossier's live field names differ from the assessment package's**, confirmed against a real device response (2026-08-14):
 
@@ -1698,7 +1648,7 @@ See §2.7 for the canonical wire-value table. Repeated here for visibility:
 
 ### 10.3 Sync-write batch response shape
 
-Every write endpoint in the verification (§7.4) + exam (§8.2, §8.3) + assessment (§9.3, §9.4) modules returns the same shape:
+Every write endpoint in the verification (§7.4) + exam (§8.2, §8.3) + assessment (§9.2, §9.3) modules returns the same shape:
 
 ```json
 {
@@ -1957,8 +1907,8 @@ The canonical envelope flag is `success` (boolean). Mobile prefers `success` but
 
 ### 14.2 New-endpoint rollout order
 
-1. **First:** `/attendance/fetch-record` + `/attendance/push-record` + `/attendance-remarks` — exam day blocks on these.
-2. **Second:** `/assessments/schedules` + `/assessments/schedules/{id}/package` — assessment day needs reference data.
+1. **First:** `/attendance/fetch-record` + `/attendance/push-record` + `/attendance-remarks` — exam day blocks on these. The dossier response must already include PE/PA papers (`paper_kind = "practical" | "project"`) — mobile filters them into the assessment side, no separate schedules endpoint.
+2. **Second:** `/assessments/schedules/{id}/package` — assessment day needs the per-schedule reference data (sections, questions, candidates).
 3. **Third:** `/assessments/practical-scores/batch` + `/assessments/project-scores/batch` — scoring is the write half of the assessment flow.
 4. **Fourth (verification cutover):** `/practitioners/verified-sync/batch` — replaces the legacy per-row endpoint (§7.2). Both run side-by-side during the cutover window so existing client builds keep working.
 
@@ -1970,11 +1920,10 @@ The mobile client already wires Composite remote sources that prefer the live AP
 2. PR #2 — `POST /adhoc/logout` and `POST /logout` token revocation (§5.3 + §5.4).
 3. PR #3 — `GET /attendance/fetch-record` (read-only; simplest to land first).
 4. PR #4 — `POST /attendance/push-record` + `POST /attendance-remarks` (batched idempotent writes; per-row results).
-5. PR #5 — `GET /assessments/schedules`.
-6. PR #6 — `GET /assessments/schedules/{id}/package`.
-7. PR #7 — `POST /assessments/practical-scores/batch` + `POST /assessments/project-scores/batch` (batched idempotent writes).
-8. PR #8 — `POST /practitioners/verified-sync/batch` (legacy verified-sync replacement).
-9. PR #9 — Remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`. (Legacy `status` field already dropped in the mobile client — backend may stop emitting it whenever convenient.)
+5. PR #5 — `GET /assessments/schedules/{id}/package` (assessment-side per-schedule reference data — sections, questions, candidates). No standalone schedules list endpoint is needed: mobile derives the schedules list from the PE/PA rows in the exam dossier.
+6. PR #6 — `POST /assessments/practical-scores/batch` + `POST /assessments/project-scores/batch` (batched idempotent writes).
+7. PR #7 — `POST /practitioners/verified-sync/batch` (legacy verified-sync replacement).
+8. PR #8 — Remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`. (Legacy `status` field already dropped in the mobile client — backend may stop emitting it whenever convenient.)
 
 ### 14.4 Contract tests
 
@@ -2006,10 +1955,9 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Examination | `GET` | `/attendance/fetch-record` | Confirmed live | `ExamDossierApiService.fetchDossier` | §8.1 |
 | Examination | `POST` | `/attendance/push-record` | To Be Implemented | `ExamSyncApiService.uploadAttendanceBatch` | §8.2 |
 | Examination | `POST` | `/attendance-remarks` | To Be Implemented | `ExamSyncApiService.uploadRemarkBatch` | §8.3 |
-| Assessment | `GET` | `/assessments/schedules` | To Be Implemented | `AssessmentPackageApiService.fetchSchedules` | §9.1 |
-| Assessment | `GET` | `/assessments/schedules/{schedule_id}/package` | To Be Implemented | `AssessmentPackageApiService.fetchPackage` | §9.2 |
-| Assessment | `POST` | `/assessments/practical-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScoreBatch` | §9.3 |
-| Assessment | `POST` | `/assessments/project-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadProjectScoreBatch` | §9.4 |
+| Assessment | `GET` | `/assessments/schedules/{schedule_id}/package` | To Be Implemented | `AssessmentPackageApiService.fetchPackage` | §9.1 |
+| Assessment | `POST` | `/assessments/practical-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScoreBatch` | §9.2 |
+| Assessment | `POST` | `/assessments/project-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadProjectScoreBatch` | §9.3 |
 
 ---
 
@@ -2018,4 +1966,5 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Version | Date | Author | Notes |
 |---|---|---|---|
 | 1.0 | 2026-05-16 | Mobile team | Initial consolidation of every Retrofit interface + DTO in the codebase. Standardises envelope to `{success, message, data, meta}` going forward; documents 7 To-Be-Implemented endpoints for the Examination + Assessment modules. |
-| 1.1 | 2026-05-16 | Mobile team | Reshape all sync write endpoints (§7.4, §8.2, §8.3, §9.3, §9.4) to batched `items[]` request + per-row `results[]` response. Reason: legacy per-row uploads cannot sustain CHPRBN's real campaign-day load (tens of thousands of records, multiple devices, narrow window). Legacy per-row `/practitioners/verified-sync` (§7.2) marked deprecated; batch replacement (§7.4) added as To Be Implemented. |
+| 1.1 | 2026-05-16 | Mobile team | Reshape all sync write endpoints (§7.4, §8.2, §8.3, and the former §9.3/§9.4 assessment batch endpoints) to batched `items[]` request + per-row `results[]` response. Reason: legacy per-row uploads cannot sustain CHPRBN's real campaign-day load (tens of thousands of records, multiple devices, narrow window). Legacy per-row `/practitioners/verified-sync` (§7.2) marked deprecated; batch replacement (§7.4) added as To Be Implemented. |
+| 1.2 | 2026-08-15 | Mobile team | Removed the dedicated `GET /assessments/schedules` endpoint (formerly §9.1). Assessment schedules are the PE/PA subset of the exam dossier (§8.1) — mobile filters `data.papers[]` by `paper_kind` and adapts them to `AssessmentSchedule` in `AssessmentScheduleRepositoryImpl.getSchedules`. Renumbered §9.x accordingly (Package became §9.1; batch writes became §9.2 / §9.3). |

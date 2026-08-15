@@ -6,7 +6,6 @@ import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.practicalScoreClientId
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
-import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentScheduleSyncStatusUpdater
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
 import javax.inject.Inject
 
@@ -14,14 +13,15 @@ import javax.inject.Inject
  * Plugs the practical-score row uploader into the cross-feature
  * `core.sync.SyncWorker` via Hilt multibinding. The runner hands in the
  * batch's slash-delimited entity keys; the handler resolves the rows,
- * sends a single batched HTTP request, flips per-row score syncStatus,
- * then refreshes the parent schedule's status once per unique
- * `scheduleId`.
+ * sends a single batched HTTP request, and flips per-row score syncStatus.
+ *
+ * The schedules-list pill's aggregate status is derived at read time in
+ * `AssessmentScheduleRepositoryImpl.getSchedules`, so no explicit
+ * per-schedule status refresh is needed here.
  */
 class PracticalScoreSyncHandler @Inject constructor(
     private val practicalScoreDao: PracticalScoreDao,
     private val remoteSource: AssessmentSyncRemoteSource,
-    private val statusUpdater: AssessmentScheduleSyncStatusUpdater,
 ) : SyncEntityHandler {
 
     override suspend fun uploadBatch(entityKeys: List<String>): Map<String, SyncOutcome> {
@@ -56,7 +56,6 @@ class PracticalScoreSyncHandler @Inject constructor(
         if (toUpload.isEmpty()) return outcomes
 
         val remoteResults = remoteSource.uploadPracticalScoreBatch(toUpload.map { it.domain })
-        val touchedSchedules = mutableSetOf<String>()
 
         for (row in toUpload) {
             val result = remoteResults[row.clientId]
@@ -70,7 +69,6 @@ class PracticalScoreSyncHandler @Inject constructor(
                         syncStatus = SyncStatus.Synced.name,
                         syncError = null,
                     )
-                    touchedSchedules += row.domain.scheduleId
                     SyncOutcome.Success
                 },
                 onFailure = { t ->
@@ -82,15 +80,9 @@ class PracticalScoreSyncHandler @Inject constructor(
                         syncStatus = SyncStatus.Failed.name,
                         syncError = message,
                     )
-                    touchedSchedules += row.domain.scheduleId
                     SyncOutcome.Failure(message)
                 },
             )
-        }
-
-        // Refresh once per unique scheduleId — fewer DB writes than per-row.
-        for (scheduleId in touchedSchedules) {
-            statusUpdater.refresh(scheduleId)
         }
 
         return outcomes

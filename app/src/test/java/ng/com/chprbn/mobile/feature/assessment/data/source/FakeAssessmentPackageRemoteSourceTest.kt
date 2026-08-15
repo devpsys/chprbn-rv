@@ -8,21 +8,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The fake source exists to keep UI development unblocked. Two
- * invariants worth pinning: it returns a non-empty schedules list, and
- * its package data is internally consistent (sections referenced by
- * questions all exist; candidates have non-blank identity).
+ * The fake source exists to keep UI development unblocked. Its package
+ * data must be internally consistent (sections referenced by questions
+ * all exist; candidates have non-blank identity). The former
+ * `fetchSchedules` test was dropped when schedule discovery moved to
+ * `ExamPaperRepository.getAssessmentPapers()`.
  */
 class FakeAssessmentPackageRemoteSourceTest {
 
     private val source = FakeAssessmentPackageRemoteSource()
-
-    @Test
-    fun `fetchSchedules returns a non-empty list`() = runTest {
-        val schedules = source.fetchSchedules()
-
-        assertTrue(schedules.isNotEmpty())
-    }
 
     @Test
     fun `fetchPackage returns a bundle for PE-2024 with consistent references`() = runTest {
