@@ -35,6 +35,8 @@ data class ExamDossierDataDto(
     @SerializedName(value = "center", alternate = ["centre"]) val center: CenterDto? = null,
     @SerializedName("papers") val papers: List<PaperDto>? = null,
     @SerializedName("schedules") val schedules: List<ScheduleDto>? = null,
+    /** Confirmed live (`docs/mobile-api-guide.html` §4) — required verbatim on every `attendance/push-record` row. */
+    @SerializedName("year") val year: Int? = null,
     /**
      * Always empty in every real response seen so far — element shape is
      * unconfirmed, so this is parsed generically via [JsonElement] rather

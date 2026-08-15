@@ -1,8 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.mappers
 
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
-import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
-import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
 import ng.com.chprbn.mobile.feature.exam.domain.model.RemarkSeverity
 import org.junit.Assert.assertEquals
@@ -11,39 +9,8 @@ import org.junit.Test
 class SyncPayloadMappersTest {
 
     @Test
-    fun `attendance maps to sync item with lowercase wire status`() {
-        val pairs = mapOf(
-            AttendanceStatus.SignedIn to "signed_in",
-            AttendanceStatus.SignedOut to "signed_out",
-            AttendanceStatus.Flagged to "flagged",
-        )
-
-        pairs.forEach { (status, wireString) ->
-            val dto = Attendance(
-                paperId = "p1",
-                candidateId = "c1",
-                status = status,
-                markedAt = 1_700_000_000_000L,
-                syncStatus = SyncStatus.Pending,
-            ).toSyncItemDto()
-
-            assertEquals(wireString, dto.status)
-            assertEquals("p1", dto.paperId)
-            assertEquals("c1", dto.candidateId)
-            assertEquals(1_700_000_000_000L, dto.markedAt)
-        }
-    }
-
-    @Test
-    fun `attendance clientId is composite paperId+candidateId`() {
-        val dto = Attendance(
-            paperId = "p1",
-            candidateId = "c1",
-            status = AttendanceStatus.SignedIn,
-            markedAt = 0L,
-        ).toSyncItemDto()
-
-        assertEquals("p1:c1", dto.clientId)
+    fun `attendanceClientId is composite paperId colon candidateId`() {
+        assertEquals("p1:c1", attendanceClientId("p1", "c1"))
     }
 
     @Test

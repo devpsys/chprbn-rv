@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CBITS Mobile API Guide</title>
+  <style>
+    :root {
+      --ink: #14212b;
+      --muted: #5a6b78;
+      --line: #d7e0e7;
+      --bg: #f4f7f5;
+      --card: #ffffff;
+      --brand: #0f6b5c;
+      --brand-dark: #0a4f44;
+      --brand-soft: #e6f4f0;
+      --accent: #c45c26;
+      --get: #1f6f8b;
+      --post: #0f6b5c;
+      --warn: #8a5a00;
+      --warn-bg: #fff6e5;
+      --danger: #9b1c1c;
+      --code-bg: #0f1a22;
+      --code-fg: #e8eef3;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(20, 33, 43, 0.08);
+      --font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(15, 107, 92, 0.08), transparent 28%),
+        linear-gradient(180deg, #eef5f2 0%, var(--bg) 240px);
+      line-height: 1.55;
+    }
+
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      background: var(--ink);
+      color: #dbe7ef;
+      padding: 28px 20px 40px;
+    }
+
+    .sidebar .brand {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8fb3a8;
+      margin-bottom: 8px;
+    }
+
+    .sidebar h1 {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+      color: #fff;
+      line-height: 1.25;
+    }
+
+    .sidebar p {
+      margin: 0 0 24px;
+      color: #9db0bd;
+      font-size: 0.92rem;
+    }
+
+    .nav-group {
+      margin-bottom: 22px;
+    }
+
+    .nav-group strong {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7f96a6;
+      margin-bottom: 8px;
+    }
+
+    .nav-group a {
+      display: block;
+      color: #d5e3ec;
+      padding: 7px 10px;
+      border-radius: 8px;
+      margin-bottom: 2px;
+      font-size: 0.92rem;
+      text-decoration: none;
+    }
+
+    .nav-group a:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .main {
+      padding: 36px 40px 80px;
+      max-width: 980px;
+    }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 28px 30px;
+      margin-bottom: 28px;
+    }
+
+    .hero h2 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 62ch;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      border: 1px solid #c7e5dd;
+    }
+
+    .section {
+      margin-bottom: 34px;
+    }
+
+    .section > h3 {
+      margin: 0 0 12px;
+      font-size: 1.35rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px 24px;
+      margin-bottom: 16px;
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+
+    .endpoint-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .method {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border-radius: 7px;
+      padding: 5px 9px;
+      color: #fff;
+    }
+
+    .method.get { background: var(--get); }
+    .method.post { background: var(--post); }
+    .method.both { background: #355c7d; }
+
+    .path {
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      background: #eef3f6;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--ink);
+    }
+
+    .auth-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: #fff1e8;
+      border: 1px solid #f0d0bc;
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    .auth-badge.public {
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      border-color: #c7e5dd;
+    }
+
+    .status-chip {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 999px;
+      padding: 4px 9px;
+    }
+
+    .status-chip.live {
+      background: #e7f7ee;
+      color: #146c43;
+      border: 1px solid #b7e4c7;
+    }
+
+    .status-chip.stub {
+      background: var(--warn-bg);
+      color: var(--warn);
+      border: 1px solid #efd7a2;
+    }
+
+    .note {
+      background: #f7fafb;
+      border-left: 4px solid var(--brand);
+      padding: 12px 14px;
+      border-radius: 0 10px 10px 0;
+      color: var(--muted);
+      margin: 12px 0;
+      font-size: 0.94rem;
+    }
+
+    .warn {
+      background: var(--warn-bg);
+      border-left-color: #d39b00;
+      color: #5f4300;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 12px 0 4px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #f7fafb;
+    }
+
+    code, .mono {
+      font-family: var(--mono);
+      font-size: 0.88em;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    .label {
+      display: inline-block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .toc-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .toc-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+
+    .toc-card strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .toc-card span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 12px 12px 12px 54px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    footer {
+      margin-top: 40px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar {
+        position: relative;
+        height: auto;
+      }
+      .main { padding: 24px 18px 60px; }
+      .grid-2, .toc-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">CHPRBN · CBITS</div>
+      <h1>Mobile API Guide</h1>
+      <p>Centre examiner app endpoints under <code style="color:#b7d7cb">/api/v1/mobile</code>.</p>
+
+      <div class="nav-group">
+        <strong>Start here</strong>
+        <a href="#overview">Overview</a>
+        <a href="#quickstart">Quick start</a>
+        <a href="#envelope">Response envelope</a>
+        <a href="#auth">Authentication</a>
+      </div>
+
+      <div class="nav-group">
+        <strong>Core endpoints</strong>
+        <a href="#centre">Centre profile</a>
+        <a href="#user">Current user</a>
+        <a href="#remarks">Attendance remarks</a>
+      </div>
+
+      <div class="nav-group">
+        <strong>Exam workflow</strong>
+        <a href="#fetch">Fetch today’s records</a>
+        <a href="#push-attendance">Push attendance</a>
+        <a href="#push-project">Push project scores</a>
+        <a href="#push-practical">Push practical scores</a>
+      </div>
+
+      <div class="nav-group">
+        <strong>Other routes</strong>
+        <a href="#stubs">Listed but not implemented</a>
+        <a href="#errors">Errors &amp; tips</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero" id="overview">
+        <h2>Mobile API developer guide</h2>
+        <p>
+          This guide documents the centre mobile API used for attendance, practical marking,
+          and project assessment. Authenticate with the centre <code>api_key</code> in the
+          <strong>X-Location</strong> header, pull today’s schedule pack, then push results.
+        </p>
+        <div class="meta-row">
+          <span class="pill">Base path <code>/api/v1/mobile</code></span>
+          <span class="pill">Auth <code>X-Location: &lt;api_key&gt;</code></span>
+          <span class="pill">Schedules include <code>start_time</code> / <code>end_time</code></span>
+          <span class="pill">Actor <code>centres</code> table</span>
+          <span class="pill">JSON envelope <code>status / message / data</code></span>
+        </div>
+
+        <div class="toc-cards">
+          <div class="toc-card">
+            <strong>1. Authenticate</strong>
+            <span>Send <code>X-Location</code> with the centre API key</span>
+          </div>
+          <div class="toc-card">
+            <strong>2. Sync day pack</strong>
+            <span>Fetch schedules (date + times), candidates, PE sections</span>
+          </div>
+          <div class="toc-card">
+            <strong>3. Push results</strong>
+            <span>Attendance, project, and practical scores</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="quickstart">
+        <h3>Quick start</h3>
+        <ol class="steps">
+          <li>
+            Configure the centre <code>api_key</code> on the client (from centre setup / admin).
+          </li>
+          <li>
+            On every request, send header
+            <code>X-Location: &lt;centre.api_key&gt;</code>.
+            Query <code>?api_key=…</code> is an optional fallback. There is no login endpoint.
+          </li>
+          <li>
+            Call <code>/attendance/fetch-record</code> to download today’s candidates and mark sheets.
+          </li>
+          <li>
+            Push attendance, project, and/or practical scores with the endpoints below.
+          </li>
+        </ol>
+      </section>
+
+      <section class="section" id="envelope">
+        <h3>Response envelope</h3>
+        <div class="card">
+          <p style="margin:0;color:var(--muted)">
+            Most endpoints return this JSON shape (helper <code>jResponse</code>):
+          </p>
+          <div class="label">Example</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": {}
+}</pre>
+          <div class="note">
+            <code>status</code> is a boolean. Treat HTTP 401 as “missing or invalid
+            <code>X-Location</code>”. Some older failure paths may omit the <code>data</code> key.
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="auth">
+        <h3>Authentication rules</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Credential</td>
+                <td>Centre <code>api_key</code> (no Sanctum / Bearer token, no login)</td>
+              </tr>
+              <tr>
+                <td>Required header</td>
+                <td><code>X-Location: &lt;centres.api_key&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Fallback</td>
+                <td>Query or JSON/form field <code>api_key</code> (optional)</td>
+              </tr>
+              <tr>
+                <td>Middleware</td>
+                <td><code>mobile.centre</code> → <code>EnsureMobileCentreApiKey</code></td>
+              </tr>
+              <tr>
+                <td>Login endpoint</td>
+                <td>Removed — <code>POST /api/v1/mobile/login</code> is not registered</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="label">Required header example</div>
+<pre>X-Location: mchst213</pre>
+
+          <div class="note">
+            Do not send <code>Authorization: Bearer …</code>. The middleware reads
+            <code>X-Location</code> (preferred) or <code>api_key</code> from query/body.
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTRE -->
+      <section class="section" id="centre">
+        <h3>1. Centre profile</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method get">GET</span>
+            <span class="path">/api/v1/mobile/centre</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">Returns a trimmed profile for the authenticated centre.</p>
+
+          <div class="label">Success response</div>
+<pre>{
+  "status": true,
+  "message": "successful",
+  "data": {
+    "name": "Federal College of Health",
+    "location": "Lagos",
+    "username": "mchst213",
+    "status": "Active"
+  }
+}</pre>
+
+          <div class="label">cURL example</div>
+<pre>curl "https://YOUR-HOST/api/v1/mobile/centre" \
+  -H "Accept: application/json" \
+  -H "X-Location: mchst213"</pre>
+        </div>
+      </section>
+
+      <!-- USER -->
+      <section class="section" id="user">
+        <h3>2. Current authenticated user</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method get">GET</span>
+            <span class="path">/api/v1/mobile/user</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Returns the centre identified by <code>api_key</code>. Response shape differs slightly from
+            the standard envelope.
+          </p>
+          <div class="label">Example response</div>
+<pre>{
+  "user": {
+    "id": 3,
+    "name": "Federal College of Health",
+    "api_key": "mchst213",
+    "status": "Active"
+  },
+  "status": "success"
+}</pre>
+        </div>
+      </section>
+
+      <!-- REMARKS -->
+      <section class="section" id="remarks">
+        <h3>3. Attendance remarks</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method get">GET</span>
+            <span class="path">/api/v1/mobile/attendance-remarks</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Lookup list used when marking candidates absent / excused / malpractice, etc.
+          </p>
+
+          <div class="label">Success response</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": [
+    { "id": 1, "code": "AE",  "description": "Absent with Excuse" },
+    { "id": 2, "code": "AW",  "description": "Absent without Excuse" },
+    { "id": 3, "code": "ABS", "description": "Absenteeism" },
+    { "id": 4, "code": "S",   "description": "Sick" },
+    { "id": 5, "code": "PI",  "description": "Project Incomplete" },
+    { "id": 6, "code": "VW",  "description": "Voluntary Withdraw" },
+    { "id": 7, "code": "SO",  "description": "Spill Over" },
+    { "id": 8, "code": "EM",  "description": "Exams Malpractice" },
+    { "id": 9, "code": "VS",  "description": "Violence against Staff/Student" }
+  ]
+}</pre>
+        </div>
+      </section>
+
+      <!-- FETCH -->
+      <section class="section" id="fetch">
+        <h3>4. Fetch today’s examiner pack</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method both">GET | POST</span>
+            <span class="path">/api/v1/mobile/attendance/fetch-record</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Downloads today’s schedules for venues belonging to the authenticated centre,
+            including schedule window times, candidates (with base64 passport photos), paper
+            assignments, and practical sections when a PE paper is present.
+          </p>
+
+          <div class="note">
+            Practical mark sheets (<code>sections</code>) are included only when at least one
+            resolved paper has code <code>PE</code>. Orphaned assignment
+            <code>subject_id</code> values are remapped via <code>test_subjects</code> for the
+            schedule’s test config so candidates and papers still return.
+          </div>
+
+          <h4 style="margin-top:18px">Schedule object fields</h4>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>int</td><td><code>schedulings.id</code> — use as <code>schedule_id</code> when pushing</td></tr>
+              <tr><td><code>test_date</code></td><td>string</td><td>Formatted day label, e.g. <code>Friday, 14th Aug 2026</code></td></tr>
+              <tr><td><code>start_time</code></td><td>string\|null</td><td>From <code>daily_start_time</code>, format <code>H:i</code> (e.g. <code>08:00</code>). <code>null</code> if unset</td></tr>
+              <tr><td><code>end_time</code></td><td>string\|null</td><td>From <code>daily_end_time</code>, format <code>H:i</code> (e.g. <code>17:00</code>). <code>null</code> if unset</td></tr>
+              <tr><td><code>test_code</code></td><td>string\|null</td><td>Test code name (e.g. <code>CHEW</code>)</td></tr>
+              <tr><td><code>test_type</code></td><td>string\|null</td><td>Test type name</td></tr>
+              <tr><td><code>paper_candidates</code></td><td>array</td><td><code>{ candidate_id, paper_id, scheduled_candidate_id }</code></td></tr>
+              <tr><td><code>candidates</code></td><td>array</td><td>Distinct candidates with <code>id</code>, <code>indexing</code>, <code>fullname</code>, base64 <code>photo</code></td></tr>
+            </tbody>
+          </table>
+
+          <div class="label">Success response (abbreviated)</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": {
+    "centre": {
+      "id": 3,
+      "name": "Federal College of Health",
+      "location": "Lagos",
+      "api_key": "mchst213",
+      "status": "Active"
+    },
+    "schedules": [
+      {
+        "id": 45,
+        "test_date": "Friday, 14th Aug 2026",
+        "start_time": "08:00",
+        "end_time": "17:00",
+        "test_code": "CHEW",
+        "test_type": "Regular Exam",
+        "paper_candidates": [
+          {
+            "candidate_id": 101,
+            "paper_id": 8,
+            "scheduled_candidate_id": 501
+          }
+        ],
+        "candidates": [
+          {
+            "id": 101,
+            "indexing": "B/213/011/21",
+            "fullname": "ABDULLAHI NANA",
+            "photo": "/9j/4AAQSkZJRgABAQ..."
+          }
+        ]
+      }
+    ],
+    "papers": [
+      { "id": 8, "code": "PE", "name": "Practical Examination" }
+    ],
+    "year": 2026,
+    "sections": [
+      {
+        "id": 1,
+        "name": "Vital Signs",
+        "status": 1,
+        "questions": [
+          {
+            "id": 11,
+            "section_id": 1,
+            "name": "Measure blood pressure correctly",
+            "mark": 10,
+            "status": 1
+          }
+        ]
+      }
+    ]
+  }
+}</pre>
+
+          <div class="note">
+            <code>data.year</code> is an <strong>integer</strong>. Prefer
+            <code>start_time</code> / <code>end_time</code> for the exam window UI;
+            keep <code>test_date</code> as the calendar day label. Copy
+            <code>schedules[].id</code> and <code>paper_candidates[]</code> IDs into push payloads.
+          </div>
+
+          <div class="label">cURL example</div>
+<pre>curl -X POST "https://YOUR-HOST/api/v1/mobile/attendance/fetch-record" \
+  -H "Accept: application/json" \
+  -H "X-Location: mchst213"</pre>
+        </div>
+      </section>
+
+      <!-- PUSH ATTENDANCE -->
+      <section class="section" id="push-attendance">
+        <h3>5. Push attendance</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method both">GET | POST</span>
+            <span class="path">/api/v1/mobile/attendance/push-record</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Upserts attendance rows. Body must be a <strong>top-level JSON array</strong>
+            (not wrapped in <code>{ "items": [...] }</code>). Unique key:
+            <code>(scheduled_candidate_id, paper_id, year)</code>.
+          </p>
+
+          <div class="label">Request body (JSON array)</div>
+<pre>[
+  {
+    "scheduled_candidate_id": 501,
+    "schedule_id": 45,
+    "candidate_id": 101,
+    "paper_id": 8,
+    "sign_in": 1,
+    "sign_out": 0,
+    "remark": "AE",
+    "year": 2026
+  }
+]</pre>
+
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>scheduled_candidate_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>paper_candidates[].scheduled_candidate_id</code></td></tr>
+              <tr><td><code>schedule_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>schedules[].id</code></td></tr>
+              <tr><td><code>candidate_id</code></td><td>int</td><td>From <code>candidates[].id</code> / <code>paper_candidates[].candidate_id</code></td></tr>
+              <tr><td><code>paper_id</code></td><td>int</td><td>From <code>paper_candidates[].paper_id</code> / <code>papers[].id</code></td></tr>
+              <tr><td><code>sign_in</code> / <code>sign_out</code></td><td>int</td><td>Usually <code>0</code> or <code>1</code> (map client statuses like <code>signed_out</code> to these)</td></tr>
+              <tr><td><code>remark</code></td><td>string\|null</td><td>Prefer a code from attendance remarks (e.g. <code>AE</code>)</td></tr>
+              <tr><td><code>year</code></td><td>int</td><td>Prefer <code>data.year</code> from the fetch pack</td></tr>
+            </tbody>
+          </table>
+
+          <div class="note warn">
+            Do <strong>not</strong> send <code>{ "items": [...] }</code>,
+            <code>status</code>, <code>client_id</code>, or <code>marked_at</code>.
+            Those shapes cause failures such as
+            <em>Attempt to read property "candidate_id" on array</em>.
+          </div>
+
+          <div class="label">Success response</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": [101]
+}</pre>
+          <div class="note">Success <code>data</code> is the list of <code>candidate_id</code> values from the payload.</div>
+
+          <div class="label">cURL example</div>
+<pre>curl -X POST "https://YOUR-HOST/api/v1/mobile/attendance/push-record" \
+  -H "Accept: application/json" \
+  -H "X-Location: mchst213" \
+  -H "Content-Type: application/json" \
+  -d '[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":8,"sign_in":1,"sign_out":0,"remark":null,"year":2026}]'</pre>
+        </div>
+      </section>
+
+      <!-- PUSH PROJECT -->
+      <section class="section" id="push-project">
+        <h3>6. Push project assessment</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method both">GET | POST</span>
+            <span class="path">/api/v1/mobile/project/push-record</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Upserts project scores into <code>project_assessments</code>.
+            Unique key used by the app:
+            <code>(scheduled_candidate_id, candidate_id, paper_id, schedule_id)</code>.
+          </p>
+
+          <div class="label">Request body (JSON array)</div>
+<pre>[
+  {
+    "scheduled_candidate_id": 501,
+    "schedule_id": 45,
+    "candidate_id": 101,
+    "paper_id": 9,
+    "score": 72.5
+  }
+]</pre>
+
+          <div class="label">Success response</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": [501]
+}</pre>
+          <div class="note warn">
+            Unlike attendance push, success <code>data</code> here is a list of
+            <code>scheduled_candidate_id</code> values.
+          </div>
+
+          <div class="label">cURL example</div>
+<pre>curl -X POST "https://YOUR-HOST/api/v1/mobile/project/push-record" \
+  -H "Accept: application/json" \
+  -H "X-Location: mchst213" \
+  -H "Content-Type: application/json" \
+  -d '[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":9,"score":72.5}]'</pre>
+        </div>
+      </section>
+
+      <!-- PUSH PRACTICAL -->
+      <section class="section" id="push-practical">
+        <h3>7. Push practical examination</h3>
+        <div class="card">
+          <div class="endpoint-head">
+            <span class="method both">GET | POST</span>
+            <span class="path">/api/v1/mobile/practical/push-record</span>
+            <span class="auth-badge">X-Location required</span>
+            <span class="status-chip live">Live</span>
+          </div>
+          <p style="margin:0;color:var(--muted)">
+            Primary practical endpoint. Body is an <strong>object</strong> with
+            <code>practicals</code> and <code>projects</code> arrays. Either array may be empty.
+          </p>
+
+          <div class="note warn">
+            Mobile field <code>question_id</code> is stored as DB column
+            <code>practical_question_id</code>.
+          </div>
+
+          <div class="label">Request body</div>
+<pre>{
+  "practicals": [
+    {
+      "scheduled_candidate_id": 501,
+      "candidate_id": 101,
+      "paper_id": 8,
+      "question_id": 11,
+      "schedule_id": 45,
+      "score": 8.0
+    }
+  ],
+  "projects": [
+    {
+      "scheduled_candidate_id": 501,
+      "schedule_id": 45,
+      "candidate_id": 101,
+      "paper_id": 9,
+      "score": 70.0
+    }
+  ]
+}</pre>
+
+          <table>
+            <thead>
+              <tr><th>Array</th><th>Writes to</th><th>Upsert key</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>practicals</code></td>
+                <td><code>practical_examinations</code></td>
+                <td><code>(scheduled_candidate_id, practical_question_id, paper_id, schedule_id)</code></td>
+              </tr>
+              <tr>
+                <td><code>projects</code></td>
+                <td><code>project_assessments</code></td>
+                <td><code>(scheduled_candidate_id, candidate_id, paper_id, schedule_id)</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="label">Success response</div>
+<pre>{
+  "status": true,
+  "message": "Successful",
+  "data": [501]
+}</pre>
+
+          <div class="label">cURL example</div>
+<pre>curl -X POST "https://YOUR-HOST/api/v1/mobile/practical/push-record" \
+  -H "Accept: application/json" \
+  -H "X-Location: mchst213" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "practicals":[{"scheduled_candidate_id":501,"candidate_id":101,"paper_id":8,"question_id":11,"schedule_id":45,"score":8}],
+    "projects":[]
+  }'</pre>
+        </div>
+      </section>
+
+      <!-- STUBS -->
+      <section class="section" id="stubs">
+        <h3>Routes listed but not implemented</h3>
+        <div class="card">
+          <p style="margin:0 0 12px;color:var(--muted)">
+            These paths are registered in <code>routes/apiV1Mobile.php</code>, but
+            <code>MiscController</code> currently only implements <code>attendanceRemark</code>.
+            Calling them will error until the methods are added.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Path</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/institutions</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/institution/{id}</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/cadres</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/cadre/{id}</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/papers</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/paper/{code}</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/assessment-forms</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/assessment-areas</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/assessment-categories</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+              <tr><td>GET</td><td><code>/assessment-items</code></td><td><span class="status-chip stub">Stub</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ERRORS -->
+      <section class="section" id="errors">
+        <h3>Errors &amp; integration tips</h3>
+        <div class="card">
+          <h4>Common issues</h4>
+          <table>
+            <thead>
+              <tr><th>Symptom</th><th>Likely cause</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTTP 401 on protected routes</td>
+                <td>Missing or invalid <code>X-Location</code> header (or fallback <code>api_key</code>)</td>
+              </tr>
+              <tr>
+                <td>Empty <code>schedules</code></td>
+                <td>No schedule dated <strong>today</strong> for this centre’s venues</td>
+              </tr>
+              <tr>
+                <td>Empty <code>candidates</code> / <code>papers</code></td>
+                <td>No assignments for today, or orphaned subject ids without matching <code>test_subjects</code></td>
+              </tr>
+              <tr>
+                <td>Empty <code>sections</code></td>
+                <td>No PE paper on today’s schedule, or no active practical questions seeded</td>
+              </tr>
+              <tr>
+                <td><em>Attempt to read property "candidate_id" on array</em></td>
+                <td>Attendance push body wrapped as <code>{ "items": [...] }</code> instead of a top-level array</td>
+              </tr>
+              <tr>
+                <td>Practical scores not saving</td>
+                <td>Sending array instead of object, or using <code>practical_question_id</code> instead of <code>question_id</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="label">Recommended client flow</div>
+<pre>1) GET  /attendance-remarks   (X-Location)
+2) POST /attendance/fetch-record   → keep schedule id, times, paper_candidates, year
+3) POST /attendance/push-record    → top-level JSON array
+4) POST /practical/push-record     (or /project/push-record)</pre>
+        </div>
+      </section>
+
+      <footer>
+        Generated from CBITS routes in <code>routes/apiV1Mobile.php</code> and
+        <code>App\Http\Controllers\Api\V1\Mobile\*</code>.
+        Companion brief: <code>docs/MOBILE_PRACTICAL_PROJECT_API.md</code>.
+        Open this file in a browser: <code>docs/mobile-api-guide.html</code>.
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

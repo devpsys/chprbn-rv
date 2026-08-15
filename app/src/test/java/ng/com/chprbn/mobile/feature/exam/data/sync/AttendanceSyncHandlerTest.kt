@@ -10,8 +10,12 @@ import ng.com.chprbn.mobile.core.sync.Clock
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceEntity
+import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
+import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
+import ng.com.chprbn.mobile.feature.exam.data.local.CenterEntity
+import ng.com.chprbn.mobile.feature.exam.data.local.PaperCandidateAssignmentEntity
+import ng.com.chprbn.mobile.feature.exam.data.source.AttendanceUploadRow
 import ng.com.chprbn.mobile.feature.exam.data.source.ExamSyncRemoteSource
-import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,8 +29,12 @@ class AttendanceSyncHandlerTest {
     private val dao = mockk<AttendanceDao>(relaxUnitFun = true) {
         coEvery { updateSyncMetadata(any(), any(), any(), any(), any()) } returns 1
     }
+    private val candidateDao = mockk<CandidateDao>()
+    private val centerDao = mockk<CenterDao> {
+        coEvery { getFirst() } returns center()
+    }
     private val remote = mockk<ExamSyncRemoteSource>()
-    private val handler = AttendanceSyncHandler(dao, remote, clock)
+    private val handler = AttendanceSyncHandler(dao, candidateDao, centerDao, remote, clock)
 
     @Test
     fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
@@ -48,9 +56,54 @@ class AttendanceSyncHandlerTest {
     }
 
     @Test
+    fun `missing assignment fails with a self-heal message instead of uploading`() = runTest {
+        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns null
+
+        val outcomes = handler.uploadBatch(listOf("p1/c1"))
+
+        assertTrue(outcomes["p1/c1"] is SyncOutcome.Failure)
+        assertTrue(
+            (outcomes["p1/c1"] as SyncOutcome.Failure).message.contains("re-download today's dossier"),
+        )
+        coVerify(exactly = 0) { remote.uploadAttendanceBatch(any()) }
+    }
+
+    @Test
+    fun `blank scheduledCandidateId on the assignment is treated as missing`() = runTest {
+        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(
+            paperId = "p1", candidateId = "c1", scheduledCandidateId = "", scheduleId = "45",
+        )
+
+        val outcomes = handler.uploadBatch(listOf("p1/c1"))
+
+        assertTrue(outcomes["p1/c1"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadAttendanceBatch(any()) }
+    }
+
+    @Test
+    fun `missing center year fails with a self-heal message instead of uploading`() = runTest {
+        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(
+            paperId = "p1", candidateId = "c1",
+        )
+        coEvery { centerDao.getFirst() } returns center(year = null)
+
+        val outcomes = handler.uploadBatch(listOf("p1/c1"))
+
+        assertTrue(outcomes["p1/c1"] is SyncOutcome.Failure)
+        coVerify(exactly = 0) { remote.uploadAttendanceBatch(any()) }
+    }
+
+    @Test
     fun `successful batch flips rows to Synced with current clock time`() = runTest {
         coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
         coEvery { dao.getOne("p1", "c2") } returns attendance(paper = "p1", candidate = "c2")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c2") } returns assignment(
+            paperId = "p1", candidateId = "c2", scheduledCandidateId = "502",
+        )
         coEvery { remote.uploadAttendanceBatch(any()) } returns mapOf(
             "p1:c1" to Result.success(Unit),
             "p1:c2" to Result.success(Unit),
@@ -81,6 +134,7 @@ class AttendanceSyncHandlerTest {
     @Test
     fun `per-row failure flips that row to Failed with error message`() = runTest {
         coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
         coEvery { remote.uploadAttendanceBatch(any()) } returns mapOf(
             "p1:c1" to Result.failure(IOException("offline")),
         )
@@ -100,25 +154,35 @@ class AttendanceSyncHandlerTest {
     }
 
     @Test
-    fun `single-call batch sends one HTTP call covering every valid row`() = runTest {
-        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
-        coEvery { dao.getOne("p1", "c2") } returns attendance(paper = "p1", candidate = "c2")
-        val captured = slot<List<Attendance>>()
-        coEvery { remote.uploadAttendanceBatch(capture(captured)) } returns mapOf(
-            "p1:c1" to Result.success(Unit),
-            "p1:c2" to Result.success(Unit),
-        )
+    fun `single-call batch sends one HTTP call carrying resolved scheduledCandidateId, scheduleId, and year`() =
+        runTest {
+            coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+            coEvery { dao.getOne("p1", "c2") } returns attendance(paper = "p1", candidate = "c2")
+            coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
+            coEvery { candidateDao.getAssignment("p1", "c2") } returns assignment(
+                paperId = "p1", candidateId = "c2", scheduledCandidateId = "502",
+            )
+            val captured = slot<List<AttendanceUploadRow>>()
+            coEvery { remote.uploadAttendanceBatch(capture(captured)) } returns mapOf(
+                "p1:c1" to Result.success(Unit),
+                "p1:c2" to Result.success(Unit),
+            )
 
-        handler.uploadBatch(listOf("p1/c1", "p1/c2"))
+            handler.uploadBatch(listOf("p1/c1", "p1/c2"))
 
-        coVerify(exactly = 1) { remote.uploadAttendanceBatch(any()) }
-        assertEquals(2, captured.captured.size)
-    }
+            coVerify(exactly = 1) { remote.uploadAttendanceBatch(any()) }
+            assertEquals(2, captured.captured.size)
+            val row1 = captured.captured.single { it.candidateId == "c1" }
+            assertEquals("501", row1.scheduledCandidateId)
+            assertEquals("45", row1.scheduleId)
+            assertEquals(2026, row1.year)
+        }
 
     @Test
-    fun `mixed batch — valid rows uploaded, missing keys still get Failure`() = runTest {
+    fun `mixed batch — valid rows uploaded, ghost rows still get Drop`() = runTest {
         coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
         coEvery { dao.getOne("p1", "missing") } returns null
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
         coEvery { remote.uploadAttendanceBatch(any()) } returns mapOf(
             "p1:c1" to Result.success(Unit),
         )
@@ -126,7 +190,7 @@ class AttendanceSyncHandlerTest {
         val outcomes = handler.uploadBatch(listOf("p1/c1", "p1/missing"))
 
         assertEquals(SyncOutcome.Success, outcomes["p1/c1"])
-        assertTrue(outcomes["p1/missing"] is SyncOutcome.Failure)
+        assertEquals(SyncOutcome.Drop, outcomes["p1/missing"])
     }
 
     private fun attendance(paper: String, candidate: String) = AttendanceEntity(
@@ -135,5 +199,25 @@ class AttendanceSyncHandlerTest {
         status = AttendanceStatus.SignedIn.name,
         markedAt = 0L,
         syncStatus = SyncStatus.Pending.name,
+    )
+
+    private fun assignment(
+        paperId: String,
+        candidateId: String,
+        scheduledCandidateId: String = "501",
+        scheduleId: String = "45",
+    ) = PaperCandidateAssignmentEntity(
+        paperId = paperId,
+        candidateId = candidateId,
+        scheduledCandidateId = scheduledCandidateId,
+        scheduleId = scheduleId,
+    )
+
+    private fun center(year: Int? = 2026) = CenterEntity(
+        id = "C-1",
+        name = "Lagos Centre",
+        code = "LAG-001",
+        location = "10 Marina Rd",
+        year = year,
     )
 }

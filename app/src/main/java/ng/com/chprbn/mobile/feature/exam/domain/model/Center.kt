@@ -13,4 +13,6 @@ data class Center(
     val heroImageUrl: String? = null,
     /** True when the dossier's `data.sections` array was non-empty. Drives the Practical Assessment card on the dashboard. */
     val hasSections: Boolean = false,
+    /** The dossier's `data.year` — required verbatim on every `attendance/push-record` row (`docs/mobile-api-guide.html` §5). */
+    val year: Int? = null,
 )

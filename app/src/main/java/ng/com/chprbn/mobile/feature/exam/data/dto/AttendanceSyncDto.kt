@@ -3,58 +3,39 @@ package ng.com.chprbn.mobile.feature.exam.data.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * **SPECULATIVE.** Batched attendance upload payload. Mobile pushes N
- * `(paper_id, candidate_id)` rows in one HTTP request so the server pays
- * one auth check + one DB transaction for the batch instead of one per
- * row. Per-row idempotency on `(paper_id, candidate_id)` still applies
- * inside the batch — a duplicate row REPLACES.
+ * Confirmed live per `docs/mobile-api-guide.html` §5. The request body is
+ * a **top-level JSON array** of these — never wrapped in `{ "items": [...] }`
+ * — and must NOT carry `client_id`, `status`, or `marked_at`; the docs
+ * call out that sending those shapes causes a server-side failure
+ * (`Attempt to read property "candidate_id" on array"`).
  *
- * Backend contract: TBD (plan §12, C1).
- */
-data class AttendanceSyncBatchRequestDto(
-    @SerializedName("items") val items: List<AttendanceSyncItemDto>,
-)
-
-/**
- * One attendance row inside a batch.
- *
- * [clientId] is a stable string keyed off the row's composite identity
- * (`"$paperId:$candidateId"`). The server echoes it in the response row
- * so the client can map results back to local outbox rows; the server
- * MUST NOT use it for dedup — composite identity is the dedup key.
+ * The server's upsert key is `(scheduled_candidate_id, paper_id, year)`,
+ * not `(paper_id, candidate_id)` — [scheduledCandidateId] is required
+ * (sourced from `attendance/fetch-record` → `paper_candidates[].scheduled_candidate_id`,
+ * resolved at sync time by `AttendanceSyncHandler`).
  */
 data class AttendanceSyncItemDto(
-    @SerializedName("client_id") val clientId: String,
-    @SerializedName("paper_id") val paperId: String,
-    @SerializedName("candidate_id") val candidateId: String,
-    /**
-     * Wire string for [ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus]
-     * — sent as `"signed_in"` / `"signed_out"` / `"flagged"` so the server
-     * doesn't need to know about the client's Kotlin enum naming.
-     */
-    @SerializedName("status") val status: String,
-    /** Epoch millis (UTC). */
-    @SerializedName("marked_at") val markedAt: Long,
+    @SerializedName("scheduled_candidate_id") val scheduledCandidateId: Long,
+    @SerializedName("schedule_id") val scheduleId: Long,
+    @SerializedName("candidate_id") val candidateId: Long,
+    @SerializedName("paper_id") val paperId: Long,
+    /** 0 or 1. */
+    @SerializedName("sign_in") val signIn: Int,
+    /** 0 or 1. */
+    @SerializedName("sign_out") val signOut: Int,
+    /** Prefer a code from `GET attendance-remarks`, e.g. `"AE"`. Nullable. */
+    @SerializedName("remark") val remark: String? = null,
+    @SerializedName("year") val year: Int,
 )
 
 /**
- * Batch response envelope. HTTP 200 even when individual rows fail; only
- * malformed batches return 4xx. Each result carries the [AttendanceSyncItemDto.clientId]
- * the client sent so a partial-success batch can be reconciled.
+ * The response carries no per-row results — just the whole envelope's
+ * `status` plus the list of `candidate_id`s the server processed. There
+ * is no way to tell which specific row failed in a partial rejection;
+ * `ApiExamSyncRemoteSource` treats the whole batch as one outcome.
  */
-data class AttendanceSyncBatchEnvelopeDto(
-    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
+data class AttendanceSyncResponseDto(
+    @SerializedName(value = "status", alternate = ["success"]) val status: Boolean = false,
     @SerializedName("message") val message: String? = null,
-    @SerializedName("data") val data: AttendanceSyncBatchResultsDto? = null,
-)
-
-data class AttendanceSyncBatchResultsDto(
-    @SerializedName("results") val results: List<AttendanceSyncResultDto>? = null,
-)
-
-data class AttendanceSyncResultDto(
-    @SerializedName("client_id") val clientId: String? = null,
-    @SerializedName("accepted") val accepted: Boolean = false,
-    @SerializedName("server_id") val serverId: String? = null,
-    @SerializedName("error") val error: String? = null,
+    @SerializedName("data") val data: List<Long>? = null,
 )

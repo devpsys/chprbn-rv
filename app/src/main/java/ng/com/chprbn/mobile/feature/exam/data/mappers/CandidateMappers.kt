@@ -69,8 +69,22 @@ internal fun CandidateDto.toDomain(): Candidate? {
     )
 }
 
-internal fun PaperCandidateAssignmentDto.toDomain(): ExamPaperAssignment? {
+/**
+ * [scheduleId] comes from the owning [ng.com.chprbn.mobile.feature.exam.data.dto.ScheduleDto.id]
+ * — the assignment row itself doesn't carry it on the wire. Drops (returns
+ * null) rows missing [scheduledCandidateId] since it's required to push
+ * attendance; better to lose that one candidate's assignment than to
+ * silently upload with a garbage id.
+ */
+internal fun PaperCandidateAssignmentDto.toDomain(scheduleId: String): ExamPaperAssignment? {
     val safePaperId = paperId?.takeIf { it.isNotBlank() } ?: return null
     val safeCandidateId = candidateId?.takeIf { it.isNotBlank() } ?: return null
-    return ExamPaperAssignment(paperId = safePaperId, candidateId = safeCandidateId)
+    val safeScheduledCandidateId = scheduledCandidateId?.takeIf { it.isNotBlank() } ?: return null
+    val safeScheduleId = scheduleId.takeIf { it.isNotBlank() } ?: return null
+    return ExamPaperAssignment(
+        paperId = safePaperId,
+        candidateId = safeCandidateId,
+        scheduledCandidateId = safeScheduledCandidateId,
+        scheduleId = safeScheduleId,
+    )
 }

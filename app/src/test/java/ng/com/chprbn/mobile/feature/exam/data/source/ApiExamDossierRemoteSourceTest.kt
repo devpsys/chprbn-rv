@@ -63,7 +63,7 @@ class ApiExamDossierRemoteSourceTest {
                         id = "sch_1",
                         testCode = "CHEW",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(
                             CandidateDto(id = "can_1", examNumber = "B/1", fullName = "A"),
@@ -93,15 +93,15 @@ class ApiExamDossierRemoteSourceTest {
                     ScheduleDto(
                         id = "sch_1",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_1")),
                     ),
                     ScheduleDto(
                         id = "sch_2",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_2", candidateId = "can_2"),
-                            PaperCandidateAssignmentDto(paperId = "pap_2", candidateId = "can_3"),
+                            PaperCandidateAssignmentDto(paperId = "pap_2", candidateId = "can_2", scheduledCandidateId = "sc_2"),
+                            PaperCandidateAssignmentDto(paperId = "pap_2", candidateId = "can_3", scheduledCandidateId = "sc_3"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_2"), CandidateDto(id = "can_3")),
                     ),
@@ -194,7 +194,7 @@ class ApiExamDossierRemoteSourceTest {
                             startTime = "09:00",
                             endTime = "17:00",
                             paperCandidates = listOf(
-                                PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                                PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                             ),
                             candidates = listOf(CandidateDto(id = "can_1")),
                         ),
@@ -223,7 +223,7 @@ class ApiExamDossierRemoteSourceTest {
                     ScheduleDto(
                         id = "sch_1",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_1")),
                     ),
@@ -250,7 +250,7 @@ class ApiExamDossierRemoteSourceTest {
                         startTime = "not-a-time",
                         endTime = "17:00",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_1")),
                     ),
@@ -279,7 +279,7 @@ class ApiExamDossierRemoteSourceTest {
                         startTime = "09:00",
                         endTime = "17:00",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_1")),
                     ),
@@ -308,7 +308,7 @@ class ApiExamDossierRemoteSourceTest {
                         startTime = "09:00",
                         endTime = "17:00",
                         paperCandidates = listOf(
-                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1"),
+                            PaperCandidateAssignmentDto(paperId = "pap_1", candidateId = "can_1", scheduledCandidateId = "sc_1"),
                         ),
                         candidates = listOf(CandidateDto(id = "can_1")),
                     ),

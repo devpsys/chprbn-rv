@@ -75,6 +75,8 @@ class ExamSyncRepositoryImpl @Inject constructor(
                         PaperCandidateAssignmentEntity(
                             paperId = it.paperId,
                             candidateId = it.candidateId,
+                            scheduledCandidateId = it.scheduledCandidateId,
+                            scheduleId = it.scheduleId,
                         )
                     },
                 )

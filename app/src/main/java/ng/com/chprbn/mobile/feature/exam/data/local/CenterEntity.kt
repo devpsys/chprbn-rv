@@ -14,4 +14,6 @@ data class CenterEntity(
     /** Added in schema v2 — see `ExamDatabase`'s `AutoMigration(1, 2)`. */
     @ColumnInfo(defaultValue = "0")
     val hasSections: Boolean = false,
+    /** Added in schema v3 — see `ExamDatabase`'s `AutoMigration(2, 3)`. Null for rows persisted before this column existed, until the next dossier download. */
+    val year: Int? = null,
 )

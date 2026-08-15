@@ -2,7 +2,6 @@ package ng.com.chprbn.mobile.feature.exam.data.api
 
 import com.google.gson.JsonParser
 import kotlinx.coroutines.test.runTest
-import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncItemDto
@@ -47,77 +46,65 @@ class ExamSyncApiServiceTest {
     // region uploadAttendanceBatch
 
     @Test
-    fun `uploadAttendanceBatch posts to exam-attendance-batch with snake_case body fields`() = runTest {
-        server.enqueue(jsonOk("""{"success":true,"data":{"results":[]}}"""))
+    fun `uploadAttendanceBatch posts a bare JSON array with snake_case fields, no client_id status or marked_at`() =
+        runTest {
+            server.enqueue(jsonOk("""{"status":true,"message":"Successful","data":[101]}"""))
 
-        api.uploadAttendanceBatch(
-            idempotencyKey = "test-idempotency-key",
-            body = AttendanceSyncBatchRequestDto(
-                items = listOf(
+            api.uploadAttendanceBatch(
+                body = listOf(
                     AttendanceSyncItemDto(
-                        clientId = "p1:c1",
-                        paperId = "p1",
-                        candidateId = "c1",
-                        status = "signed_in",
-                        markedAt = 1_700_000_000_000L,
+                        scheduledCandidateId = 501L,
+                        scheduleId = 45L,
+                        candidateId = 101L,
+                        paperId = 8L,
+                        signIn = 1,
+                        signOut = 0,
+                        remark = "AE",
+                        year = 2026,
                     ),
                 ),
-            ),
-        )
+            )
 
-        val recorded = server.takeRequest()
-        assertEquals("POST", recorded.method)
-        assertEquals("/attendance/push-record", recorded.path)
-        assertEquals("application/json; charset=UTF-8", recorded.getHeader("Content-Type"))
+            val recorded = server.takeRequest()
+            assertEquals("POST", recorded.method)
+            assertEquals("/attendance/push-record", recorded.path)
 
-        val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonObject
-        val item = body.getAsJsonArray("items").single().asJsonObject
-        assertEquals("p1:c1", item["client_id"].asString)
-        assertEquals("p1", item["paper_id"].asString)
-        assertEquals("c1", item["candidate_id"].asString)
-        assertEquals("signed_in", item["status"].asString)
-        assertEquals(1_700_000_000_000L, item["marked_at"].asLong)
-    }
+            // Confirmed live contract (docs/mobile-api-guide.html §5): the
+            // body IS the array, not `{ "items": [...] }`.
+            val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonArray
+            val item = body.single().asJsonObject
+            assertEquals(501L, item["scheduled_candidate_id"].asLong)
+            assertEquals(45L, item["schedule_id"].asLong)
+            assertEquals(101L, item["candidate_id"].asLong)
+            assertEquals(8L, item["paper_id"].asLong)
+            assertEquals(1, item["sign_in"].asInt)
+            assertEquals(0, item["sign_out"].asInt)
+            assertEquals("AE", item["remark"].asString)
+            assertEquals(2026, item["year"].asInt)
+            // Explicitly forbidden shapes per the docs' warning note.
+            assertFalse("must not send client_id", item.has("client_id"))
+            assertFalse("must not send status", item.has("status"))
+            assertFalse("must not send marked_at", item.has("marked_at"))
+            // `body` was already parsed with .asJsonArray above — a JsonObject
+            // (the old `{ "items": [...] }` wrapper) would have thrown there,
+            // so reaching this line already proves the bare-array shape.
+        }
 
     @Test
-    fun `uploadAttendanceBatch parses per-row results envelope`() = runTest {
-        server.enqueue(
-            jsonOk(
-                """
-                {
-                  "success": true,
-                  "message": "Batch processed.",
-                  "data": {
-                    "results": [
-                      {"client_id": "p1:c1", "accepted": true,  "server_id": "att_1"},
-                      {"client_id": "p1:c2", "accepted": false, "error": "candidate not assigned to paper"}
-                    ]
-                  }
-                }
-                """.trimIndent(),
-            ),
-        )
+    fun `uploadAttendanceBatch parses the whole-batch status and processed candidate_ids`() = runTest {
+        server.enqueue(jsonOk("""{"status":true,"message":"Successful","data":[101,102]}"""))
 
         val response = api.uploadAttendanceBatch(
-            idempotencyKey = "test-idempotency-key",
-            body = AttendanceSyncBatchRequestDto(
-                items = listOf(
-                    AttendanceSyncItemDto("p1:c1", "p1", "c1", "signed_in", 0L),
-                    AttendanceSyncItemDto("p1:c2", "p1", "c2", "signed_in", 0L),
-                ),
+            body = listOf(
+                AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026),
+                AttendanceSyncItemDto(502L, 45L, 102L, 8L, 1, 1, null, 2026),
             ),
         )
 
         assertTrue(response.isSuccessful)
-        val results = response.body()!!.data!!.results!!
-        assertEquals(2, results.size)
-        assertEquals("p1:c1", results[0].clientId)
-        assertTrue(results[0].accepted)
-        assertEquals("att_1", results[0].serverId)
-        assertNull(results[0].error)
-        assertEquals("p1:c2", results[1].clientId)
-        assertFalse(results[1].accepted)
-        assertEquals("candidate not assigned to paper", results[1].error)
+        val envelope = response.body()!!
+        assertTrue(envelope.status)
+        assertEquals(listOf(101L, 102L), envelope.data)
     }
 
     @Test
@@ -125,10 +112,7 @@ class ExamSyncApiServiceTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val response = api.uploadAttendanceBatch(
-            idempotencyKey = "test-idempotency-key",
-            body = AttendanceSyncBatchRequestDto(
-                items = listOf(AttendanceSyncItemDto("p1:c1", "p1", "c1", "signed_in", 0L)),
-            ),
+            body = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
         )
 
         assertFalse(response.isSuccessful)
@@ -138,17 +122,25 @@ class ExamSyncApiServiceTest {
 
     @Test
     fun `uploadAttendanceBatch tolerates missing data field`() = runTest {
-        server.enqueue(jsonOk("""{"success":true,"message":"empty"}"""))
+        server.enqueue(jsonOk("""{"status":true,"message":"empty"}"""))
 
-        val response = api.uploadAttendanceBatch(
-            idempotencyKey = "test-idempotency-key",
-            body = AttendanceSyncBatchRequestDto(items = emptyList()),
-        )
+        val response = api.uploadAttendanceBatch(body = emptyList())
 
         assertTrue(response.isSuccessful)
         val body = response.body()!!
-        assertTrue(body.success)
+        assertTrue(body.status)
         assertNull(body.data)
+    }
+
+    @Test
+    fun `uploadAttendanceBatch tolerates a legacy success key in place of status`() = runTest {
+        server.enqueue(jsonOk("""{"success":true,"message":"ok","data":[101]}"""))
+
+        val response = api.uploadAttendanceBatch(
+            body = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
+        )
+
+        assertTrue(response.body()!!.status)
     }
 
     // endregion

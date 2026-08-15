@@ -19,7 +19,15 @@ data class CandidateDto(
     @SerializedName(value = "photo_url", alternate = ["photo"]) val photoUrl: String? = null,
 )
 
+/**
+ * Confirmed live per `docs/mobile-api-guide.html` §4 — the schedule's
+ * `paper_candidates[]` row. [scheduledCandidateId] is required to push
+ * attendance (`docs/mobile-api-guide.html` §5): the server's write
+ * contract keys the upsert on `(scheduled_candidate_id, paper_id, year)`,
+ * not on `(paper_id, candidate_id)` alone.
+ */
 data class PaperCandidateAssignmentDto(
     @SerializedName("paper_id") val paperId: String? = null,
     @SerializedName("candidate_id") val candidateId: String? = null,
+    @SerializedName("scheduled_candidate_id") val scheduledCandidateId: String? = null,
 )

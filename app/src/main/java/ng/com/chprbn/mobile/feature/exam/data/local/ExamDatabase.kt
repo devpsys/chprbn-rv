@@ -28,12 +28,19 @@ import androidx.room.RoomDatabase
         AttendanceEntity::class,
         RemarkEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // v1 → v2: adds nullable-with-default `centers.hasSections`,
         // derived from the dossier's `data.sections` array.
         AutoMigration(from = 1, to = 2),
+        // v2 → v3: adds `centers.year` and `paper_candidate_assignments.
+        // scheduledCandidateId`/`scheduleId` — required to push attendance
+        // per the confirmed live contract (`docs/mobile-api-guide.html`
+        // §4/§5). Both tables are fully wiped and rebuilt on every dossier
+        // download, so the defaulted/null values on pre-existing rows are
+        // only ever transiently stale until the next download.
+        AutoMigration(from = 2, to = 3),
     ],
 )
 abstract class ExamDatabase : RoomDatabase() {

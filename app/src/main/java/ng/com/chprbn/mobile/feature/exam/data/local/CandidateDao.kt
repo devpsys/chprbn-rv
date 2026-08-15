@@ -62,6 +62,10 @@ interface CandidateDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAssignments(assignments: List<PaperCandidateAssignmentEntity>): List<Long>
 
+    /** Backs [ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceSyncHandler]'s scheduledCandidateId/scheduleId lookup at sync time. */
+    @Query("SELECT * FROM paper_candidate_assignments WHERE paperId = :paperId AND candidateId = :candidateId")
+    suspend fun getAssignment(paperId: String, candidateId: String): PaperCandidateAssignmentEntity?
+
     @Query("SELECT COUNT(*) FROM paper_candidate_assignments")
     suspend fun assignmentCount(): Int
 

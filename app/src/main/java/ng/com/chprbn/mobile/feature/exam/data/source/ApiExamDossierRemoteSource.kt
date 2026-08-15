@@ -51,6 +51,10 @@ import javax.inject.Inject
  * `data.sections` collapses to `Center.hasSections` (non-emptiness only —
  * element shape is unconfirmed, always empty in every response seen so
  * far) so the dashboard can gate the Practical Assessment card on it.
+ *
+ * `data.year` is copied onto [Center.year] — confirmed live per
+ * `docs/mobile-api-guide.html` §4, required verbatim on every
+ * `attendance/push-record` row (§5).
  */
 class ApiExamDossierRemoteSource @Inject constructor(
     private val api: ExamDossierApiService,
@@ -75,7 +79,10 @@ class ApiExamDossierRemoteSource @Inject constructor(
             Log.w(TAG, "Dossier envelope had success=true but a null data block — returning null.")
             return null
         }
-        val center = data.center?.toDomain()?.copy(hasSections = !data.sections.isNullOrEmpty())
+        val center = data.center?.toDomain()?.copy(
+            hasSections = !data.sections.isNullOrEmpty(),
+            year = data.year,
+        )
         if (center == null) {
             Log.w(
                 TAG,
@@ -90,7 +97,7 @@ class ApiExamDossierRemoteSource @Inject constructor(
 
         val rawAssignmentCount = schedules.sumOf { it.paperCandidates?.size ?: 0 }
         val assignments = schedules.flatMap { schedule ->
-            schedule.paperCandidates.orEmpty().mapNotNull { it.toDomain() }
+            schedule.paperCandidates.orEmpty().mapNotNull { it.toDomain(schedule.id.orEmpty()) }
         }
         logDroppedRows("assignments", rawAssignmentCount, assignments.size)
         val assignmentCountByPaperId = assignments.groupingBy { it.paperId }.eachCount()

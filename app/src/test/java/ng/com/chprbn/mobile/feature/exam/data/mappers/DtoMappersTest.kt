@@ -132,17 +132,45 @@ class DtoMappersTest {
 
     @Test
     fun `assignment dto maps to domain`() {
-        val dto = PaperCandidateAssignmentDto(paperId = "p1", candidateId = "c1")
+        val dto = PaperCandidateAssignmentDto(
+            paperId = "p1",
+            candidateId = "c1",
+            scheduledCandidateId = "501",
+        )
 
-        val assignment = dto.toDomain()!!
+        val assignment = dto.toDomain(scheduleId = "45")!!
 
         assertEquals("p1", assignment.paperId)
         assertEquals("c1", assignment.candidateId)
+        assertEquals("501", assignment.scheduledCandidateId)
+        assertEquals("45", assignment.scheduleId)
     }
 
     @Test
     fun `assignment dto missing either id returns null`() {
-        assertNull(PaperCandidateAssignmentDto(paperId = null, candidateId = "c1").toDomain())
-        assertNull(PaperCandidateAssignmentDto(paperId = "p1", candidateId = null).toDomain())
+        assertNull(
+            PaperCandidateAssignmentDto(paperId = null, candidateId = "c1", scheduledCandidateId = "501")
+                .toDomain(scheduleId = "45"),
+        )
+        assertNull(
+            PaperCandidateAssignmentDto(paperId = "p1", candidateId = null, scheduledCandidateId = "501")
+                .toDomain(scheduleId = "45"),
+        )
+    }
+
+    @Test
+    fun `assignment dto missing scheduledCandidateId returns null`() {
+        assertNull(
+            PaperCandidateAssignmentDto(paperId = "p1", candidateId = "c1", scheduledCandidateId = null)
+                .toDomain(scheduleId = "45"),
+        )
+    }
+
+    @Test
+    fun `assignment dto with blank scheduleId returns null`() {
+        assertNull(
+            PaperCandidateAssignmentDto(paperId = "p1", candidateId = "c1", scheduledCandidateId = "501")
+                .toDomain(scheduleId = ""),
+        )
     }
 }

@@ -87,7 +87,14 @@ class FakeExamDossierRemoteSource @Inject constructor() : ExamDossierRemoteSourc
         // fake roster simple. A more realistic dataset would have
         // candidates split across papers; revisit when the backend ships.
         private val ASSIGNMENTS = CANDIDATES.flatMap { c ->
-            PAPERS.map { p -> ExamPaperAssignment(paperId = p.id, candidateId = c.id) }
+            PAPERS.map { p ->
+                ExamPaperAssignment(
+                    paperId = p.id,
+                    candidateId = c.id,
+                    scheduledCandidateId = "${p.id}-${c.id}",
+                    scheduleId = "fake-schedule",
+                )
+            }
         }
 
         val BUNDLE = ExamDossierBundle(

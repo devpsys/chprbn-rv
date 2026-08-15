@@ -2,62 +2,68 @@ package ng.com.chprbn.mobile.feature.exam.data.source
 
 import ng.com.chprbn.mobile.core.sync.foldBatchResults
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamSyncApiService
-import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
-import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncResultDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncItemDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncResultDto
+import ng.com.chprbn.mobile.feature.exam.data.mappers.attendanceClientId
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toSyncItemDto
-import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
+import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
 import retrofit2.Response
 import java.util.UUID
 import javax.inject.Inject
 
-/**
- * Retrofit-backed batched sync source. Sends one batched POST per call
- * and walks the response's per-row `results` array, producing a map
- * keyed by each row's `client_id`.
- *
- * Transport-level failure (non-2xx, network, parse error) is folded
- * into a per-row failure for every input row so the handler can still
- * map back uniformly.
- */
 class ApiExamSyncRemoteSource @Inject constructor(
     private val api: ExamSyncApiService,
 ) : ExamSyncRemoteSource {
 
     override suspend fun uploadAttendanceBatch(
-        rows: List<Attendance>,
+        rows: List<AttendanceUploadRow>,
     ): Map<String, Result<Unit>> {
         if (rows.isEmpty()) return emptyMap()
-        val items: List<AttendanceSyncItemDto> = rows.map { it.toSyncItemDto() }
 
-        val transportOutcome: Result<List<AttendanceSyncResultDto>> = runCatching {
-            val response = api.uploadAttendanceBatch(
-                idempotencyKey = UUID.randomUUID().toString(),
-                body = AttendanceSyncBatchRequestDto(items = items),
-            )
+        val outcomes = LinkedHashMap<String, Result<Unit>>(rows.size)
+        val items = mutableListOf<AttendanceSyncItemDto>()
+        val itemKeys = mutableListOf<String>()
+
+        for (row in rows) {
+            val key = attendanceClientId(row.paperId, row.candidateId)
+            val dto = row.toSyncItemDtoOrNull()
+            if (dto == null) {
+                outcomes[key] = Result.failure(
+                    IllegalStateException(
+                        "Cannot push attendance for candidate ${row.candidateId}: missing/" +
+                            "non-numeric scheduledCandidateId, scheduleId, candidateId, or paperId.",
+                    ),
+                )
+                continue
+            }
+            items.add(dto)
+            itemKeys.add(key)
+        }
+
+        if (items.isEmpty()) return outcomes
+
+        // The endpoint returns no per-row results — just the batch's own
+        // status + a list of processed candidate_ids (docs/mobile-api-guide.html
+        // §5) — so every well-formed row in the batch shares one outcome.
+        val transportOutcome: Result<Unit> = runCatching {
+            val response = api.uploadAttendanceBatch(body = items)
             response.requireSuccessOrThrow()
             val envelope = response.body()
                 ?: error("Attendance batch: empty response body.")
-            if (!envelope.success) {
-                // E3 audit: an envelope-level rejection must fail every row
-                // with the server's own message so retries surface the real
-                // cause, not the generic per-row "no result" fallback.
+            if (!envelope.status) {
                 error(envelope.message ?: "Attendance batch rejected by server.")
             }
-            envelope.data?.results.orEmpty()
         }
 
-        return foldBatchResults(
-            clientIds = items.map { it.clientId },
-            transportOutcome = transportOutcome,
-            acceptedOf = { it.accepted },
-            errorOf = { it.error },
-            clientIdOf = { it.clientId },
+        transportOutcome.fold(
+            onSuccess = { itemKeys.forEach { outcomes[it] = Result.success(Unit) } },
+            onFailure = { t -> itemKeys.forEach { outcomes[it] = Result.failure(t) } },
         )
+
+        return outcomes
     }
 
     override suspend fun uploadRemarkBatch(
@@ -86,6 +92,24 @@ class ApiExamSyncRemoteSource @Inject constructor(
             acceptedOf = { it.accepted },
             errorOf = { it.error },
             clientIdOf = { it.clientId },
+        )
+    }
+
+    /** Null when any required numeric field fails to parse — see [AttendanceSyncItemDto]. */
+    private fun AttendanceUploadRow.toSyncItemDtoOrNull(): AttendanceSyncItemDto? {
+        val scheduledCandidateIdLong = scheduledCandidateId.toLongOrNull() ?: return null
+        val scheduleIdLong = scheduleId.toLongOrNull() ?: return null
+        val candidateIdLong = candidateId.toLongOrNull() ?: return null
+        val paperIdLong = paperId.toLongOrNull() ?: return null
+        return AttendanceSyncItemDto(
+            scheduledCandidateId = scheduledCandidateIdLong,
+            scheduleId = scheduleIdLong,
+            candidateId = candidateIdLong,
+            paperId = paperIdLong,
+            signIn = if (status == AttendanceStatus.SignedIn || status == AttendanceStatus.SignedOut) 1 else 0,
+            signOut = if (status == AttendanceStatus.SignedOut) 1 else 0,
+            remark = remark,
+            year = year,
         )
     }
 
