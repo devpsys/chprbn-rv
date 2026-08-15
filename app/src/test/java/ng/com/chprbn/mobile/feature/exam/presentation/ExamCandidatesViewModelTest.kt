@@ -219,12 +219,13 @@ class ExamCandidatesViewModelTest {
         runTest {
             coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
             coEvery {
-                addRemark("c1", "p1", "Absenteeism", RemarkType.Absenteeism.severity)
+                addRemark("c1", "p1", "Absenteeism", RemarkType.Absenteeism.severity, RemarkType.Absenteeism.code)
             } returns AddRemarkResult.Success(
                 Remark(
                     id = "r1",
                     candidateId = "c1",
                     paperId = "p1",
+                    code = RemarkType.Absenteeism.code,
                     body = "Absenteeism",
                     createdAt = 0L,
                 ),
@@ -240,9 +241,24 @@ class ExamCandidatesViewModelTest {
         }
 
     @Test
+    fun `onSaveRemark on a candidate that already has a remark still leaves the count at 1, not 2`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe", remarkCount = 1))
+        coEvery { addRemark(any(), any(), any(), any(), any()) } returns AddRemarkResult.Success(
+            Remark(id = "r1", candidateId = "c1", code = "ABS", body = "Absenteeism", createdAt = 0L),
+        )
+        val viewModel = viewModel()
+        viewModel.onAddRemarkClicked("c1")
+        viewModel.onSelectRemarkType(RemarkType.Absenteeism)
+
+        viewModel.onSaveRemark()
+
+        assertEquals(1, viewModel.uiState.value.candidates.single().remarkCount)
+    }
+
+    @Test
     fun `onSaveRemark surfaces the use case's error and keeps the dialog open for retry`() = runTest {
         coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
-        coEvery { addRemark(any(), any(), any(), any()) } returns
+        coEvery { addRemark(any(), any(), any(), any(), any()) } returns
             AddRemarkResult.Error("Remark cannot be empty.")
         val viewModel = viewModel()
         viewModel.onAddRemarkClicked("c1")
@@ -265,7 +281,7 @@ class ExamCandidatesViewModelTest {
         viewModel.onSaveRemark()
 
         assertTrue(viewModel.remarkDialogState.value is AddRemarkUiState.Open)
-        io.mockk.coVerify(exactly = 0) { addRemark(any(), any(), any(), any()) }
+        io.mockk.coVerify(exactly = 0) { addRemark(any(), any(), any(), any(), any()) }
     }
 
     private fun row(

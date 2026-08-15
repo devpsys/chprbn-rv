@@ -41,9 +41,10 @@ import javax.inject.Inject
  * [remarkDialogState] drives the Add Remark modal ([AddRemarkDialog]):
  * [onAddRemarkClicked] opens it for a candidate, [onSelectRemarkType]
  * tracks the picked [RemarkType], and [onSaveRemark] calls
- * [AddRemarkUseCase] and optimistically bumps that candidate's
- * [ExamCandidateUiState.remarkCount] on success rather than re-querying
- * the whole roster.
+ * [AddRemarkUseCase] and optimistically sets that candidate's
+ * [ExamCandidateUiState.remarkCount] to 1 on success (one remark per
+ * candidate — a save always replaces, never appends) rather than
+ * re-querying the whole roster.
  */
 @HiltViewModel
 class ExamCandidatesViewModel @Inject constructor(
@@ -128,12 +129,16 @@ class ExamCandidatesViewModel @Inject constructor(
                 paperId = paperId,
                 body = context.getString(type.labelRes),
                 severity = type.severity,
+                code = type.code,
             )
             when (result) {
                 is AddRemarkResult.Success -> {
+                    // One remark per candidate now — saving replaces
+                    // whatever was already on file, so the count is
+                    // always 1 after a successful save, never incremented.
                     source = source.map { candidate ->
                         if (candidate.candidateId == state.candidateId) {
-                            candidate.copy(remarkCount = candidate.remarkCount + 1)
+                            candidate.copy(remarkCount = 1)
                         } else {
                             candidate
                         }

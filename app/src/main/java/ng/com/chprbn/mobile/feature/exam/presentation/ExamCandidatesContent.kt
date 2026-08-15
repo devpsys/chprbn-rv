@@ -191,7 +191,7 @@ private fun ExamCandidatesTopBar(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Left,
             )
             IconButton(onClick = onFiltersClick, modifier = Modifier.size(40.dp)) {
                 Icon(

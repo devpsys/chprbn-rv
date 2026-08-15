@@ -7,6 +7,7 @@ import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
+import ng.com.chprbn.mobile.feature.exam.data.local.RemarkDao
 import ng.com.chprbn.mobile.feature.exam.data.mappers.attendanceClientId
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.exam.data.source.AttendanceUploadRow
@@ -21,18 +22,17 @@ import javax.inject.Inject
  * `attendance.syncStatus` based on each result.
  *
  * `attendance/push-record` needs `scheduledCandidateId`/`scheduleId`
- * (from the cached dossier assignment) and `year` (from the cached
- * centre) — none of which live on the `attendance` row itself, so
- * they're resolved here at sync time via [candidateDao]/[centerDao]
- * rather than duplicated onto `AttendanceEntity`'s schema. A row whose
+ * (from the cached dossier assignment), `year` (from the cached
+ * centre), and `remark` (the candidate's on-file remark code) — none of
+ * which live on the `attendance` row itself, so they're resolved here
+ * at sync time via [candidateDao]/[centerDao]/[remarkDao] rather than
+ * duplicated onto `AttendanceEntity`'s schema. A row whose
  * assignment/centre can't be resolved (e.g. attendance marked from a
  * dossier that's since been re-downloaded and no longer contains that
  * candidate) fails with a clear message and self-heals on the next
  * successful dossier download rather than being dropped outright.
- *
- * [ng.com.chprbn.mobile.feature.exam.data.source.AttendanceUploadRow.remark]
- * is left `null` — there's no confirmed mapping yet from the officer's
- * free-text remark log to the single push-record remark code.
+ * `remark` degrades gracefully instead: no on-file remark just means an
+ * empty string, not a sync failure.
  *
  * One [SyncOutcome] per input key in the returned map. Malformed or
  * missing-local rows are degraded to [SyncOutcome.Failure] without
@@ -42,6 +42,7 @@ class AttendanceSyncHandler @Inject constructor(
     private val attendanceDao: AttendanceDao,
     private val candidateDao: CandidateDao,
     private val centerDao: CenterDao,
+    private val remarkDao: RemarkDao,
     private val remoteSource: ExamSyncRemoteSource,
     private val clock: Clock,
 ) : SyncEntityHandler {
@@ -76,6 +77,7 @@ class AttendanceSyncHandler @Inject constructor(
                 continue
             }
             val domain = entity.toDomain()
+            val remarkCode = remarkDao.getOne(candidateId)?.code.orEmpty()
             toUpload.add(
                 UploadRow(
                     entityKey = key,
@@ -88,6 +90,7 @@ class AttendanceSyncHandler @Inject constructor(
                         scheduleId = assignment.scheduleId,
                         year = year,
                         status = domain.status,
+                        remark = remarkCode,
                     ),
                 ),
             )

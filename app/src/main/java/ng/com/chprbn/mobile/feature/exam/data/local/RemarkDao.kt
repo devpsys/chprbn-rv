@@ -15,6 +15,11 @@ interface RemarkDao {
     @Query("SELECT * FROM remarks WHERE candidateId = :candidateId ORDER BY createdAt DESC")
     suspend fun getForCandidate(candidateId: String): List<RemarkEntity>
 
+    /** Backs [ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceSyncHandler]'s remark-code lookup at sync time. */
+    @Query("SELECT * FROM remarks WHERE candidateId = :candidateId")
+    suspend fun getOne(candidateId: String): RemarkEntity?
+
+    /** REPLACEs by `candidateId` (the primary key) — one remark per candidate, last write wins. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(remark: RemarkEntity): Long
 

@@ -14,9 +14,12 @@ import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperCandidateAssignmentEntity
+import ng.com.chprbn.mobile.feature.exam.data.local.RemarkDao
+import ng.com.chprbn.mobile.feature.exam.data.local.RemarkEntity
 import ng.com.chprbn.mobile.feature.exam.data.source.AttendanceUploadRow
 import ng.com.chprbn.mobile.feature.exam.data.source.ExamSyncRemoteSource
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
+import ng.com.chprbn.mobile.feature.exam.domain.model.RemarkSeverity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,8 +36,11 @@ class AttendanceSyncHandlerTest {
     private val centerDao = mockk<CenterDao> {
         coEvery { getFirst() } returns center()
     }
+    private val remarkDao = mockk<RemarkDao> {
+        coEvery { getOne(any()) } returns null
+    }
     private val remote = mockk<ExamSyncRemoteSource>()
-    private val handler = AttendanceSyncHandler(dao, candidateDao, centerDao, remote, clock)
+    private val handler = AttendanceSyncHandler(dao, candidateDao, centerDao, remarkDao, remote, clock)
 
     @Test
     fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
@@ -179,6 +185,36 @@ class AttendanceSyncHandlerTest {
         }
 
     @Test
+    fun `candidate with no remark on file uploads with an empty remark string, not null`() = runTest {
+        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
+        coEvery { remarkDao.getOne("c1") } returns null
+        val captured = slot<List<AttendanceUploadRow>>()
+        coEvery { remote.uploadAttendanceBatch(capture(captured)) } returns mapOf(
+            "p1:c1" to Result.success(Unit),
+        )
+
+        handler.uploadBatch(listOf("p1/c1"))
+
+        assertEquals("", captured.captured.single().remark)
+    }
+
+    @Test
+    fun `candidate with an on-file remark uploads its code`() = runTest {
+        coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
+        coEvery { candidateDao.getAssignment("p1", "c1") } returns assignment(paperId = "p1", candidateId = "c1")
+        coEvery { remarkDao.getOne("c1") } returns remark(candidateId = "c1", code = "AE")
+        val captured = slot<List<AttendanceUploadRow>>()
+        coEvery { remote.uploadAttendanceBatch(capture(captured)) } returns mapOf(
+            "p1:c1" to Result.success(Unit),
+        )
+
+        handler.uploadBatch(listOf("p1/c1"))
+
+        assertEquals("AE", captured.captured.single().remark)
+    }
+
+    @Test
     fun `mixed batch — valid rows uploaded, ghost rows still get Drop`() = runTest {
         coEvery { dao.getOne("p1", "c1") } returns attendance(paper = "p1", candidate = "c1")
         coEvery { dao.getOne("p1", "missing") } returns null
@@ -211,6 +247,16 @@ class AttendanceSyncHandlerTest {
         candidateId = candidateId,
         scheduledCandidateId = scheduledCandidateId,
         scheduleId = scheduleId,
+    )
+
+    private fun remark(candidateId: String, code: String) = RemarkEntity(
+        candidateId = candidateId,
+        id = "r-$candidateId",
+        code = code,
+        body = "x",
+        severity = RemarkSeverity.Info.name,
+        createdAt = 0L,
+        syncStatus = SyncStatus.Pending.name,
     )
 
     private fun center(year: Int? = 2026) = CenterEntity(

@@ -7,8 +7,12 @@ import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
  * A local attendance row plus everything `attendance/push-record`
  * requires that isn't stored on [ng.com.chprbn.mobile.feature.exam.domain.model.Attendance]
  * itself — [scheduledCandidateId]/[scheduleId] (resolved from the
- * cached dossier assignment) and [year] (from the cached centre) —
- * resolved by `AttendanceSyncHandler` at sync time.
+ * cached dossier assignment), [year] (from the cached centre), and
+ * [remark] (the candidate's on-file remark code, resolved from
+ * [ng.com.chprbn.mobile.feature.exam.data.local.RemarkDao]) — all
+ * resolved by `AttendanceSyncHandler` at sync time. [remark] is never
+ * null: `""` when the candidate has no remark on file, otherwise the
+ * remark's [ng.com.chprbn.mobile.feature.exam.presentation.RemarkType.code].
  */
 data class AttendanceUploadRow(
     val paperId: String,
@@ -17,7 +21,7 @@ data class AttendanceUploadRow(
     val scheduleId: String,
     val year: Int,
     val status: AttendanceStatus,
-    val remark: String? = null,
+    val remark: String,
 )
 
 /**

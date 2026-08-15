@@ -6,9 +6,9 @@ import ng.com.chprbn.mobile.feature.exam.domain.model.RemarkSeverity
 import ng.com.chprbn.mobile.feature.exam.domain.model.SaveResult
 
 /**
- * Append-only remark surface. Unlike attendance, multiple remarks per
- * candidate coexist, so the repository never REPLACES — it always
- * INSERTs a fresh row keyed by a client-generated UUID.
+ * One remark per candidate. [addRemark] always REPLACEs whatever remark
+ * (if any) is already on file for that candidate, keyed by
+ * `candidateId` — it never appends a second row.
  */
 interface RemarkRepository {
 
@@ -17,14 +17,16 @@ interface RemarkRepository {
         paperId: String?,
         body: String,
         severity: RemarkSeverity,
+        code: String = "",
     ): AddRemarkResult
 
     suspend fun getRemarksForCandidate(candidateId: String): List<Remark>
 
     /**
-     * Deletes every remark for [candidateId]. Doesn't touch the sync
-     * queue directly — any now-orphaned `SyncJobEntity` self-cleans the
-     * next time [ng.com.chprbn.mobile.feature.exam.data.sync.RemarkSyncHandler]
+     * Deletes the remark on file for [candidateId], if any. Doesn't
+     * touch the sync queue directly — any now-orphaned `SyncJobEntity`
+     * self-cleans the next time
+     * [ng.com.chprbn.mobile.feature.exam.data.sync.RemarkSyncHandler]
      * finds its local row missing (same pattern as attendance's ghost-job
      * handling).
      */

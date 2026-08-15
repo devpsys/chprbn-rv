@@ -6,9 +6,11 @@ import ng.com.chprbn.mobile.feature.exam.domain.repository.RemarkRepository
 import javax.inject.Inject
 
 /**
- * Append a candidate remark. [body] is trimmed and rejected when blank.
- * [paperId] is optional — null means a centre-wide remark not tied to a
- * specific paper.
+ * Set (or replace) a candidate's remark. [body] is trimmed and rejected
+ * when blank. [paperId] is optional — null means a centre-wide remark
+ * not tied to a specific paper. [code] is the fixed CHPRBN remark code
+ * (e.g. `"AE"`); passed through as-is since it comes from a closed enum,
+ * not free text.
  */
 class AddRemarkUseCase @Inject constructor(
     private val repository: RemarkRepository,
@@ -18,6 +20,7 @@ class AddRemarkUseCase @Inject constructor(
         paperId: String?,
         body: String,
         severity: RemarkSeverity = RemarkSeverity.Info,
+        code: String = "",
     ): AddRemarkResult {
         val trimmedCandidate = candidateId.trim()
         val trimmedBody = body.trim()
@@ -32,6 +35,7 @@ class AddRemarkUseCase @Inject constructor(
             paperId = paperId?.trim()?.takeIf { it.isNotEmpty() },
             body = trimmedBody,
             severity = severity,
+            code = code,
         )
     }
 }

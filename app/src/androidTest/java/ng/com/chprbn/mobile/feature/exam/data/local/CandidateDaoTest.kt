@@ -96,13 +96,15 @@ class CandidateDaoTest {
     @Test
     fun rowsForPaperReportsRemarkCount() = runTest {
         seedAssignments()
+        // One remark per candidate now — a second upsert for the same
+        // candidate REPLACEs rather than adding a second row.
         remarkDao.upsert(remarkFor("r1", "c1"))
-        remarkDao.upsert(remarkFor("r2", "c1"))
+        remarkDao.upsert(remarkFor("r1b", "c1"))
         remarkDao.upsert(remarkFor("r3", "c2"))
 
         val rows = candidateDao.rowsForPaper("p1", "All", "").associateBy { it.candidateId }
 
-        assertEquals(2, rows.getValue("c1").remarkCount)
+        assertEquals(1, rows.getValue("c1").remarkCount)
         assertEquals(1, rows.getValue("c2").remarkCount)
         assertEquals(0, rows.getValue("c3").remarkCount)
     }

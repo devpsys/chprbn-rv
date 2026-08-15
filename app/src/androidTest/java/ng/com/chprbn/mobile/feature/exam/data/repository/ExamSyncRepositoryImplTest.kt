@@ -143,8 +143,8 @@ class ExamSyncRepositoryImplTest {
         coEvery { remoteSource.fetchDossier() } returns sampleBundle(
             candidates = listOf(Candidate("c3", "EX-3", "New Cand")),
             assignments = listOf(
-                ExamPaperAssignment("p1", "c3"),
-                ExamPaperAssignment("p2", "c3"),
+                ExamPaperAssignment("p1", "c3", "sc-1", "sch-1"),
+                ExamPaperAssignment("p2", "c3", "sc-2", "sch-1"),
             ),
         )
         repository.downloadDossier()
@@ -160,10 +160,10 @@ class ExamSyncRepositoryImplTest {
             Candidate("c2", "EX-2", "John Smith"),
         ),
         assignments: List<ExamPaperAssignment> = listOf(
-            ExamPaperAssignment("p1", "c1"),
-            ExamPaperAssignment("p1", "c2"),
-            ExamPaperAssignment("p2", "c1"),
-            ExamPaperAssignment("p2", "c2"),
+            ExamPaperAssignment("p1", "c1", "sc-1", "sch-1"),
+            ExamPaperAssignment("p1", "c2", "sc-2", "sch-1"),
+            ExamPaperAssignment("p2", "c1", "sc-3", "sch-1"),
+            ExamPaperAssignment("p2", "c2", "sc-4", "sch-1"),
         ),
     ) = ExamDossierBundle(
         center = Center("C-1", "Lagos Centre", "LAG-001", "Marina", null),

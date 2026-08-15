@@ -21,11 +21,12 @@ import java.util.UUID
 import javax.inject.Inject
 
 /**
- * Append-only remark surface. The repository generates a UUID as the
- * client-side primary key; once the server accepts the row, the sync
- * handler optionally REPLACES with the server-assigned id (a feature
- * the wire DTO supports but the v1 handler doesn't yet exercise — the
- * UUID stays stable end-to-end).
+ * One remark per candidate. [addRemark] always builds a fresh
+ * client-generated UUID as `id` and upserts by `candidateId` (the
+ * entity's primary key), so it REPLACES whatever remark was already on
+ * file — any sync job still pointing at the previous `id` becomes a
+ * ghost job that [ng.com.chprbn.mobile.feature.exam.data.sync.RemarkSyncHandler]
+ * self-cleans the next time it runs.
  */
 class RemarkRepositoryImpl @Inject constructor(
     private val remarkDao: RemarkDao,
@@ -39,12 +40,14 @@ class RemarkRepositoryImpl @Inject constructor(
         paperId: String?,
         body: String,
         severity: RemarkSeverity,
+        code: String,
     ): AddRemarkResult = withContext(Dispatchers.IO) {
         val createdAt = clock.nowMillis()
         val remark = Remark(
             id = UUID.randomUUID().toString(),
             candidateId = candidateId,
             paperId = paperId,
+            code = code,
             body = body,
             severity = severity,
             createdAt = createdAt,

@@ -35,30 +35,37 @@ class RemarkDaoTest {
     }
 
     @Test
-    fun upsertReplacesByPrimaryKey() = runTest {
-        dao.upsert(remark(id = "r1", body = "first"))
-        dao.upsert(remark(id = "r1", body = "edited"))
+    fun upsertReplacesByCandidateId() = runTest {
+        dao.upsert(remark(id = "r1", candidateId = "c1", body = "first"))
+        dao.upsert(remark(id = "r2", candidateId = "c1", body = "edited"))
 
-        assertEquals("edited", dao.getById("r1")?.body)
+        val row = dao.getOne("c1")!!
+        assertEquals("edited", row.body)
+        assertEquals("r2", row.id)
+        assertNull("the replaced row must be gone, not just shadowed", dao.getById("r1"))
     }
 
     @Test
-    fun getForCandidateReturnsRowsInReverseChronologicalOrder() = runTest {
+    fun getOneReturnsNullWhenTheCandidateHasNoRemark() = runTest {
+        assertNull(dao.getOne("c1"))
+    }
+
+    @Test
+    fun getForCandidateReturnsAtMostOneRow() = runTest {
         dao.upsert(remark(id = "r1", candidateId = "c1", createdAt = 100L))
         dao.upsert(remark(id = "r2", candidateId = "c1", createdAt = 300L))
-        dao.upsert(remark(id = "r3", candidateId = "c1", createdAt = 200L))
         dao.upsert(remark(id = "r4", candidateId = "c2", createdAt = 500L))
 
         val rows = dao.getForCandidate("c1")
 
-        assertEquals(listOf("r2", "r3", "r1"), rows.map { it.id })
+        assertEquals(listOf("r2"), rows.map { it.id })
     }
 
     @Test
     fun pendingAndFailedFiltersBySyncStatus() = runTest {
-        dao.upsert(remark(id = "r1", syncStatus = SyncStatus.Pending))
-        dao.upsert(remark(id = "r2", syncStatus = SyncStatus.Synced))
-        dao.upsert(remark(id = "r3", syncStatus = SyncStatus.Failed))
+        dao.upsert(remark(id = "r1", candidateId = "c1", syncStatus = SyncStatus.Pending))
+        dao.upsert(remark(id = "r2", candidateId = "c2", syncStatus = SyncStatus.Synced))
+        dao.upsert(remark(id = "r3", candidateId = "c3", syncStatus = SyncStatus.Failed))
 
         val pending = dao.pendingAndFailed()
 
@@ -68,7 +75,7 @@ class RemarkDaoTest {
 
     @Test
     fun updateSyncMetadataFlipsStatusAndKeepsBody() = runTest {
-        dao.upsert(remark(id = "r1", body = "Late", syncStatus = SyncStatus.Pending))
+        dao.upsert(remark(id = "r1", candidateId = "c1", body = "Late", syncStatus = SyncStatus.Pending))
 
         val rows = dao.updateSyncMetadata(
             id = "r1",
@@ -86,22 +93,21 @@ class RemarkDaoTest {
     }
 
     @Test
-    fun deleteForCandidateOnlyRemovesThatCandidatesRows() = runTest {
+    fun deleteForCandidateOnlyRemovesThatCandidatesRow() = runTest {
         dao.upsert(remark(id = "r1", candidateId = "c1"))
-        dao.upsert(remark(id = "r2", candidateId = "c1"))
         dao.upsert(remark(id = "r3", candidateId = "c2"))
 
         val deleted = dao.deleteForCandidate("c1")
 
-        assertEquals(2, deleted)
+        assertEquals(1, deleted)
         assertEquals(emptyList<RemarkEntity>(), dao.getForCandidate("c1"))
         assertNotNull(dao.getById("r3"))
     }
 
     @Test
     fun clearAllWipesEverything() = runTest {
-        dao.upsert(remark(id = "r1"))
-        dao.upsert(remark(id = "r2"))
+        dao.upsert(remark(id = "r1", candidateId = "c1"))
+        dao.upsert(remark(id = "r2", candidateId = "c2"))
 
         val deleted = dao.clearAll()
 
@@ -115,17 +121,20 @@ class RemarkDaoTest {
     }
 
     @Test
-    fun upsertPersistsOptionalPaperId() = runTest {
-        dao.upsert(remark(id = "r1", paperId = null))
+    fun upsertPersistsCodeAndOptionalPaperId() = runTest {
+        dao.upsert(remark(id = "r1", candidateId = "c1", paperId = null, code = "AE"))
 
-        assertNotNull(dao.getById("r1"))
-        assertNull(dao.getById("r1")?.paperId)
+        val row = dao.getById("r1")
+        assertNotNull(row)
+        assertNull(row?.paperId)
+        assertEquals("AE", row?.code)
     }
 
     private fun remark(
         id: String = "r1",
         candidateId: String = "c1",
         paperId: String? = "p1",
+        code: String = "",
         body: String = "Late arrival",
         severity: RemarkSeverity = RemarkSeverity.Info,
         createdAt: Long = 1_700_000_000_000L,
@@ -134,6 +143,7 @@ class RemarkDaoTest {
         id = id,
         candidateId = candidateId,
         paperId = paperId,
+        code = code,
         body = body,
         severity = severity.name,
         createdAt = createdAt,

@@ -21,11 +21,12 @@ import javax.inject.Singleton
  * `SupportOpenHelperFactory` from `core.persistence.encryption.EncryptionModule`,
  * and exposes every DAO as a singleton.
  *
- * Migrations are registered on [ExamDatabase] itself (`autoMigrations`).
+ * Migrations are registered on [ExamDatabase] itself (`autoMigrations`
+ * plus any manual `Migration` objects, added below via `.addMigrations`).
  * Future schema bumps MUST add an explicit `Migration`/`AutoMigration`
  * there. The destructive fallback is deliberately not used — losing
- * pending attendance writes to a missed migration is unacceptable, so a
- * missing migration now fails loudly at startup instead of silently
+ * pending attendance/remark writes to a missed migration is unacceptable,
+ * so a missing migration now fails loudly at startup instead of silently
  * wiping.
  */
 @Module
@@ -40,6 +41,7 @@ object ExamDatabaseModule {
     ): ExamDatabase =
         Room.databaseBuilder(context, ExamDatabase::class.java, "exam.db")
             .openHelperFactory(supportFactory)
+            .addMigrations(ExamDatabase.MIGRATION_3_4)
             .build()
 
     @Provides

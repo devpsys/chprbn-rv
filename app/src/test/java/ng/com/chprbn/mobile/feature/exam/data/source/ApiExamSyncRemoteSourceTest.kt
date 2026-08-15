@@ -130,6 +130,7 @@ class ApiExamSyncRemoteSourceTest {
         scheduleId = scheduleId,
         year = year,
         status = AttendanceStatus.SignedIn,
+        remark = "",
     )
 
     /** Client key mirrors [ApiExamSyncRemoteSource]'s `attendanceClientId(row.paperId, row.candidateId)`. */
