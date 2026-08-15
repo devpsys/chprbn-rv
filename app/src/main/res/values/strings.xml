@@ -431,6 +431,44 @@
     <string name="exam_candidates_nav_reports">Reports</string>
     <string name="exam_candidates_nav_settings">Settings</string>
 
+    <!-- ============== Exam candidates — Add Remark dialog ============== -->
+    <string name="exam_candidates_remark_dialog_title">Candidate Remarks</string>
+    <string name="exam_candidates_remark_dialog_subtitle">Review clinical observations and behavioral notes.</string>
+    <string name="exam_candidates_remark_dialog_close">Close</string>
+    <string name="exam_candidates_remark_dialog_cancel">Cancel</string>
+    <string name="exam_candidates_remark_dialog_save">Save Remark</string>
+    <string name="exam_candidates_remark_dialog_error_default">Unable to save remark. Please try again.</string>
+    <string name="exam_candidates_remark_section_attendance">Attendance</string>
+    <string name="exam_candidates_remark_section_status">Status</string>
+    <string name="exam_candidates_remark_section_conduct">Conduct</string>
+    <string name="exam_candidates_remark_type_absenteeism">Absenteeism</string>
+    <string name="exam_candidates_remark_type_absent_with_excuse">Absent with Excuse</string>
+    <string name="exam_candidates_remark_type_absent_without_excuse">Absent without Excuse</string>
+    <string name="exam_candidates_remark_type_project_incomplete">Project Incomplete</string>
+    <string name="exam_candidates_remark_type_sick">Sick</string>
+    <string name="exam_candidates_remark_type_exams_malpractice">Exams Malpractice</string>
+
+    <!-- ============== Candidate profile ============== -->
+    <string name="exam_candidate_profile_header_title">Candidate Profile</string>
+    <string name="exam_candidate_profile_action_back">Back</string>
+    <string name="exam_candidate_profile_remarks_section_title">Remarks</string>
+    <string name="exam_candidate_profile_action_clear_all">Clear All Remarks</string>
+    <string name="exam_candidate_profile_empty_title">No Remarks Logged</string>
+    <string name="exam_candidate_profile_empty_subtitle">This candidate has no remarks on file yet.</string>
+    <string name="exam_candidate_profile_not_found_title">Candidate Not Found</string>
+    <string name="exam_candidate_profile_not_found_subtitle">This candidate isn\'t cached on this device.</string>
+    <string name="exam_candidate_profile_clear_warning_title">Clear All Remarks?</string>
+    <string name="exam_candidate_profile_clear_warning_message">This permanently deletes every remark logged against %1$s. This cannot be undone.</string>
+    <string name="exam_candidate_profile_clear_warning_confirm">Clear Remarks</string>
+    <string name="exam_candidate_profile_clear_warning_cancel">Cancel</string>
+    <string name="exam_candidate_profile_clear_loading_title">Clearing Remarks…</string>
+    <string name="exam_candidate_profile_clear_loading_subtitle">Please wait while we remove these records.</string>
+    <string name="exam_candidate_profile_clear_success_title">Remarks Cleared</string>
+    <string name="exam_candidate_profile_clear_success_message">All remarks for this candidate have been removed.</string>
+    <string name="exam_candidate_profile_clear_error_title">Couldn\'t Clear Remarks</string>
+    <string name="exam_candidate_profile_clear_error_action_retry">Try Again</string>
+    <string name="exam_candidate_profile_clear_error_action_close">Close</string>
+
     <!-- ============== Exam — statistics ============== -->
     <!-- VM-side relative-time labels for ExamStatisticsViewModel. -->
     <string name="exam_statistics_updated_just_now">Updated just now</string>

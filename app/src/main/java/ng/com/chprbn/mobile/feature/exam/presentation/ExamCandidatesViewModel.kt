@@ -1,16 +1,21 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.feature.exam.domain.model.AddRemarkResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamCandidateRow
+import ng.com.chprbn.mobile.feature.exam.domain.usecase.AddRemarkUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamCandidatesUseCase
 import java.time.Instant
 import java.time.ZoneId
@@ -32,24 +37,47 @@ import javax.inject.Inject
  * Filter + search are applied **client-side** against the source list —
  * cheap at today's roster size (bounded ~200/day per centre); revisit
  * with a SQL-side filter if that changes.
+ *
+ * [remarkDialogState] drives the Add Remark modal ([AddRemarkDialog]):
+ * [onAddRemarkClicked] opens it for a candidate, [onSelectRemarkType]
+ * tracks the picked [RemarkType], and [onSaveRemark] calls
+ * [AddRemarkUseCase] and optimistically bumps that candidate's
+ * [ExamCandidateUiState.remarkCount] on success rather than re-querying
+ * the whole roster.
  */
 @HiltViewModel
 class ExamCandidatesViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getCandidates: GetExamCandidatesUseCase,
+    private val addRemark: AddRemarkUseCase,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamCandidatesUiState.placeholder())
     val uiState: StateFlow<ExamCandidatesUiState> = _uiState.asStateFlow()
+
+    private val _remarkDialogState = MutableStateFlow<AddRemarkUiState>(AddRemarkUiState.Closed)
+    val remarkDialogState: StateFlow<AddRemarkUiState> = _remarkDialogState.asStateFlow()
 
     // Unfiltered source of truth for the currently-loaded roster. Replaced
     // once at init with the real (possibly empty) result. Every
     // filter/search re-derives from this list.
     private var source: List<ExamCandidateUiState> = _uiState.value.candidates
 
-    private val paperId: String = savedStateHandle.get<String>("paperId").orEmpty()
+    /** Exposed so [ExamCandidatesScreen] can pass it along when navigating to a candidate's profile. */
+    val paperId: String = savedStateHandle.get<String>("paperId").orEmpty()
 
     init {
+        refresh()
+    }
+
+    /**
+     * Public so [ExamCandidatesScreen] can re-invoke it on
+     * `LifecycleResumeEffect` — returning from a candidate's profile
+     * (where remarks can be cleared, changing [ExamCandidateUiState.remarkCount])
+     * shouldn't leave this roster showing stale counts.
+     */
+    fun refresh() {
         viewModelScope.launch {
             source = getCandidates(paperId).map { it.toCardUi() }
             emitVisible()
@@ -64,6 +92,65 @@ class ExamCandidatesViewModel @Inject constructor(
     fun onFilterChange(label: String) {
         _uiState.update { it.copy(activeFilterLabel = label) }
         emitVisible()
+    }
+
+    fun onAddRemarkClicked(candidateId: String) {
+        val candidateName = source.firstOrNull { it.candidateId == candidateId }?.name.orEmpty()
+        _remarkDialogState.value = AddRemarkUiState.Open(
+            candidateId = candidateId,
+            candidateName = candidateName,
+        )
+    }
+
+    fun onSelectRemarkType(type: RemarkType) {
+        _remarkDialogState.update { state ->
+            if (state is AddRemarkUiState.Open) {
+                state.copy(selectedType = type, errorMessage = null)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun onDismissRemarkDialog() {
+        _remarkDialogState.value = AddRemarkUiState.Closed
+    }
+
+    fun onSaveRemark() {
+        val state = _remarkDialogState.value
+        if (state !is AddRemarkUiState.Open || state.isSaving) return
+        val type = state.selectedType ?: return
+
+        _remarkDialogState.value = state.copy(isSaving = true, errorMessage = null)
+        viewModelScope.launch {
+            val result = addRemark(
+                candidateId = state.candidateId,
+                paperId = paperId,
+                body = context.getString(type.labelRes),
+                severity = type.severity,
+            )
+            when (result) {
+                is AddRemarkResult.Success -> {
+                    source = source.map { candidate ->
+                        if (candidate.candidateId == state.candidateId) {
+                            candidate.copy(remarkCount = candidate.remarkCount + 1)
+                        } else {
+                            candidate
+                        }
+                    }
+                    emitVisible()
+                    _remarkDialogState.value = AddRemarkUiState.Closed
+                }
+                is AddRemarkResult.Error -> {
+                    _remarkDialogState.value = state.copy(
+                        isSaving = false,
+                        errorMessage = result.message.ifBlank {
+                            context.getString(R.string.exam_candidates_remark_dialog_error_default)
+                        },
+                    )
+                }
+            }
+        }
     }
 
     private fun emitVisible() {
@@ -88,6 +175,7 @@ class ExamCandidatesViewModel @Inject constructor(
             idLabel.contains(query, ignoreCase = true)
 
     private fun ExamCandidateRow.toCardUi(): ExamCandidateUiState = ExamCandidateUiState(
+        candidateId = candidate.id,
         // Nullable in the model — the card renders a bundled Icon fallback
         // when null (E11 audit fix; previously hotlinked stock avatars).
         avatarUrl = candidate.photoUrl,

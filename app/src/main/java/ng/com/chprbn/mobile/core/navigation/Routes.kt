@@ -57,6 +57,14 @@ object Routes {
     @Serializable
     data class ExamCandidates(val paperId: String)
 
+    /**
+     * A candidate's profile — name/photo, their attendance status for
+     * [paperId] (the roster they were opened from), and their full
+     * remark history.
+     */
+    @Serializable
+    data class CandidateProfile(val candidateId: String, val paperId: String)
+
     /** QR scan for exam attendance check-in against [paperId]'s roster. */
     @Serializable
     data class ExamScan(val paperId: String)

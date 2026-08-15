@@ -29,6 +29,7 @@ import ng.com.chprbn.mobile.feature.dashboard.presentation.UnifiedDashboardScree
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamDashboardScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPapersScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.CandidateProfileScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
@@ -167,8 +168,14 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
         composable<Routes.ExamCandidates> {
             ExamCandidatesScreen(
                 onBack = { navController.popBackStack() },
-                onAddRemark = { /* TODO */ },
-                onViewProfile = { /* TODO */ }
+                onViewProfile = { candidateId, paperId ->
+                    navController.navigate(Routes.CandidateProfile(candidateId, paperId))
+                }
+            )
+        }
+        composable<Routes.CandidateProfile> {
+            CandidateProfileScreen(
+                onBack = { navController.popBackStack() },
             )
         }
         composable<Routes.ExamStatistics> {

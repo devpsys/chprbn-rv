@@ -37,6 +37,9 @@ interface RemarkDao {
     @Query("SELECT * FROM remarks WHERE syncStatus IN ('Pending', 'Failed') LIMIT :limit")
     suspend fun pendingAndFailed(limit: Int = 50): List<RemarkEntity>
 
+    @Query("DELETE FROM remarks WHERE candidateId = :candidateId")
+    suspend fun deleteForCandidate(candidateId: String): Int
+
     @Query("DELETE FROM remarks")
     suspend fun clearAll(): Int
 }

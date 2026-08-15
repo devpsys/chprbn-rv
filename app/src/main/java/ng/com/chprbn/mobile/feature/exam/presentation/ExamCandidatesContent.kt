@@ -143,8 +143,8 @@ fun ExamCandidatesContent(
                     items(uiState.candidates) { candidate ->
                         ExamCandidateCard(
                             candidate = candidate,
-                            onAddRemark = { onAddRemark(candidate.idLabel) },
-                            onViewProfile = { onViewProfile(candidate.idLabel) },
+                            onAddRemark = { onAddRemark(candidate.candidateId) },
+                            onViewProfile = { onViewProfile(candidate.candidateId) },
                         )
                     }
                 }
@@ -385,9 +385,9 @@ private fun CandidateAvatar(avatarUrl: String?, shape: RoundedCornerShape) {
     }
 }
 
-private data class StatusVisual(val bg: Color, val text: Color, val dot: Color)
+internal data class StatusVisual(val bg: Color, val text: Color, val dot: Color)
 
-private fun statusVisualFor(label: String): StatusVisual = when {
+internal fun statusVisualFor(label: String): StatusVisual = when {
     label.equals("Signed In", ignoreCase = true) ->
         StatusVisual(StatusEmeraldBg, StatusEmeraldText, StatusEmeraldDot)
 
@@ -400,7 +400,7 @@ private fun statusVisualFor(label: String): StatusVisual = when {
 }
 
 @Composable
-private fun StatusPill(label: String, visual: StatusVisual) {
+internal fun StatusPill(label: String, visual: StatusVisual) {
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = visual.bg,

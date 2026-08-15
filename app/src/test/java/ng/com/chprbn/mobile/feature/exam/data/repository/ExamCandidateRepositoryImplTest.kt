@@ -119,6 +119,28 @@ class ExamCandidateRepositoryImplTest {
     }
 
     @Test
+    fun `getCandidateById forwards the lookup and maps to domain`() = runTest {
+        coEvery { dao.getById("c1") } returns CandidateEntity(
+            id = "c1",
+            examNumber = "EX1",
+            fullName = "Ada",
+        )
+
+        val candidate = repository.getCandidateById("c1")
+
+        assertEquals("c1", candidate?.id)
+        assertEquals("Ada", candidate?.fullName)
+        coVerify(exactly = 1) { dao.getById("c1") }
+    }
+
+    @Test
+    fun `getCandidateById returns null when dao has no match`() = runTest {
+        coEvery { dao.getById("c1") } returns null
+
+        assertNull(repository.getCandidateById("c1"))
+    }
+
+    @Test
     fun `SignedIn filter is forwarded as the SQL filter string`() = runTest {
         coEvery {
             dao.rowsForPaper("p1", "SignedIn", "")

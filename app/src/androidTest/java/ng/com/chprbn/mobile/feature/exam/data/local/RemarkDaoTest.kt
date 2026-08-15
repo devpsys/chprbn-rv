@@ -86,6 +86,19 @@ class RemarkDaoTest {
     }
 
     @Test
+    fun deleteForCandidateOnlyRemovesThatCandidatesRows() = runTest {
+        dao.upsert(remark(id = "r1", candidateId = "c1"))
+        dao.upsert(remark(id = "r2", candidateId = "c1"))
+        dao.upsert(remark(id = "r3", candidateId = "c2"))
+
+        val deleted = dao.deleteForCandidate("c1")
+
+        assertEquals(2, deleted)
+        assertEquals(emptyList<RemarkEntity>(), dao.getForCandidate("c1"))
+        assertNotNull(dao.getById("r3"))
+    }
+
+    @Test
     fun clearAllWipesEverything() = runTest {
         dao.upsert(remark(id = "r1"))
         dao.upsert(remark(id = "r2"))

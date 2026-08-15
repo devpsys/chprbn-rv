@@ -1,17 +1,24 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.exam.domain.model.Attendance
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import ng.com.chprbn.mobile.feature.exam.domain.model.ExamCandidateRow
+import ng.com.chprbn.mobile.feature.exam.domain.model.AddRemarkResult
+import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
+import ng.com.chprbn.mobile.feature.exam.domain.usecase.AddRemarkUseCase
 import ng.com.chprbn.mobile.feature.exam.domain.usecase.GetExamCandidatesUseCase
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -22,9 +29,18 @@ class ExamCandidatesViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getCandidates = mockk<GetExamCandidatesUseCase>()
+    private val addRemark = mockk<AddRemarkUseCase>()
     private val savedState = SavedStateHandle(mapOf("paperId" to "p1"))
+    private val context = mockk<Context> {
+        every {
+            getString(R.string.exam_candidates_remark_type_absenteeism)
+        } returns "Absenteeism"
+        every {
+            getString(R.string.exam_candidates_remark_dialog_error_default)
+        } returns "Unable to save remark. Please try again."
+    }
 
-    private fun viewModel() = ExamCandidatesViewModel(savedState, getCandidates)
+    private fun viewModel() = ExamCandidatesViewModel(savedState, getCandidates, addRemark, context)
 
     @Test
     fun `reads paperId from the nav arg and forwards it to the use case`() = runTest {
@@ -33,6 +49,23 @@ class ExamCandidatesViewModelTest {
         viewModel()
 
         io.mockk.coVerify { getCandidates("p1", any(), any()) }
+    }
+
+    @Test
+    fun `refresh re-runs the use case and picks up updated remark counts`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(
+            row("c1", "Jane Doe", remarkCount = 2),
+        )
+        val viewModel = viewModel()
+        assertEquals(2, viewModel.uiState.value.candidates.single().remarkCount)
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(
+            row("c1", "Jane Doe", remarkCount = 0),
+        )
+
+        viewModel.refresh()
+
+        assertEquals(0, viewModel.uiState.value.candidates.single().remarkCount)
+        io.mockk.coVerify(exactly = 2) { getCandidates(any(), any(), any()) }
     }
 
     @Test
@@ -63,6 +96,15 @@ class ExamCandidatesViewModelTest {
         assertEquals("Pending", byName.getValue("Bob Jones").statusPillLabel)
         assertEquals(1, byName.getValue("Bob Jones").remarkCount)
         assertEquals("Flagged", byName.getValue("Mia Smith").statusPillLabel)
+    }
+
+    @Test
+    fun `populated cohort carries the real candidateId, not the display idLabel`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+
+        val viewModel = viewModel()
+
+        assertEquals("c1", viewModel.uiState.value.candidates.single().candidateId)
     }
 
     @Test
@@ -123,6 +165,98 @@ class ExamCandidatesViewModelTest {
         assertTrue("All" in state.filterLabels)
         assertTrue("Flagged" in state.filterLabels)
         assertEquals("All", state.activeFilterLabel)
+    }
+
+    @Test
+    fun `onAddRemarkClicked opens the dialog with the candidate's name and no selection`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+        val viewModel = viewModel()
+
+        viewModel.onAddRemarkClicked("c1")
+
+        val state = viewModel.remarkDialogState.value
+        assertTrue(state is AddRemarkUiState.Open)
+        state as AddRemarkUiState.Open
+        assertEquals("c1", state.candidateId)
+        assertEquals("Jane Doe", state.candidateName)
+        assertNull(state.selectedType)
+    }
+
+    @Test
+    fun `onSelectRemarkType updates the open dialog's selection`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+        val viewModel = viewModel()
+        viewModel.onAddRemarkClicked("c1")
+
+        viewModel.onSelectRemarkType(RemarkType.Absenteeism)
+
+        val state = viewModel.remarkDialogState.value as AddRemarkUiState.Open
+        assertEquals(RemarkType.Absenteeism, state.selectedType)
+    }
+
+    @Test
+    fun `onDismissRemarkDialog closes the dialog`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+        val viewModel = viewModel()
+        viewModel.onAddRemarkClicked("c1")
+
+        viewModel.onDismissRemarkDialog()
+
+        assertEquals(AddRemarkUiState.Closed, viewModel.remarkDialogState.value)
+    }
+
+    @Test
+    fun `onSaveRemark calls the use case with the resolved label and severity, then closes and bumps the count`() =
+        runTest {
+            coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+            coEvery {
+                addRemark("c1", "p1", "Absenteeism", RemarkType.Absenteeism.severity)
+            } returns AddRemarkResult.Success(
+                Remark(
+                    id = "r1",
+                    candidateId = "c1",
+                    paperId = "p1",
+                    body = "Absenteeism",
+                    createdAt = 0L,
+                ),
+            )
+            val viewModel = viewModel()
+            viewModel.onAddRemarkClicked("c1")
+            viewModel.onSelectRemarkType(RemarkType.Absenteeism)
+
+            viewModel.onSaveRemark()
+
+            assertEquals(AddRemarkUiState.Closed, viewModel.remarkDialogState.value)
+            assertEquals(1, viewModel.uiState.value.candidates.single().remarkCount)
+        }
+
+    @Test
+    fun `onSaveRemark surfaces the use case's error and keeps the dialog open for retry`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+        coEvery { addRemark(any(), any(), any(), any()) } returns
+            AddRemarkResult.Error("Remark cannot be empty.")
+        val viewModel = viewModel()
+        viewModel.onAddRemarkClicked("c1")
+        viewModel.onSelectRemarkType(RemarkType.Absenteeism)
+
+        viewModel.onSaveRemark()
+
+        val state = viewModel.remarkDialogState.value as AddRemarkUiState.Open
+        assertEquals("Remark cannot be empty.", state.errorMessage)
+        assertEquals(false, state.isSaving)
+        assertEquals(0, viewModel.uiState.value.candidates.single().remarkCount)
+    }
+
+    @Test
+    fun `onSaveRemark without a selected type is a no-op`() = runTest {
+        coEvery { getCandidates(any(), any(), any()) } returns listOf(row("c1", "Jane Doe"))
+        val viewModel = viewModel()
+        viewModel.onAddRemarkClicked("c1")
+
+        viewModel.onSaveRemark()
+
+        assertTrue(viewModel.remarkDialogState.value is AddRemarkUiState.Open)
+        io.mockk.coVerify(exactly = 0) { addRemark(any(), any(), any(), any()) }
     }
 
     private fun row(

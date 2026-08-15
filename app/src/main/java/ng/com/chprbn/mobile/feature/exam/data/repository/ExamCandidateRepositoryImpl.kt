@@ -32,6 +32,11 @@ class ExamCandidateRepositoryImpl @Inject constructor(
             candidateDao.getByExamNumber(examNumber)?.toDomain()
         }
 
+    override suspend fun getCandidateById(candidateId: String): Candidate? =
+        withContext(Dispatchers.IO) {
+            candidateDao.getById(candidateId)?.toDomain()
+        }
+
     // SQLite LIKE treats `%`, `_`, and `\` specially. Escape them so a
     // search for "100%" doesn't match every candidate.
     private fun escapeLike(input: String): String = buildString {

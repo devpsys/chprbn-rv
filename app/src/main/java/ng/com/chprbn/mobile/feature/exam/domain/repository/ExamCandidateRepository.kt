@@ -21,4 +21,7 @@ interface ExamCandidateRepository {
     ): List<ExamCandidateRow>
 
     suspend fun getCandidateByExamNumber(examNumber: String): Candidate?
+
+    /** Lookup by the stable DB id (as opposed to the exam-number lookup above). */
+    suspend fun getCandidateById(candidateId: String): Candidate?
 }

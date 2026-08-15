@@ -15,6 +15,7 @@ import ng.com.chprbn.mobile.feature.exam.data.sync.RemarkKey
 import ng.com.chprbn.mobile.feature.exam.domain.model.AddRemarkResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.Remark
 import ng.com.chprbn.mobile.feature.exam.domain.model.RemarkSeverity
+import ng.com.chprbn.mobile.feature.exam.domain.model.SaveResult
 import ng.com.chprbn.mobile.feature.exam.domain.repository.RemarkRepository
 import java.util.UUID
 import javax.inject.Inject
@@ -72,5 +73,15 @@ class RemarkRepositoryImpl @Inject constructor(
     override suspend fun getRemarksForCandidate(candidateId: String): List<Remark> =
         withContext(Dispatchers.IO) {
             remarkDao.getForCandidate(candidateId).map { it.toDomain() }
+        }
+
+    override suspend fun clearRemarksForCandidate(candidateId: String): SaveResult =
+        withContext(Dispatchers.IO) {
+            try {
+                remarkDao.deleteForCandidate(candidateId)
+                SaveResult.Success
+            } catch (t: Throwable) {
+                SaveResult.Error(t.message ?: "Unable to clear remarks.")
+            }
         }
 }

@@ -1,6 +1,8 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
 data class ExamCandidateUiState(
+    /** Real DB candidate id — used for the Add Remark dialog and profile nav, never shown in the UI (see [idLabel]). */
+    val candidateId: String = "",
     /**
      * Candidate photo. `null` means "no photo available" — the card renders
      * a bundled `Icons.Filled.AccountCircle` inside a green-tinted circle

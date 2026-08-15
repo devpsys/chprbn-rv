@@ -15,6 +15,7 @@ import ng.com.chprbn.mobile.feature.exam.data.local.RemarkDao
 import ng.com.chprbn.mobile.feature.exam.data.local.RemarkEntity
 import ng.com.chprbn.mobile.feature.exam.domain.model.AddRemarkResult
 import ng.com.chprbn.mobile.feature.exam.domain.model.RemarkSeverity
+import ng.com.chprbn.mobile.feature.exam.domain.model.SaveResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -107,5 +108,25 @@ class RemarkRepositoryImplTest {
 
         assertTrue(result is AddRemarkResult.Error)
         coVerify(exactly = 0) { workScheduler.scheduleSyncWork() }
+    }
+
+    @Test
+    fun `clearRemarksForCandidate deletes the candidate's rows and returns Success`() = runTest {
+        coEvery { remarkDao.deleteForCandidate("c1") } returns 3
+
+        val result = repository.clearRemarksForCandidate("c1")
+
+        assertEquals(SaveResult.Success, result)
+        coVerify(exactly = 1) { remarkDao.deleteForCandidate("c1") }
+    }
+
+    @Test
+    fun `clearRemarksForCandidate maps a DAO throw to Error`() = runTest {
+        coEvery { remarkDao.deleteForCandidate("c1") } throws RuntimeException("disk full")
+
+        val result = repository.clearRemarksForCandidate("c1")
+
+        assertTrue(result is SaveResult.Error)
+        assertEquals("disk full", (result as SaveResult.Error).message)
     }
 }
