@@ -495,13 +495,13 @@
     <string name="exam_statistics_status_pending_sync">Records Pending Sync</string>
     <string name="exam_statistics_status_successfully_synced">Successfully Synced</string>
     <string name="exam_statistics_clear_warning_title">Clear Cached Records?</string>
-    <string name="exam_statistics_clear_warning_message">This erases every cached exam record on this device — centres, papers, candidates, attendance, and remarks. Make sure everything is synced first; unsynced records will be lost.</string>
+    <string name="exam_statistics_clear_warning_message">This erases every cached exam and assessment record on this device — centres, papers, candidates, attendance, remarks, and practical and project scores. Make sure everything is synced first; unsynced records will be lost.</string>
     <string name="exam_statistics_clear_warning_confirm">Clear Records</string>
     <string name="exam_statistics_clear_warning_cancel">Cancel</string>
     <string name="exam_statistics_clear_loading_title">Clearing Cached Records…</string>
-    <string name="exam_statistics_clear_loading_subtitle">Removing local exam data from this device.</string>
+    <string name="exam_statistics_clear_loading_subtitle">Removing local exam and assessment data from this device.</string>
     <string name="exam_statistics_clear_success_title">Cache Cleared</string>
-    <string name="exam_statistics_clear_success_message">All cached exam records have been removed from this device.</string>
+    <string name="exam_statistics_clear_success_message">All cached exam and assessment records have been removed from this device.</string>
     <string name="exam_statistics_clear_error_title">Clear Failed</string>
     <string name="exam_statistics_clear_error_action_retry">Try Again</string>
     <string name="exam_statistics_clear_error_action_close">Close</string>

@@ -5,9 +5,10 @@ import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamStatisticsReposit
 import javax.inject.Inject
 
 /**
- * Wipes every locally-cached exam row. Pending attendance / remark
- * writes are lost — the caller must surface the destructive-warning
- * dialog before invoking this.
+ * Wipes every locally-cached exam and assessment row. Pending
+ * attendance, remark, practical, and project writes are lost — the
+ * caller must surface the destructive-warning dialog before invoking
+ * this.
  */
 class ClearExamCacheUseCase @Inject constructor(
     private val repository: ExamStatisticsRepository,

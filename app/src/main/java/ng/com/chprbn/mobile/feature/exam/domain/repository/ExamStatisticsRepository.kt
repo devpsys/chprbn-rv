@@ -6,7 +6,8 @@ import ng.com.chprbn.mobile.feature.exam.domain.model.SaveResult
 /**
  * Backs the Statistics screen. [getStatistics] aggregates SQL counts;
  * [clearLocalCache] is the destructive companion behind the "Clear
- * Cached Records" button, gated by the UI's warning dialog.
+ * Cached Records" button, gated by the UI's warning dialog. It wipes
+ * exam.db and the practical/project score tables in assessment.db.
  */
 interface ExamStatisticsRepository {
 

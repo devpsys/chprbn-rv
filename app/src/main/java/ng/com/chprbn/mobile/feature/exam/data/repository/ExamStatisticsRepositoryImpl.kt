@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
@@ -30,6 +31,7 @@ import javax.inject.Inject
  */
 class ExamStatisticsRepositoryImpl @Inject constructor(
     private val db: ExamDatabase,
+    private val assessmentDb: AssessmentDatabase,
     private val centerDao: CenterDao,
     private val paperDao: PaperDao,
     private val candidateDao: CandidateDao,
@@ -66,6 +68,8 @@ class ExamStatisticsRepositoryImpl @Inject constructor(
 
     override suspend fun clearLocalCache(): SaveResult = withContext(Dispatchers.IO) {
         try {
+            // Two files, two transactions — Room can't span exam.db and
+            // assessment.db. Exam wipe first, then practical/project scores.
             db.withTransaction {
                 attendanceDao.clearAll()
                 remarkDao.clearAll()
@@ -73,6 +77,10 @@ class ExamStatisticsRepositoryImpl @Inject constructor(
                 candidateDao.clearCandidates()
                 paperDao.clearAll()
                 centerDao.clearAll()
+            }
+            assessmentDb.withTransaction {
+                practicalScoreDao.clearAll()
+                projectScoreDao.clearAll()
             }
             SaveResult.Success
         } catch (t: Throwable) {

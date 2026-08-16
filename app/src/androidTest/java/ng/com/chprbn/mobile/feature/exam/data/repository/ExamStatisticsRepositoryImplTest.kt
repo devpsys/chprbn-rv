@@ -51,6 +51,7 @@ class ExamStatisticsRepositoryImplTest {
             .build()
         repository = ExamStatisticsRepositoryImpl(
             db = db,
+            assessmentDb = assessmentDb,
             centerDao = db.centerDao(),
             paperDao = db.paperDao(),
             candidateDao = db.candidateDao(),
@@ -182,6 +183,12 @@ class ExamStatisticsRepositoryImplTest {
         )
         db.attendanceDao().upsert(attendance("c1"))
         db.remarkDao().upsert(remark())
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c1", questionId = "q1", status = SyncStatus.Pending, scoredAt = 1L),
+        )
+        assessmentDb.projectScoreDao().upsert(
+            project(candidateId = "c1", status = SyncStatus.Pending, scoredAt = 1L),
+        )
 
         val result = repository.clearLocalCache()
 
@@ -189,6 +196,8 @@ class ExamStatisticsRepositoryImplTest {
         assertEquals(0, db.attendanceDao().totalCount())
         assertNull(db.paperDao().getById("p1"))
         assertNull(db.centerDao().getById("c1"))
+        assertEquals(0, assessmentDb.practicalScoreDao().totalCount())
+        assertEquals(0, assessmentDb.projectScoreDao().totalCount())
     }
 
     private fun center() = CenterEntity(
