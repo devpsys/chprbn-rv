@@ -116,7 +116,8 @@ class ExamDashboardViewModel @Inject constructor(
                     refresh()
                     DownloadDossierUiState.Success(
                         papersCount = result.papersCount,
-                        candidatesCount = result.candidatesCount,
+                        newCandidatesCount = result.newCandidatesCount,
+                        skippedCandidatesCount = result.skippedCandidatesCount,
                     )
                 }
                 is DownloadDossierResult.Error -> DownloadDossierUiState.Error(result.message)
@@ -137,6 +138,17 @@ sealed interface DownloadDossierUiState {
     data object Idle : DownloadDossierUiState
     data object WarningShown : DownloadDossierUiState
     data object Downloading : DownloadDossierUiState
-    data class Success(val papersCount: Int, val candidatesCount: Int) : DownloadDossierUiState
+    /**
+     * Additive-merge summary. [newCandidatesCount] is how many candidates
+     * actually landed; [skippedCandidatesCount] is how many the wire
+     * re-sent that were already cached (kept as-is to preserve any
+     * captured data). [papersCount] is the total post-refresh count for
+     * papers (authoritative).
+     */
+    data class Success(
+        val papersCount: Int,
+        val newCandidatesCount: Int,
+        val skippedCandidatesCount: Int,
+    ) : DownloadDossierUiState
     data class Error(val message: String) : DownloadDossierUiState
 }

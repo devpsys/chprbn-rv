@@ -62,7 +62,7 @@ class AssessmentScheduleRepositoryImplTest {
     }
 
     @Test
-    fun `per-schedule clearCache wipes only that schedule's score rows`() = runTest {
+    fun perScheduleClearCacheWipesOnlyThatSchedulesScoreRows() = runTest {
         db.practicalScoreDao().upsert(
             PracticalScoreEntity(
                 scheduleId = "PE-2024", candidateId = "c1", questionId = "q1",
@@ -84,7 +84,7 @@ class AssessmentScheduleRepositoryImplTest {
     }
 
     @Test
-    fun `global clearCache wipes everything including scores`() = runTest {
+    fun globalClearCacheWipesEverythingIncludingScores() = runTest {
         db.practicalScoreDao().upsert(
             PracticalScoreEntity(
                 scheduleId = "PE-2024", candidateId = "c1", questionId = "q1",

@@ -380,15 +380,15 @@
     <string name="exam_dashboard_no_schedules_subtitle">There are no exam papers assigned to this centre for today.</string>
 
     <!-- ============== Exam — download dossier warning + loading ============== -->
-    <string name="exam_download_warning_title">Download Candidate Records</string>
-    <string name="exam_download_warning_message">Warning: This operation will erase all currently cached records on this device. Please ensure any pending attendance data is synced before proceeding.</string>
-    <string name="exam_download_warning_footnote">Once initiated, the local database will be wiped and replaced with the server-side master list. This action is irreversible.</string>
-    <string name="exam_download_warning_confirm">Download &amp; Erase</string>
+    <string name="exam_download_warning_title">Refresh Candidate Records</string>
+    <string name="exam_download_warning_message">This will pull the latest dossier and add any new candidates the server has assigned. Candidates already on this device are kept as-is.</string>
+    <string name="exam_download_warning_footnote">Attendance, remarks and practical/project scores you\'ve already captured are always preserved — this refresh never touches them.</string>
+    <string name="exam_download_warning_confirm">Refresh</string>
     <string name="exam_download_warning_cancel">Cancel</string>
-    <string name="exam_download_loading_title">Downloading Candidate Records…</string>
-    <string name="exam_download_loading_subtitle">Hang tight — this can take a few minutes depending on how many records there are. Please don\'t close the app.</string>
-    <string name="exam_download_success_title">Dossier Downloaded</string>
-    <string name="exam_download_success_message_format">%1$d papers and %2$d candidates are now cached on this device.</string>
+    <string name="exam_download_loading_title">Refreshing Dossier…</string>
+    <string name="exam_download_loading_subtitle">Hang tight — pulling the latest papers, candidates and practical questions. Please don\'t close the app.</string>
+    <string name="exam_download_success_title">Dossier Refreshed</string>
+    <string name="exam_download_success_message_format">%1$d papers cached. %2$d new candidate(s) added, %3$d already on device.</string>
     <string name="exam_download_error_title">Download Failed</string>
     <string name="exam_download_error_action_retry">Try Again</string>
     <string name="exam_download_error_action_close">Close</string>

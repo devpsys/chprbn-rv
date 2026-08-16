@@ -27,17 +27,28 @@ import javax.inject.Inject
  *
  * The dossier download runs inside `db.withTransaction { … }` so a
  * partial write can't leave the local cache in an inconsistent state.
- * Crucially, it never touches `attendance` or `remarks` — pending writes
- * survive a re-download (the explicit UX contract behind the
- * download-warning prompt).
  *
- * Practical-assessment reference data (sections + nested questions) also
- * arrives on the dossier and is persisted here into `assessment.db` in a
- * second, sequential transaction — the two databases can't share one.
- * Same UX contract: score rows are never touched, so pending writes
- * survive a re-download. If the exam-side write succeeded but the
- * assessment-side write threw, the officer sees an error and the
- * next re-download replays both sides idempotently.
+ * **Merge semantics — additive roster, authoritative reference data.**
+ * - **Candidates** and **paper↔candidate assignments** are additive: a
+ *   re-download only adds rows that weren't already local. A candidate
+ *   already known is skipped (`OnConflictStrategy.IGNORE`), so a fresher
+ *   photo/name coming back down the wire never overwrites what the
+ *   officer already trusts. This is the "roster grew mid-day, don't
+ *   disturb what I've already touched" case.
+ * - **Centre**, **papers**, **practical sections**, and **section
+ *   questions** stay authoritative — the pre-download wipe on those
+ *   tables is preserved so a server-side rename / edit / cancellation
+ *   is captured.
+ * - **Captured records** — `attendance`, `remarks`, `practical_scores`,
+ *   `project_scores` — are never touched here, at all. The transaction
+ *   only writes reference tables.
+ *
+ * Practical-assessment reference data (sections + nested questions)
+ * arrives on the dossier and is persisted here into `assessment.db` in
+ * a second, sequential transaction — the two databases can't share
+ * one. If the exam-side write succeeded but the assessment-side write
+ * threw, the officer sees an error and the next re-download replays
+ * both sides idempotently.
  *
  * `syncPending` delegates to the cross-feature [SyncBatchRunner] —
  * running it here flushes assessment-side rows too, which is fine: the
@@ -74,17 +85,31 @@ class ExamSyncRepositoryImpl @Inject constructor(
         )
 
         try {
+            var newCandidatesCount = 0
             db.withTransaction {
-                // Wipe stale reference rows in FK-respecting order.
-                // Scores/attendance/remarks are deliberately untouched.
-                candidateDao.clearAssignments()
-                candidateDao.clearCandidates()
+                // Centre + papers stay authoritative: a renamed centre or a
+                // cancelled paper must actually disappear from the local
+                // cache, so wipe then upsert.
                 paperDao.clearAll()
                 centerDao.clearAll()
-
                 centerDao.upsert(bundle.center.toEntity())
                 paperDao.upsertAll(bundle.papers.map { it.toEntity() })
-                candidateDao.upsertAll(bundle.candidates.map { it.toExamCandidateEntity() })
+
+                // Additive candidate merge — `insertMissing` uses IGNORE
+                // on the PK so an already-known candidate is skipped
+                // wholesale (photo/name from the wire never clobbers a
+                // local row). Returned rowIds are -1 for skipped rows;
+                // count the non-negatives to report "N new candidates."
+                val inserted = candidateDao.insertMissing(
+                    bundle.candidates.map { it.toExamCandidateEntity() },
+                )
+                newCandidatesCount = inserted.count { it >= 0L }
+
+                // Assignments upsert on (paperId, candidateId) — same-PK
+                // rows are replaced so a corrected scheduledCandidateId
+                // is captured, new pairings are inserted. Pre-existing
+                // assignments not mentioned in the bundle stay put —
+                // matches the additive philosophy for the roster.
                 candidateDao.upsertAssignments(
                     bundle.assignments.map {
                         PaperCandidateAssignmentEntity(
@@ -97,7 +122,8 @@ class ExamSyncRepositoryImpl @Inject constructor(
                 )
             }
             // Separate transaction — cross-DB atomicity isn't available,
-            // and the assessment reference data is a pure replace anyway.
+            // and practical reference data is authoritative (question
+            // edits / section renames must actually land).
             assessmentDb.withTransaction {
                 bundle.practicalSections.map { it.scheduleId }.distinct().forEach { scheduleId ->
                     // Delete questions first (dependent on section rows),
@@ -111,6 +137,8 @@ class ExamSyncRepositoryImpl @Inject constructor(
             DownloadDossierResult.Success(
                 papersCount = bundle.papers.size,
                 candidatesCount = bundle.candidates.size,
+                newCandidatesCount = newCandidatesCount,
+                skippedCandidatesCount = bundle.candidates.size - newCandidatesCount,
             )
         } catch (t: Throwable) {
             // Full stack trace only reaches Logcat — the officer only ever

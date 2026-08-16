@@ -184,6 +184,8 @@ class ExamDashboardViewModelTest {
         coEvery { downloadDossier() } returns DownloadDossierResult.Success(
             papersCount = 3,
             candidatesCount = 120,
+            newCandidatesCount = 5,
+            skippedCandidatesCount = 115,
         )
 
         val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
@@ -194,7 +196,8 @@ class ExamDashboardViewModelTest {
         assertTrue("expected Success terminal state, was $terminal", terminal is DownloadDossierUiState.Success)
         val success = terminal as DownloadDossierUiState.Success
         assertEquals(3, success.papersCount)
-        assertEquals(120, success.candidatesCount)
+        assertEquals(5, success.newCandidatesCount)
+        assertEquals(115, success.skippedCandidatesCount)
         // init + post-download refresh
         coVerify(exactly = 2) { getDashboard() }
     }

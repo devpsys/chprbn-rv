@@ -91,6 +91,9 @@ class ExamSyncRepositoryImplTest {
         val success = result as DownloadDossierResult.Success
         assertEquals(2, success.papersCount)
         assertEquals(2, success.candidatesCount)
+        // First download into an empty cache — every candidate is new.
+        assertEquals(2, success.newCandidatesCount)
+        assertEquals(0, success.skippedCandidatesCount)
 
         assertNotNull(db.centerDao().getById("C-1"))
         assertEquals(2, db.paperDao().getAll().size)
@@ -148,24 +151,70 @@ class ExamSyncRepositoryImplTest {
     }
 
     @Test
-    fun replaceTwicePersistsLatestReferenceData() = runTest {
+    fun redownloadMergesNewCandidatesAndKeepsExistingOnes() = runTest {
         coEvery { remoteSource.fetchDossier() } returns sampleBundle()
         repository.downloadDossier()
 
-        // Second download with a different candidate set — old assignment
-        // rows for c1/c2 must be cleared, new c3 must appear.
+        // Second download brings ONE brand-new candidate assigned to
+        // both papers. The additive merge must:
+        //   - keep c1 and c2 (already known, no wire mention this time)
+        //   - insert c3 as new
+        //   - count c3 as the only "new" candidate on the counter
         coEvery { remoteSource.fetchDossier() } returns sampleBundle(
             candidates = listOf(Candidate("c3", "EX-3", "New Cand")),
             assignments = listOf(
-                ExamPaperAssignment("p1", "c3", "sc-1", "sch-1"),
-                ExamPaperAssignment("p2", "c3", "sc-2", "sch-1"),
+                ExamPaperAssignment("p1", "c3", "sc-5", "sch-1"),
+                ExamPaperAssignment("p2", "c3", "sc-6", "sch-1"),
             ),
+        )
+        val result = repository.downloadDossier() as DownloadDossierResult.Success
+
+        assertEquals(1, result.newCandidatesCount)
+        assertEquals(0, result.skippedCandidatesCount)
+        val rows = db.candidateDao().rowsForPaper("p1", "All", "")
+        assertEquals("c1/c2 stay put + c3 was added", 3, rows.size)
+        assertEquals(
+            setOf("c1", "c2", "c3"),
+            rows.map { it.candidateId }.toSet(),
+        )
+    }
+
+    @Test
+    fun redownloadOfSameBundleSkipsAllCandidatesAndAddsNothing() = runTest {
+        coEvery { remoteSource.fetchDossier() } returns sampleBundle()
+        repository.downloadDossier()
+
+        // Second download of the SAME bundle — every candidate was
+        // already inserted, so all skipped, nothing new.
+        val result = repository.downloadDossier() as DownloadDossierResult.Success
+
+        assertEquals(0, result.newCandidatesCount)
+        assertEquals(2, result.skippedCandidatesCount)
+    }
+
+    @Test
+    fun redownloadDoesNotOverwriteExistingCandidateFields() = runTest {
+        coEvery { remoteSource.fetchDossier() } returns sampleBundle(
+            candidates = listOf(
+                Candidate("c1", "EX-1", "Original Name", photoUrl = "data:image/png;base64,ORIGINAL"),
+            ),
+            assignments = listOf(ExamPaperAssignment("p1", "c1", "sc-1", "sch-1")),
         )
         repository.downloadDossier()
 
-        val rows = db.candidateDao().rowsForPaper("p1", "All", "")
-        assertEquals(1, rows.size)
-        assertEquals("c3", rows.single().candidateId)
+        // Server sends a fresher name/photo for the same candidate id.
+        // The IGNORE conflict strategy must NOT clobber the local row —
+        // the officer's already-trusted data wins.
+        coEvery { remoteSource.fetchDossier() } returns sampleBundle(
+            candidates = listOf(
+                Candidate("c1", "EX-1", "Renamed On Wire", photoUrl = "data:image/png;base64,NEW"),
+            ),
+            assignments = listOf(ExamPaperAssignment("p1", "c1", "sc-1", "sch-1")),
+        )
+        repository.downloadDossier()
+
+        val local = db.candidateDao().getById("c1")!!
+        assertEquals("Original Name", local.fullName)
     }
 
     private fun sampleBundle(

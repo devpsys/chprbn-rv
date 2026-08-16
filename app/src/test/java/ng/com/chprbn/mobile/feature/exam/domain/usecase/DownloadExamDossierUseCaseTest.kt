@@ -18,6 +18,8 @@ class DownloadExamDossierUseCaseTest {
         val expected = DownloadDossierResult.Success(
             papersCount = 5,
             candidatesCount = 200,
+            newCandidatesCount = 3,
+            skippedCandidatesCount = 197,
         )
         coEvery { repository.downloadDossier() } returns expected
 

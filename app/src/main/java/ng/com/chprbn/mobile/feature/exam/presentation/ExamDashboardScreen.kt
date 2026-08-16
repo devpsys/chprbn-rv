@@ -144,7 +144,8 @@ private fun ExamDownloadDossierOverlay(
             message = stringResource(
                 R.string.exam_download_success_message_format,
                 state.papersCount,
-                state.candidatesCount,
+                state.newCandidatesCount,
+                state.skippedCandidatesCount,
             ),
             primaryButtonText = stringResource(R.string.action_ok),
             onPrimary = onDismiss,
@@ -583,6 +584,7 @@ private fun InstitutionCardTextBlock(
             lineHeight = 28.sp,
             color = scheme.onPrimary
         )
+        /*
         Column(
             modifier = Modifier.padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -614,6 +616,7 @@ private fun InstitutionCardTextBlock(
                 )
             }
         }
+        */
     }
 }
 

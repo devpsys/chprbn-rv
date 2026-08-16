@@ -139,8 +139,17 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                     navController.navigate(Routes.ExamStatistics)
                 },
                 onLogout = {
+                    // Pop the entire graph (including Splash) — using
+                    // popUpTo<Routes.Splash> is a silent no-op once
+                    // Splash has been popped from the stack (which it
+                    // always has by the time the user reaches this
+                    // dashboard), so back from Login would otherwise
+                    // walk right back into authenticated screens.
+                    // launchSingleTop guards against a stacked Login if
+                    // two logout events race.
                     navController.navigate(Routes.Login) {
-                        popUpTo<Routes.Splash> { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -206,8 +215,13 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 onEditProfile = { /* TODO: edit profile */ },
                 onChangePassword = { /* TODO */ },
                 onLogout = {
+                    // See ExamDashboard.onLogout for the rationale —
+                    // popUpTo<Routes.Splash> is a no-op after cold
+                    // start, so the whole authenticated stack would
+                    // survive under Login and back would leak into it.
                     navController.navigate(Routes.Login) {
-                        popUpTo<Routes.Splash> { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onHome = {

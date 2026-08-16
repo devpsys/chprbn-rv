@@ -60,6 +60,17 @@ interface CandidateDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(candidates: List<CandidateEntity>): List<Long>
 
+    /**
+     * Additive-merge insert used by `downloadDossier` — pre-existing
+     * candidate rows (same PK) are left untouched, so a re-download that
+     * ships the same candidate with, say, a fresher photoUrl does NOT
+     * overwrite the local row. The return list carries the new rowId
+     * for newly-inserted rows and `-1L` for the skipped/conflicting
+     * ones; callers count the non-negatives to report "N new candidates."
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMissing(candidates: List<CandidateEntity>): List<Long>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAssignments(assignments: List<PaperCandidateAssignmentEntity>): List<Long>
 
