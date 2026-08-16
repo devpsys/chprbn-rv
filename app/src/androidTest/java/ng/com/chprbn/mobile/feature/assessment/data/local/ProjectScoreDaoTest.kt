@@ -105,6 +105,19 @@ class ProjectScoreDaoTest {
     }
 
     @Test
+    fun globalCountsIgnoreScheduleAndPickLatestScoredAt() = runTest {
+        dao.upsert(score("s1", "c1", syncStatus = SyncStatus.Pending.name, scoredAt = 100L))
+        dao.upsert(score("s1", "c2", syncStatus = SyncStatus.Synced.name, scoredAt = 400L))
+        dao.upsert(score("s2", "c1", syncStatus = SyncStatus.Failed.name, scoredAt = 250L))
+
+        assertEquals(3, dao.totalCount())
+        assertEquals(1, dao.countByStatus(SyncStatus.Pending.name))
+        assertEquals(1, dao.countByStatus(SyncStatus.Synced.name))
+        assertEquals(1, dao.countByStatus(SyncStatus.Failed.name))
+        assertEquals(400L, dao.mostRecentScoredAt())
+    }
+
+    @Test
     fun deleteForScheduleLeavesOtherSchedulesIntact() = runTest {
         dao.upsert(score("s1", "c1"))
         dao.upsert(score("s1", "c2"))
@@ -123,12 +136,13 @@ class ProjectScoreDaoTest {
         candidateId: String,
         value: Double = 5.0,
         syncStatus: String = SyncStatus.Pending.name,
+        scoredAt: Long = 1_700_000_000_000L,
     ) = ProjectScoreEntity(
         scheduleId = scheduleId,
         candidateId = candidateId,
         score = value,
         maxScore = 10,
-        scoredAt = 1_700_000_000_000L,
+        scoredAt = scoredAt,
         syncStatus = syncStatus,
         syncError = null,
     )

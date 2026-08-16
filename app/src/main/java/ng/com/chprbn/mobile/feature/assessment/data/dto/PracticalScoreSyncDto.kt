@@ -3,48 +3,38 @@ package ng.com.chprbn.mobile.feature.assessment.data.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * **SPECULATIVE.** Batched practical-score upload payload. Mobile pushes N
- * `(schedule_id, candidate_id, question_id)` rows in one HTTP request so
- * the server pays one auth check + one DB transaction per batch. Per-row
- * idempotency on the composite key still applies inside the batch —
- * a duplicate row REPLACES.
- *
- * Backend contract: TBD (plan §12, C1).
+ * Confirmed live per `docs/mobile-api-guide.html` §7.
+ * `POST /practical/push-record` body is an **object** with `practicals`
+ * and `projects` arrays — never a bare list, and never `{ "items": [...] }`.
+ * Either array may be empty. This feature's practical handler always
+ * sends `projects: []`; project scores go to `/project/push-record`.
  */
-data class PracticalScoreSyncBatchRequestDto(
-    @SerializedName("items") val items: List<PracticalScoreSyncItemDto>,
+data class PracticalPushRequestDto(
+    @SerializedName("practicals") val practicals: List<PracticalPushItemDto>,
+    @SerializedName("projects") val projects: List<ProjectPushItemDto> = emptyList(),
 )
 
 /**
- * One practical-score row inside a batch.
- *
- * [clientId] is a stable string keyed off the composite identity
- * (`"$scheduleId:$candidateId:$questionId"`). The server echoes it so
- * the client can correlate results; it MUST NOT be used for dedup.
+ * One practical row. Mobile field `question_id` is stored server-side as
+ * `practical_question_id`. Upsert key:
+ * `(scheduled_candidate_id, practical_question_id, paper_id, schedule_id)`.
  */
-data class PracticalScoreSyncItemDto(
-    @SerializedName("client_id") val clientId: String,
-    @SerializedName("schedule_id") val scheduleId: String,
-    @SerializedName("candidate_id") val candidateId: String,
-    @SerializedName("question_id") val questionId: String,
-    @SerializedName("score") val score: Int,
-    /** Epoch millis (UTC). */
-    @SerializedName("scored_at") val scoredAt: Long,
+data class PracticalPushItemDto(
+    @SerializedName("scheduled_candidate_id") val scheduledCandidateId: Long,
+    @SerializedName("candidate_id") val candidateId: Long,
+    @SerializedName("paper_id") val paperId: Long,
+    @SerializedName("question_id") val questionId: Long,
+    @SerializedName("schedule_id") val scheduleId: Long,
+    @SerializedName("score") val score: Double,
 )
 
-data class PracticalScoreSyncBatchEnvelopeDto(
-    @SerializedName(value = "success", alternate = ["status"]) val success: Boolean = false,
+/**
+ * Shared envelope for both score-push endpoints. Success `data` is a list
+ * of `scheduled_candidate_id` values — no per-row client_id results — so
+ * the remote source treats the whole batch as one outcome.
+ */
+data class ScorePushResponseDto(
+    @SerializedName(value = "status", alternate = ["success"]) val status: Boolean = false,
     @SerializedName("message") val message: String? = null,
-    @SerializedName("data") val data: PracticalScoreSyncBatchResultsDto? = null,
-)
-
-data class PracticalScoreSyncBatchResultsDto(
-    @SerializedName("results") val results: List<PracticalScoreSyncResultDto>? = null,
-)
-
-data class PracticalScoreSyncResultDto(
-    @SerializedName("client_id") val clientId: String? = null,
-    @SerializedName("accepted") val accepted: Boolean = false,
-    @SerializedName("server_id") val serverId: String? = null,
-    @SerializedName("error") val error: String? = null,
+    @SerializedName("data") val data: List<Long>? = null,
 )

@@ -454,7 +454,6 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
             AssessmentCandidatesScreen(
                 onBack = { navController.popBackStack() },
                 onCandidateClick = { /* TODO: candidate detail when that screen lands */ },
-                onAddRemark = { /* TODO: remark sheet/screen */ },
             )
         }
         composable<Routes.AssessmentScan> { backStackEntry ->
@@ -511,14 +510,14 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
             AssessmentPracticalScoringScreen(
                 onBack = { navController.popBackStack() },
                 onInfoClick = { /* TODO: section info sheet */ },
-                onSaveScores = { /* TODO: persist + return to hub */ },
+                onSaveScores = { navController.popBackStack() },
             )
         }
         composable<Routes.AssessmentProjectAssessment> {
             AssessmentProjectAssessmentScreen(
                 onBack = { navController.popBackStack() },
                 onCancel = { navController.popBackStack() },
-                onSaveScore = { /* TODO: persist + return to hub */ },
+                onSaveScore = { navController.popBackStack() },
             )
         }
     }

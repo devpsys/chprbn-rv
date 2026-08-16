@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PendingActions
 import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -78,7 +79,7 @@ fun AssessmentPracticalScoringContent(
             ScoringTopBar(onBack = onBack, onInfoClick = onInfoClick)
         },
         floatingActionButton = {
-            SaveScoresFab(onClick = onSaveScores)
+            SaveScoresFab(isSaving = uiState.isSaving, onClick = onSaveScores)
         },
     ) { paddingValues ->
         LazyColumn(
@@ -132,7 +133,7 @@ private fun ScoringTopBar(onBack: () -> Unit, onInfoClick: () -> Unit) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = scheme.onPrimary,
                 maxLines = 1,
@@ -392,19 +393,32 @@ private fun StepperButton(
 }
 
 @Composable
-private fun SaveScoresFab(onClick: () -> Unit) {
+private fun SaveScoresFab(isSaving: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val savingCd = stringResource(R.string.assessment_practical_scoring_action_saving_cd)
     ExtendedFloatingActionButton(
-        onClick = onClick,
+        onClick = { if (!isSaving) onClick() },
         containerColor = scheme.primary,
         contentColor = scheme.onPrimary,
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
     ) {
-        Icon(
-            imageVector = Icons.Filled.Save,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-        )
+        if (isSaving) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(20.dp)
+                    .semantics {
+                        contentDescription = savingCd
+                    },
+                color = scheme.onPrimary,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.Save,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = stringResource(R.string.assessment_practical_scoring_action_save),
@@ -420,7 +434,7 @@ private fun AssessmentPracticalScoringContentPreview() {
     ChprbnTheme {
         AssessmentPracticalScoringContent(
             uiState = AssessmentPracticalScoringUiState(
-                sectionTitle = "Section A — Vital Signs",
+                sectionTitle = "CHEW - Patient Assessment",
                 questions = listOf(
                     ScoreQuestionUiState(
                         id = "q1",

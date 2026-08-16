@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +79,7 @@ fun AssessmentProjectAssessmentContent(
         },
         floatingActionButton = {
             ProjectAssessmentFabs(
+                isSaving = uiState.isSaving,
                 onCancel = onCancel,
                 onSave = onSaveScore,
             )
@@ -138,7 +141,7 @@ private fun ProjectAssessmentTopBar(onBack: () -> Unit) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = scheme.onPrimary,
                 maxLines = 1,
@@ -374,10 +377,12 @@ private fun ScoreInput(
 
 @Composable
 private fun ProjectAssessmentFabs(
+    isSaving: Boolean,
     onCancel: () -> Unit,
     onSave: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val savingCd = stringResource(R.string.assessment_project_action_saving_cd)
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -402,16 +407,28 @@ private fun ProjectAssessmentFabs(
             )
         }
         ExtendedFloatingActionButton(
-            onClick = onSave,
+            onClick = { if (!isSaving) onSave() },
             containerColor = scheme.primary,
             contentColor = scheme.onPrimary,
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Save,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-            )
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .semantics {
+                            contentDescription = savingCd
+                        },
+                    color = scheme.onPrimary,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = stringResource(R.string.assessment_project_action_save),

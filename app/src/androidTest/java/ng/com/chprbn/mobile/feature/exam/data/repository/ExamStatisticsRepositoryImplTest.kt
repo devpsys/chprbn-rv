@@ -7,6 +7,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
+import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreEntity
+import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterEntity
@@ -34,12 +37,16 @@ import org.junit.runner.RunWith
 class ExamStatisticsRepositoryImplTest {
 
     private lateinit var db: ExamDatabase
+    private lateinit var assessmentDb: AssessmentDatabase
     private lateinit var repository: ExamStatisticsRepositoryImpl
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, ExamDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        assessmentDb = Room.inMemoryDatabaseBuilder(context, AssessmentDatabase::class.java)
             .allowMainThreadQueries()
             .build()
         repository = ExamStatisticsRepositoryImpl(
@@ -49,12 +56,15 @@ class ExamStatisticsRepositoryImplTest {
             candidateDao = db.candidateDao(),
             attendanceDao = db.attendanceDao(),
             remarkDao = db.remarkDao(),
+            practicalScoreDao = assessmentDb.practicalScoreDao(),
+            projectScoreDao = assessmentDb.projectScoreDao(),
         )
     }
 
     @After
     fun tearDown() {
         db.close()
+        assessmentDb.close()
     }
 
     @Test
@@ -66,10 +76,56 @@ class ExamStatisticsRepositoryImplTest {
         val stats = repository.getStatistics()
 
         assertEquals(3, stats.attendanceCaptured)
+        assertEquals(0, stats.practicalCaptured)
+        assertEquals(0, stats.projectCaptured)
         assertEquals(1, stats.syncedCount)
+        assertEquals(3, stats.cachedCount)
         assertEquals(1, stats.pendingCount)
         assertEquals(1, stats.failedCount)
         assertEquals(300L, stats.lastUpdatedAt)
+    }
+
+    @Test
+    fun getStatisticsFoldsPracticalAndProjectIntoSyncBuckets() = runTest {
+        db.attendanceDao().upsert(attendance("c1", SyncStatus.Synced, markedAt = 100L))
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c1", questionId = "q1", status = SyncStatus.Pending, scoredAt = 400L),
+        )
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c1", questionId = "q2", status = SyncStatus.Synced, scoredAt = 150L),
+        )
+        assessmentDb.projectScoreDao().upsert(
+            project(candidateId = "c2", status = SyncStatus.Failed, scoredAt = 250L),
+        )
+
+        val stats = repository.getStatistics()
+
+        assertEquals(1, stats.attendanceCaptured)
+        assertEquals(1, stats.practicalCaptured)
+        assertEquals(1, stats.projectCaptured)
+        assertEquals(2, stats.syncedCount)
+        assertEquals(1, stats.pendingCount)
+        assertEquals(1, stats.failedCount)
+        assertEquals(4, stats.cachedCount)
+        assertEquals(400L, stats.lastUpdatedAt)
+    }
+
+    @Test
+    fun practicalCapturedCountsDistinctCandidatesNotQuestionRows() = runTest {
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c1", questionId = "q1", status = SyncStatus.Pending, scoredAt = 1L),
+        )
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c1", questionId = "q2", status = SyncStatus.Synced, scoredAt = 2L),
+        )
+        assessmentDb.practicalScoreDao().upsert(
+            practical(candidateId = "c2", questionId = "q1", status = SyncStatus.Pending, scoredAt = 3L),
+        )
+
+        val stats = repository.getStatistics()
+
+        assertEquals(2, stats.practicalCaptured)
+        assertEquals(3, stats.cachedCount)
     }
 
     @Test
@@ -78,6 +134,8 @@ class ExamStatisticsRepositoryImplTest {
 
         assertEquals(0, stats.recordsDownloaded)
         assertEquals(0, stats.attendanceCaptured)
+        assertEquals(0, stats.practicalCaptured)
+        assertEquals(0, stats.projectCaptured)
         assertEquals(0, stats.syncedCount)
         assertEquals(0, stats.pendingCount)
         assertEquals(0, stats.failedCount)
@@ -168,6 +226,33 @@ class ExamStatisticsRepositoryImplTest {
         status = AttendanceStatus.SignedIn.name,
         markedAt = markedAt,
         syncStatus = syncStatus.name,
+    )
+
+    private fun practical(
+        candidateId: String,
+        questionId: String,
+        status: SyncStatus,
+        scoredAt: Long,
+    ) = PracticalScoreEntity(
+        scheduleId = "p1",
+        candidateId = candidateId,
+        questionId = questionId,
+        score = 5,
+        scoredAt = scoredAt,
+        syncStatus = status.name,
+    )
+
+    private fun project(
+        candidateId: String,
+        status: SyncStatus,
+        scoredAt: Long,
+    ) = ProjectScoreEntity(
+        scheduleId = "p1",
+        candidateId = candidateId,
+        score = 8.0,
+        maxScore = 20,
+        scoredAt = scoredAt,
+        syncStatus = status.name,
     )
 
     private fun remark() = RemarkEntity(

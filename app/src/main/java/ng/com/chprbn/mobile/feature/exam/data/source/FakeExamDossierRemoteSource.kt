@@ -3,6 +3,8 @@ package ng.com.chprbn.mobile.feature.exam.data.source
 import kotlinx.coroutines.delay
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
+import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
+import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
 import ng.com.chprbn.mobile.feature.exam.domain.model.Center
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import javax.inject.Inject
@@ -97,11 +99,55 @@ class FakeExamDossierRemoteSource @Inject constructor() : ExamDossierRemoteSourc
             }
         }
 
+        // Sections fan out per PE/PA paper to mirror what the API source
+        // does — dev builds that render the assessment sections screen
+        // exercise the same PK layout as production.
+        private val PRACTICAL_PAPERS = PAPERS.filter {
+            it.paperKind == PaperKind.Practical || it.paperKind == PaperKind.Project
+        }
+
+        private val PRACTICAL_SECTIONS: List<PracticalSection> =
+            PRACTICAL_PAPERS.flatMap { paper ->
+                listOf(
+                    PracticalSection(
+                        id = "${paper.id}-sec-1",
+                        scheduleId = paper.id,
+                        title = "JCHEW - Management of Common Complaints",
+                        subtitle = "",
+                        ordering = 1,
+                    ),
+                )
+            }
+
+        private val PRACTICAL_QUESTIONS: List<SectionQuestion> =
+            PRACTICAL_SECTIONS.flatMap { section ->
+                listOf(
+                    SectionQuestion(
+                        id = "${section.id}-q1",
+                        sectionId = section.id,
+                        number = 1,
+                        prompt = "Establish rapport with the client.",
+                        imageUrl = null,
+                        maxScore = 3,
+                    ),
+                    SectionQuestion(
+                        id = "${section.id}-q2",
+                        sectionId = section.id,
+                        number = 2,
+                        prompt = "Explain the purpose and procedure clearly.",
+                        imageUrl = null,
+                        maxScore = 2,
+                    ),
+                )
+            }
+
         val BUNDLE = ExamDossierBundle(
             center = CENTRE,
             papers = PAPERS,
             candidates = CANDIDATES,
             assignments = ASSIGNMENTS,
+            practicalSections = PRACTICAL_SECTIONS,
+            practicalQuestions = PRACTICAL_QUESTIONS,
         )
     }
 }

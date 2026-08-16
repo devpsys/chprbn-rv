@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
@@ -17,10 +18,15 @@ fun AssessmentCandidatesScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onCandidateClick: (CandidateCardUiState) -> Unit = {},
-    onAddRemark: (CandidateCardUiState) -> Unit = {},
     viewModel: AssessmentCandidatesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose {}
+    }
+
     AssessmentCandidatesContent(
         modifier = modifier,
         uiState = uiState,
@@ -28,6 +34,5 @@ fun AssessmentCandidatesScreen(
         onQueryChange = viewModel::onQueryChange,
         onViewModeChange = viewModel::onViewModeChange,
         onCandidateClick = onCandidateClick,
-        onAddRemark = onAddRemark,
     )
 }

@@ -118,6 +118,31 @@ interface PracticalScoreDao {
         syncStatus: String,
     ): Int
 
+    @Query("SELECT COUNT(*) FROM practical_scores")
+    suspend fun totalCount(): Int
+
+    /**
+     * Distinct candidates with at least one practical score, counted
+     * per schedule. Two question rows for the same candidate on the
+     * same paper still count as one assessed candidate.
+     */
+    @Query("SELECT COUNT(DISTINCT scheduleId || '|' || candidateId) FROM practical_scores")
+    suspend fun assessedCandidateCount(): Int
+
+    @Query("SELECT COUNT(*) FROM practical_scores WHERE syncStatus = :syncStatus")
+    suspend fun countByStatus(syncStatus: String): Int
+
+    @Query("SELECT MAX(scoredAt) FROM practical_scores")
+    suspend fun mostRecentScoredAt(): Long?
+
+    @Query(
+        """
+        SELECT MAX(scoredAt) FROM practical_scores
+        WHERE scheduleId = :scheduleId AND syncStatus = 'Synced'
+        """,
+    )
+    suspend fun mostRecentSyncedAt(scheduleId: String): Long?
+
     @Query("DELETE FROM practical_scores WHERE scheduleId = :scheduleId")
     suspend fun deleteForSchedule(scheduleId: String): Int
 

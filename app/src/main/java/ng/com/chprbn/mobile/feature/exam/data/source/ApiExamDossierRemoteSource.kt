@@ -1,9 +1,14 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
 import android.util.Log
+import ng.com.chprbn.mobile.core.domain.model.PaperKind
+import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
+import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamDossierApiService
+import ng.com.chprbn.mobile.feature.exam.data.dto.PracticalSectionWireDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.ScheduleDto
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toDomain
+import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,9 +53,12 @@ import javax.inject.Inject
  * papers and 3 candidates" success message for a 150-candidate
  * download).
  *
- * `data.sections` collapses to `Center.hasSections` (non-emptiness only —
- * element shape is unconfirmed, always empty in every response seen so
- * far) so the dashboard can gate the Practical Assessment card on it.
+ * `data.sections` is a typed list of practical sections (each with
+ * nested questions) — fanned out to every PE/PA paper via
+ * [fanOutPracticalReferenceData] so `assessment.db` can key the same
+ * section-set by paper id per the assessment schema. `Center.hasSections`
+ * still reflects the wire's non-emptiness for the dashboard's Practical
+ * Assessment gate.
  *
  * `data.year` is copied onto [Center.year] — confirmed live per
  * `docs/mobile-api-guide.html` §4, required verbatim on every
@@ -136,12 +144,74 @@ class ApiExamDossierRemoteSource @Inject constructor(
             )
         }
 
+        val (practicalSections, practicalQuestions) = fanOutPracticalReferenceData(
+            wireSections = data.sections.orEmpty(),
+            papers = papers,
+        )
+
         return ExamDossierBundle(
             center = center,
             papers = papers,
             candidates = candidates,
             assignments = assignments,
+            practicalSections = practicalSections,
+            practicalQuestions = practicalQuestions,
         )
+    }
+
+    /**
+     * Turns the wire's single top-level `sections[]` into
+     * [PracticalSection] + [SectionQuestion] rows keyed on every PE/PA
+     * paper on the dossier. In practice a dossier carries at most one
+     * practical paper, but the wire has no `paper_id` link on a section
+     * so the mapper replicates the whole set across each practical
+     * paper — the alternative (guessing which paper "owns" the sections)
+     * would silently drop scoring rows if the guess is wrong.
+     *
+     * Section+question ids are namespaced with the paper id so replicated
+     * rows across two papers don't collide on the assessment DB's PK.
+     * The ordering follows wire order; `question.number` is the 1-based
+     * position within its section.
+     */
+    private fun fanOutPracticalReferenceData(
+        wireSections: List<PracticalSectionWireDto>,
+        papers: List<Paper>,
+    ): Pair<List<PracticalSection>, List<SectionQuestion>> {
+        if (wireSections.isEmpty()) return emptyList<PracticalSection>() to emptyList()
+        val practicalPapers = papers.filter {
+            it.paperKind == PaperKind.Practical || it.paperKind == PaperKind.Project
+        }
+        if (practicalPapers.isEmpty()) return emptyList<PracticalSection>() to emptyList()
+
+        val sections = mutableListOf<PracticalSection>()
+        val questions = mutableListOf<SectionQuestion>()
+        practicalPapers.forEach { paper ->
+            wireSections.forEachIndexed { index, wireSection ->
+                val wireSectionId = wireSection.id ?: return@forEachIndexed
+                val entitySectionId = "${paper.id}-sec-$wireSectionId"
+                sections += PracticalSection(
+                    id = entitySectionId,
+                    scheduleId = paper.id,
+                    // Server puts the section name in `name`; there's no
+                    // separate title/subtitle split on the wire.
+                    title = wireSection.name.orEmpty(),
+                    subtitle = "",
+                    ordering = index + 1,
+                )
+                wireSection.questions.orEmpty().forEachIndexed { qIndex, wireQuestion ->
+                    val wireQuestionId = wireQuestion.id ?: return@forEachIndexed
+                    questions += SectionQuestion(
+                        id = "$entitySectionId-q$wireQuestionId",
+                        sectionId = entitySectionId,
+                        number = qIndex + 1,
+                        prompt = wireQuestion.name.orEmpty(),
+                        imageUrl = null,
+                        maxScore = wireQuestion.mark ?: 0,
+                    )
+                }
+            }
+        }
+        return sections to questions
     }
 
     /**

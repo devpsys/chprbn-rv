@@ -23,9 +23,10 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MeetingRoom
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -66,6 +68,7 @@ fun AssessmentPaperDetailContent(
     onCandidateClick: (CandidateRowUiState) -> Unit = {},
     onViewFullDirectory: () -> Unit = {},
     onScanQr: () -> Unit = {},
+    onSyncData: () -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     Scaffold(
@@ -75,7 +78,13 @@ fun AssessmentPaperDetailContent(
             PaperDetailTopBar(onBack = onBack, onShare = onShare, onMore = onMore)
         },
         floatingActionButton = {
-            ScanQrFab(onClick = onScanQr)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                SyncDataPill(onClick = onSyncData)
+                ScanQrFab(onClick = onScanQr)
+            }
         },
     ) { paddingValues ->
         LazyColumn(
@@ -100,6 +109,8 @@ fun AssessmentPaperDetailContent(
                     progressFraction = uiState.progressFraction,
                     checkedIn = uiState.checkedInCount,
                     total = uiState.totalCount,
+                    lastUpdatedLabel = uiState.lastUpdatedLabel,
+                    syncStatusLabel = uiState.syncStatusLabel,
                 )
             }
 //            item {
@@ -118,10 +129,8 @@ fun AssessmentPaperDetailContent(
                     onViewFullDirectory = onViewFullDirectory,
                 )
             }
-            // Trailing space sized to clear the Scan QR Code FAB (~56dp tall
-            // + 16dp Scaffold margin + breathing room) so the last list item
-            // can be fully scrolled into view above the FAB.
-            item { Spacer(modifier = Modifier.height(96.dp)) }
+            // Trailing space sized to clear the stacked Sync + Scan FABs.
+            item { Spacer(modifier = Modifier.height(160.dp)) }
         }
     }
 }
@@ -287,6 +296,8 @@ private fun CheckedInProgressCard(
     progressFraction: Float,
     checkedIn: Int,
     total: Int,
+    lastUpdatedLabel: String,
+    syncStatusLabel: String,
 ) {
     val scheme = MaterialTheme.colorScheme
     val pct = (progressFraction.coerceIn(0f, 1f) * 100).toInt()
@@ -376,6 +387,52 @@ private fun CheckedInProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = scheme.onSurfaceVariant,
                 )
+                if (lastUpdatedLabel.isNotBlank() || syncStatusLabel.isNotBlank()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (lastUpdatedLabel.isNotBlank()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Schedule,
+                                    contentDescription = null,
+                                    tint = scheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Text(
+                                    text = lastUpdatedLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = scheme.onSurfaceVariant,
+                                    fontStyle = FontStyle.Italic,
+                                )
+                            }
+                        }
+                        if (syncStatusLabel.isNotBlank()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CloudDone,
+                                    contentDescription = null,
+                                    tint = scheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Text(
+                                    text = syncStatusLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = scheme.onSurfaceVariant,
+                                    fontStyle = FontStyle.Italic,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -645,6 +702,37 @@ private fun CandidateStatusPill(status: CandidateSyncStatus) {
 }
 
 @Composable
+private fun SyncDataPill(onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        color = scheme.surface,
+        shadowElevation = 6.dp,
+        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.35f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.assessment_paper_detail_action_sync_data),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = scheme.onSurface,
+            )
+            Icon(
+                imageVector = Icons.Outlined.Sync,
+                contentDescription = null,
+                tint = scheme.onSurface,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun ScanQrFab(onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     // Same Extended FAB pattern as ExamPaperContent — primary container,
@@ -708,6 +796,8 @@ private fun AssessmentPaperDetailContentPreview() {
                     ),
                 ),
                 heroImageUrl = null,
+                lastUpdatedLabel = "Last updated: 2 min ago",
+                syncStatusLabel = "Pending Sync (3)",
             ),
         )
     }

@@ -1,86 +1,138 @@
 package ng.com.chprbn.mobile.feature.assessment.data.source
 
-import ng.com.chprbn.mobile.core.sync.foldBatchResults
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentSyncApiService
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchRequestDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncItemDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncResultDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchRequestDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncItemDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncResultDto
-import ng.com.chprbn.mobile.feature.assessment.data.mappers.toSyncItemDto
-import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
-import ng.com.chprbn.mobile.feature.assessment.domain.model.ProjectScore
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushItemDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushItemDto
+import ng.com.chprbn.mobile.feature.assessment.data.mappers.wireQuestionId
 import retrofit2.Response
-import java.util.UUID
 import javax.inject.Inject
 
 /**
- * Retrofit-backed batched sync source for the assessment feature. Same
- * shape as `ApiExamSyncRemoteSource` — one batched HTTP request per
- * call, response is a per-row results array keyed by `client_id`.
+ * Retrofit-backed batched sync source matching `docs/mobile-api-guide.html`
+ * §6 / §7. Same whole-batch outcome model as attendance push: the server
+ * returns no per-row results.
  */
 class ApiAssessmentSyncRemoteSource @Inject constructor(
     private val api: AssessmentSyncApiService,
 ) : AssessmentSyncRemoteSource {
 
     override suspend fun uploadPracticalScoreBatch(
-        rows: List<PracticalScore>,
+        rows: List<PracticalScoreUploadRow>,
     ): Map<String, Result<Unit>> {
         if (rows.isEmpty()) return emptyMap()
-        val items: List<PracticalScoreSyncItemDto> = rows.map { it.toSyncItemDto() }
 
-        val transportOutcome: Result<List<PracticalScoreSyncResultDto>> = runCatching {
+        val outcomes = LinkedHashMap<String, Result<Unit>>(rows.size)
+        val items = mutableListOf<PracticalPushItemDto>()
+        val itemKeys = mutableListOf<String>()
+
+        for (row in rows) {
+            val dto = row.toPushItemDtoOrNull()
+            if (dto == null) {
+                outcomes[row.clientId] = Result.failure(
+                    IllegalStateException(
+                        "Cannot push practical score for candidate ${row.candidateId}: " +
+                            "missing/non-numeric scheduledCandidateId, scheduleId, candidateId, " +
+                            "paperId, or questionId.",
+                    ),
+                )
+                continue
+            }
+            items.add(dto)
+            itemKeys.add(row.clientId)
+        }
+
+        if (items.isEmpty()) return outcomes
+
+        val transportOutcome: Result<Unit> = runCatching {
             val response = api.uploadPracticalScoreBatch(
-                idempotencyKey = UUID.randomUUID().toString(),
-                body = PracticalScoreSyncBatchRequestDto(items = items),
+                PracticalPushRequestDto(practicals = items, projects = emptyList()),
             )
             response.requireSuccessOrThrow()
             val envelope = response.body()
                 ?: error("Practical-score batch: empty response body.")
-            if (!envelope.success) {
-                // A-S3 audit: envelope-level rejection fails every row with
-                // the server's own message, not the generic "no result."
+            if (!envelope.status) {
                 error(envelope.message ?: "Practical-score batch rejected by server.")
             }
-            envelope.data?.results.orEmpty()
         }
 
-        return foldBatchResults(
-            clientIds = items.map { it.clientId },
-            transportOutcome = transportOutcome,
-            acceptedOf = { it.accepted },
-            errorOf = { it.error },
-            clientIdOf = { it.clientId },
+        transportOutcome.fold(
+            onSuccess = { itemKeys.forEach { outcomes[it] = Result.success(Unit) } },
+            onFailure = { t -> itemKeys.forEach { outcomes[it] = Result.failure(t) } },
         )
+        return outcomes
     }
 
     override suspend fun uploadProjectScoreBatch(
-        rows: List<ProjectScore>,
+        rows: List<ProjectScoreUploadRow>,
     ): Map<String, Result<Unit>> {
         if (rows.isEmpty()) return emptyMap()
-        val items: List<ProjectScoreSyncItemDto> = rows.map { it.toSyncItemDto() }
 
-        val transportOutcome: Result<List<ProjectScoreSyncResultDto>> = runCatching {
-            val response = api.uploadProjectScoreBatch(
-                idempotencyKey = UUID.randomUUID().toString(),
-                body = ProjectScoreSyncBatchRequestDto(items = items),
-            )
+        val outcomes = LinkedHashMap<String, Result<Unit>>(rows.size)
+        val items = mutableListOf<ProjectPushItemDto>()
+        val itemKeys = mutableListOf<String>()
+
+        for (row in rows) {
+            val dto = row.toPushItemDtoOrNull()
+            if (dto == null) {
+                outcomes[row.clientId] = Result.failure(
+                    IllegalStateException(
+                        "Cannot push project score for candidate ${row.candidateId}: " +
+                            "missing/non-numeric scheduledCandidateId, scheduleId, candidateId, or paperId.",
+                    ),
+                )
+                continue
+            }
+            items.add(dto)
+            itemKeys.add(row.clientId)
+        }
+
+        if (items.isEmpty()) return outcomes
+
+        val transportOutcome: Result<Unit> = runCatching {
+            val response = api.uploadProjectScoreBatch(items)
             response.requireSuccessOrThrow()
             val envelope = response.body()
                 ?: error("Project-score batch: empty response body.")
-            if (!envelope.success) {
+            if (!envelope.status) {
                 error(envelope.message ?: "Project-score batch rejected by server.")
             }
-            envelope.data?.results.orEmpty()
         }
 
-        return foldBatchResults(
-            clientIds = items.map { it.clientId },
-            transportOutcome = transportOutcome,
-            acceptedOf = { it.accepted },
-            errorOf = { it.error },
-            clientIdOf = { it.clientId },
+        transportOutcome.fold(
+            onSuccess = { itemKeys.forEach { outcomes[it] = Result.success(Unit) } },
+            onFailure = { t -> itemKeys.forEach { outcomes[it] = Result.failure(t) } },
+        )
+        return outcomes
+    }
+
+    private fun PracticalScoreUploadRow.toPushItemDtoOrNull(): PracticalPushItemDto? {
+        val scheduledCandidateIdLong = scheduledCandidateId.toLongOrNull() ?: return null
+        val candidateIdLong = candidateId.toLongOrNull() ?: return null
+        val paperIdLong = paperId.toLongOrNull() ?: return null
+        val questionIdLong = wireQuestionId(questionId) ?: return null
+        val scheduleIdLong = scheduleId.toLongOrNull() ?: return null
+        return PracticalPushItemDto(
+            scheduledCandidateId = scheduledCandidateIdLong,
+            candidateId = candidateIdLong,
+            paperId = paperIdLong,
+            questionId = questionIdLong,
+            scheduleId = scheduleIdLong,
+            score = score.toDouble(),
+        )
+    }
+
+    private fun ProjectScoreUploadRow.toPushItemDtoOrNull(): ProjectPushItemDto? {
+        val scheduledCandidateIdLong = scheduledCandidateId.toLongOrNull() ?: return null
+        val candidateIdLong = candidateId.toLongOrNull() ?: return null
+        val paperIdLong = paperId.toLongOrNull() ?: return null
+        val scheduleIdLong = scheduleId.toLongOrNull() ?: return null
+        return ProjectPushItemDto(
+            scheduledCandidateId = scheduledCandidateIdLong,
+            scheduleId = scheduleIdLong,
+            candidateId = candidateIdLong,
+            paperId = paperIdLong,
+            score = score,
         )
     }
 

@@ -9,6 +9,8 @@ import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreEntity
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
+import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
+import ng.com.chprbn.mobile.feature.exam.data.local.PaperCandidateAssignmentEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -19,8 +21,16 @@ class PracticalScoreSyncHandlerTest {
     private val dao = mockk<PracticalScoreDao>(relaxUnitFun = true) {
         coEvery { updateSyncMetadata(any(), any(), any(), any(), any()) } returns 1
     }
+    private val candidateDao = mockk<CandidateDao> {
+        coEvery { getAssignment("s", "c") } returns PaperCandidateAssignmentEntity(
+            paperId = "s",
+            candidateId = "c",
+            scheduledCandidateId = "501",
+            scheduleId = "45",
+        )
+    }
     private val remote = mockk<AssessmentSyncRemoteSource>()
-    private val handler = PracticalScoreSyncHandler(dao, remote)
+    private val handler = PracticalScoreSyncHandler(dao, candidateDao, remote)
 
     @Test
     fun `malformed key produces per-key Failure without touching dao or remote`() = runTest {
@@ -38,6 +48,17 @@ class PracticalScoreSyncHandlerTest {
         val outcomes = handler.uploadBatch(listOf("s/c/q"))
 
         assertEquals(SyncOutcome.Drop, outcomes["s/c/q"])
+        coVerify(exactly = 0) { remote.uploadPracticalScoreBatch(any()) }
+    }
+
+    @Test
+    fun `missing assignment fails the row without an HTTP call`() = runTest {
+        coEvery { dao.getOne("s", "c", "q") } returns scoreEntity()
+        coEvery { candidateDao.getAssignment("s", "c") } returns null
+
+        val outcomes = handler.uploadBatch(listOf("s/c/q"))
+
+        assertTrue(outcomes["s/c/q"] is SyncOutcome.Failure)
         coVerify(exactly = 0) { remote.uploadPracticalScoreBatch(any()) }
     }
 
@@ -60,8 +81,6 @@ class PracticalScoreSyncHandlerTest {
                 syncError = null,
             )
         }
-        // No per-schedule status refresh anymore — the schedules-list pill
-        // is derived at read time in AssessmentScheduleRepositoryImpl.
     }
 
     @Test

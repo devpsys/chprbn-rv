@@ -7,7 +7,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import dagger.multibindings.IntoSet
-import ng.com.chprbn.mobile.BuildConfig
 import ng.com.chprbn.mobile.core.session.SessionScopedCleaner
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
@@ -18,12 +17,8 @@ import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentSession
 import ng.com.chprbn.mobile.feature.assessment.data.repository.AssessmentSyncRepositoryImpl
 import ng.com.chprbn.mobile.feature.assessment.data.repository.PracticalScoringRepositoryImpl
 import ng.com.chprbn.mobile.feature.assessment.data.repository.ProjectScoringRepositoryImpl
-import ng.com.chprbn.mobile.feature.assessment.data.source.ApiAssessmentPackageRemoteSource
 import ng.com.chprbn.mobile.feature.assessment.data.source.ApiAssessmentSyncRemoteSource
-import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentPackageRemoteSource
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
-import ng.com.chprbn.mobile.feature.assessment.data.source.CompositeAssessmentPackageRemoteSource
-import ng.com.chprbn.mobile.feature.assessment.data.source.FakeAssessmentPackageRemoteSource
 import ng.com.chprbn.mobile.feature.assessment.data.sync.PracticalScoreSyncHandler
 import ng.com.chprbn.mobile.feature.assessment.data.sync.ProjectScoreSyncHandler
 import ng.com.chprbn.mobile.feature.assessment.domain.model.LowScoreThreshold
@@ -39,15 +34,15 @@ import javax.inject.Singleton
  * Wires every assessment-side abstraction to its concrete implementation:
  *
  * - **Repositories** — domain interfaces ↔ `*Impl` classes.
- * - **AssessmentPackageRemoteSource** — `@Provides` builds the
- *   [CompositeAssessmentPackageRemoteSource], with the live API as primary
- *   and the in-memory fake as fallback so screens stay functional before
- *   the backend ships.
  * - **AssessmentSyncRemoteSource** — `@Binds` directly to the Retrofit
  *   impl (no fake — uploading to nowhere is never the right behaviour).
  * - **Sync handler multibindings** — both score handlers contribute to
  *   the shared `core.sync` `Map<SyncEntityType, SyncEntityHandler>` so
  *   `SyncBatchRunner` dispatches by entity type.
+ *
+ * The per-schedule package remote source is gone — practical sections
+ * and questions arrive on the exam dossier and are persisted by
+ * `ExamSyncRepositoryImpl` in the same download.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -117,24 +112,6 @@ abstract class AssessmentDataModule {
     ): SessionScopedCleaner
 
     companion object {
-
-        /**
-         * Debug builds get the composite (Api → Fake fallback for empty-live
-         * responses). Release builds bind the API source directly — the Fake
-         * path is inaccessible, so a 500 / empty envelope surfaces as a real
-         * error rather than silently synthetic data (A-S1 audit finding).
-         */
-        @Provides
-        @Singleton
-        fun provideAssessmentPackageRemoteSource(
-            api: ApiAssessmentPackageRemoteSource,
-            fake: FakeAssessmentPackageRemoteSource,
-        ): AssessmentPackageRemoteSource =
-            if (BuildConfig.DEBUG) {
-                CompositeAssessmentPackageRemoteSource(api, fake)
-            } else {
-                api
-            }
 
         /**
          * Cohort-level "below this aggregate score = Low" threshold. Defaulted

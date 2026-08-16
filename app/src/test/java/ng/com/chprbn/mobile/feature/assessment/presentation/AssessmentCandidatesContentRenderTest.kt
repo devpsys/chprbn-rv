@@ -17,7 +17,12 @@ class AssessmentCandidatesContentRenderTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun card(id: String, name: String, score: Int = 72, level: ScoreLevel = ScoreLevel.Normal) =
+    private fun card(
+        id: String,
+        name: String,
+        score: Int = 72,
+        level: ScoreLevel = ScoreLevel.Normal,
+    ) =
         CandidateCardUiState(
             id = id,
             indexingNumber = "EX-$id",
@@ -34,7 +39,7 @@ class AssessmentCandidatesContentRenderTest {
             query = "",
             viewMode = CandidatesViewMode.List,
             candidates = listOf(
-                card("001", "Aisha Bello"),
+                card("001", "Aisha Bello", score = 82),
                 card("002", "Tunde Adebayo", score = 38, level = ScoreLevel.Low),
                 card("003", "Chiamaka Okeke"),
             ),
@@ -50,6 +55,8 @@ class AssessmentCandidatesContentRenderTest {
         composeRule.onNodeWithText("Tunde Adebayo").assertExists()
         composeRule.onNodeWithText("Chiamaka Okeke").assertExists()
         composeRule.onNodeWithText("3 Total").assertExists()
+        composeRule.onNodeWithText("82").assertExists()
+        composeRule.onNodeWithText("38").assertExists()
     }
 
     @Test

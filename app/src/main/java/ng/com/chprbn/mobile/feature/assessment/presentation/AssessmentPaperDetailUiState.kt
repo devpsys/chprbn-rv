@@ -28,6 +28,8 @@ data class AssessmentPaperDetailUiState(
     val hallAddress: String = "",
     val candidates: List<CandidateRowUiState> = emptyList(),
     val heroImageUrl: String? = null,
+    val lastUpdatedLabel: String = "",
+    val syncStatusLabel: String = "",
     /**
      * Non-null when the paper fetch surfaced an error (either NotFound or a
      * repository-side error). The screen renders a small banner so the

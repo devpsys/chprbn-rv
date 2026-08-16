@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.assessment.presentation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import org.junit.Rule
@@ -20,7 +21,7 @@ class AssessmentPracticalScoringContentRenderTest {
     @Test
     fun renders_section_title_and_each_question_prompt() {
         val state = AssessmentPracticalScoringUiState(
-            sectionTitle = "Section A — Vital Signs",
+            sectionTitle = "CHEW - Patient Assessment",
             questions = listOf(
                 ScoreQuestionUiState(
                     id = "q1",
@@ -47,8 +48,23 @@ class AssessmentPracticalScoringContentRenderTest {
             }
         }
 
+        composeRule.onNodeWithText("CHEW - PATIENT ASSESSMENT").assertExists()
         composeRule.onNodeWithText("1. Measures blood pressure correctly").assertExists()
         composeRule.onNodeWithText("2. Records pulse rate accurately").assertExists()
+        composeRule.onNodeWithText("Save Scores").assertExists()
+    }
+
+    @Test
+    fun save_fab_shows_spinner_while_saving() {
+        composeRule.setContent {
+            ChprbnTheme {
+                AssessmentPracticalScoringContent(
+                    uiState = AssessmentPracticalScoringUiState(isSaving = true),
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Saving scores").assertExists()
         composeRule.onNodeWithText("Save Scores").assertExists()
     }
 }

@@ -12,6 +12,7 @@ import ng.com.chprbn.mobile.core.domain.model.PaperKind
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.SyncBatchRunner
+import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.ExamDatabase
 import ng.com.chprbn.mobile.feature.exam.data.local.RemarkEntity
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith
 class ExamSyncRepositoryImplTest {
 
     private lateinit var db: ExamDatabase
+    private lateinit var assessmentDb: AssessmentDatabase
     private lateinit var repository: ExamSyncRepositoryImpl
     private lateinit var remoteSource: ExamDossierRemoteSource
     private lateinit var runner: SyncBatchRunner
@@ -48,15 +50,26 @@ class ExamSyncRepositoryImplTest {
         db = Room.inMemoryDatabaseBuilder(context, ExamDatabase::class.java)
             .allowMainThreadQueries()
             .build()
+        // Empty in-memory assessment DB — the sample bundles below never
+        // include practical sections, so the section/question DAOs are
+        // only ever called with empty lists. Test data that exercises
+        // section persistence is unnecessary here; the DTO→domain
+        // fan-out is covered in ApiExamDossierRemoteSourceTest.
+        assessmentDb = Room.inMemoryDatabaseBuilder(context, AssessmentDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
         remoteSource = mockk()
         runner = mockk {
             coEvery { runBatch(any()) } returns SyncBatchResult.Empty
         }
         repository = ExamSyncRepositoryImpl(
             db = db,
+            assessmentDb = assessmentDb,
             centerDao = db.centerDao(),
             paperDao = db.paperDao(),
             candidateDao = db.candidateDao(),
+            practicalSectionDao = assessmentDb.sectionDao(),
+            sectionQuestionDao = assessmentDb.questionDao(),
             remoteSource = remoteSource,
             runner = runner,
         )
@@ -65,6 +78,7 @@ class ExamSyncRepositoryImplTest {
     @After
     fun tearDown() {
         db.close()
+        assessmentDb.close()
     }
 
     @Test

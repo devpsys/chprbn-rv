@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Owns reads/writes to both `candidates` and `paper_candidate_assignments`.
@@ -68,6 +69,49 @@ interface CandidateDao {
 
     @Query("SELECT COUNT(*) FROM paper_candidate_assignments")
     suspend fun assignmentCount(): Int
+
+    /**
+     * Live count of candidates assigned to [paperId]. Consumed by the
+     * assessment feature as the fallback denominator for a PE/PA
+     * paper's progress pill before the schedule's package has been
+     * downloaded (see `AssessmentCandidateRepositoryImpl.observeAssignedCount`).
+     */
+    @Query("SELECT COUNT(*) FROM paper_candidate_assignments WHERE paperId = :paperId")
+    fun observeCountForPaper(paperId: String): Flow<Int>
+
+    /**
+     * Plain candidate list assigned to [paperId] — no attendance/remark
+     * join, no LIKE filter. Used by the assessment feature to render a
+     * shell candidate list for a PE/PA paper before its package is
+     * downloaded.
+     */
+    @Query(
+        """
+        SELECT c.* FROM candidates c
+        INNER JOIN paper_candidate_assignments pca ON pca.candidateId = c.id
+        WHERE pca.paperId = :paperId
+        ORDER BY c.fullName ASC
+        """,
+    )
+    suspend fun candidatesForPaper(paperId: String): List<CandidateEntity>
+
+    /**
+     * Scoped exam-number lookup — the assessment feature falls back to
+     * this when the schedule's practical package hasn't been downloaded
+     * yet but the candidate is on the paper's dossier roster.
+     */
+    @Query(
+        """
+        SELECT c.* FROM candidates c
+        INNER JOIN paper_candidate_assignments pca ON pca.candidateId = c.id
+        WHERE pca.paperId = :paperId AND c.examNumber = :examNumber
+        LIMIT 1
+        """,
+    )
+    suspend fun candidateForPaperByExamNumber(
+        paperId: String,
+        examNumber: String,
+    ): CandidateEntity?
 
     @Query("DELETE FROM paper_candidate_assignments")
     suspend fun clearAssignments(): Int

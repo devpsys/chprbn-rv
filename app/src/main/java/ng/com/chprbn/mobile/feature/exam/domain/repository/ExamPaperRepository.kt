@@ -29,5 +29,14 @@ interface ExamPaperRepository {
      */
     suspend fun getAssessmentPapers(): List<Paper>
 
+    /**
+     * Lightweight single-paper lookup — returns the `Paper` row from the
+     * dossier's cache without the attendance/centre join that
+     * [getPaperDetail] performs. Used by the assessment feature to render
+     * a paper-detail shell for a PE/PA paper before the officer has
+     * downloaded that schedule's package.
+     */
+    suspend fun getPaperById(id: String): Paper?
+
     suspend fun getPaperDetail(paperId: String): ExamPaperDetailResult
 }

@@ -4,14 +4,21 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore
+import ng.com.chprbn.mobile.feature.assessment.domain.model.SaveResult
 import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.CommitPracticalSectionUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetPracticalQuestionsUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetPracticalSectionsUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.LookupAssessmentCandidateUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.RecordPracticalScoreUseCase
 import javax.inject.Inject
 
@@ -21,6 +28,11 @@ import javax.inject.Inject
  * domain use case validates the score range; the VM clamps locally for
  * the UI but the persistence call is authoritative.
  *
+ * [onSaveScores] is the explicit "done with this section" gesture —
+ * [CommitPracticalSectionUseCase] flags the pending rows for upload,
+ * then [sectionSaved] fires so the Screen layer can pop back to the
+ * practical-sections hub (which is already observing live summaries).
+ *
  * No debouncing — `recordScore` upserts on a primary key, so rapid
  * `+ + + +` is a sequence of cheap REPLACEs. If profiling shows
  * contention later, add a `MutableSharedFlow.collectLatest` pipeline.
@@ -28,23 +40,47 @@ import javax.inject.Inject
 @HiltViewModel
 class AssessmentPracticalScoringViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val lookupCandidate: LookupAssessmentCandidateUseCase,
     private val getQuestions: GetPracticalQuestionsUseCase,
     private val recordScore: RecordPracticalScoreUseCase,
+    private val getSections: GetPracticalSectionsUseCase,
+    private val commitSection: CommitPracticalSectionUseCase,
 ) : ViewModel() {
 
     private val scheduleId: String = savedStateHandle.get<String>("scheduleId").orEmpty()
-    private val candidateId: String = savedStateHandle.get<String>("candidateId").orEmpty()
+    // Nav arg name is `candidateId`, actual value is the QR-extracted
+    // registration/exam number — resolved to a domain id below so scores
+    // aren't written under a bogus PK.
+    private val scannedPayload: String = savedStateHandle.get<String>("candidateId").orEmpty()
     private val sectionId: String = savedStateHandle.get<String>("sectionId").orEmpty()
+
+    /** Populated by init once the scanned payload resolves against the roster. */
+    private var resolvedCandidateId: String? = null
 
     private val _uiState = MutableStateFlow(AssessmentPracticalScoringUiState())
     val uiState: StateFlow<AssessmentPracticalScoringUiState> = _uiState.asStateFlow()
 
+    private val _sectionSaved = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val sectionSaved: SharedFlow<Unit> = _sectionSaved.asSharedFlow()
+
     init {
         viewModelScope.launch {
-            val pairs = getQuestions(scheduleId, candidateId, sectionId)
+            val candidate = lookupCandidate(scheduleId, scannedPayload)
+            if (candidate == null) {
+                // Sections hub would have caught this too, but guard here
+                // in case a deep-link lands us straight on scoring.
+                return@launch
+            }
+            resolvedCandidateId = candidate.id
+            val pairs = getQuestions(scheduleId, candidate.id, sectionId)
+            val sectionTitle = getSections(scheduleId, candidate.id)
+                .firstOrNull { it.section.id == sectionId }
+                ?.section
+                ?.title
+                .orEmpty()
             _uiState.update {
                 it.copy(
-                    sectionTitle = sectionTitleFor(sectionId),
+                    sectionTitle = sectionTitle,
                     questions = pairs.map { (q, existing) -> q.toScoreUi(existing) },
                 )
             }
@@ -59,6 +95,18 @@ class AssessmentPracticalScoringViewModel @Inject constructor(
         adjustScore(questionId, -1)
     }
 
+    fun onSaveScores() {
+        if (_uiState.value.isSaving) return
+        val candidateId = resolvedCandidateId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            when (commitSection(scheduleId, candidateId, sectionId)) {
+                SaveResult.Success -> _sectionSaved.emit(Unit)
+                is SaveResult.Error -> _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
     private fun adjustScore(questionId: String, delta: Int) {
         val before = _uiState.value.questions.firstOrNull { it.id == questionId } ?: return
         val nextScore = (before.score + delta).coerceIn(0, before.maxScore)
@@ -71,6 +119,9 @@ class AssessmentPracticalScoringViewModel @Inject constructor(
                 },
             )
         }
+        // Only persist once we have a real DB id — writing under the raw
+        // scan payload would corrupt the score table with orphan rows.
+        val candidateId = resolvedCandidateId ?: return
         viewModelScope.launch {
             recordScore(
                 scheduleId = scheduleId,
@@ -91,18 +142,4 @@ class AssessmentPracticalScoringViewModel @Inject constructor(
             maxScore = maxScore,
             score = existing?.score ?: 0,
         )
-
-    // Section titles aren't carried by the question payload; the title comes
-    // from the parent PracticalSection. Since the screen only knows
-    // `sectionId`, derive a sensible label from the id letter until a richer
-    // lookup is wired.
-    private fun sectionTitleFor(id: String): String {
-        val letter = id.substringAfterLast("-").uppercase()
-        return when (letter) {
-            "A" -> "Section A — Patient Assessment"
-            "B" -> "Section B — Clinical Diagnosis"
-            "C" -> "Section C — Ethical Standards"
-            else -> "Section $letter"
-        }
-    }
 }

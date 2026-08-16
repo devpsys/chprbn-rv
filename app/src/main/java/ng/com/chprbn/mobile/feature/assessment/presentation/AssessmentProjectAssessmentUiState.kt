@@ -13,4 +13,7 @@ data class AssessmentProjectAssessmentUiState(
      *  "8." or "" can be represented without losing user state. */
     val scoreText: String = "",
     val maxScore: Int = 10,
+    /** True while [AssessmentProjectAssessmentViewModel.onSaveScore] is
+     *  persisting; the Save FAB shows a spinner and ignores further taps. */
+    val isSaving: Boolean = false,
 )

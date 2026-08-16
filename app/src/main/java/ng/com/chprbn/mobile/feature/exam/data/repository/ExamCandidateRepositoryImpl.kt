@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.exam.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
@@ -36,6 +37,21 @@ class ExamCandidateRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             candidateDao.getById(candidateId)?.toDomain()
         }
+
+    override suspend fun getAssignedCandidates(paperId: String): List<Candidate> =
+        withContext(Dispatchers.IO) {
+            candidateDao.candidatesForPaper(paperId).map { it.toDomain() }
+        }
+
+    override suspend fun getCandidateForPaperByExamNumber(
+        paperId: String,
+        examNumber: String,
+    ): Candidate? = withContext(Dispatchers.IO) {
+        candidateDao.candidateForPaperByExamNumber(paperId, examNumber)?.toDomain()
+    }
+
+    override fun observeAssignedCandidateCount(paperId: String): Flow<Int> =
+        candidateDao.observeCountForPaper(paperId)
 
     // SQLite LIKE treats `%`, `_`, and `\` specially. Escape them so a
     // search for "100%" doesn't match every candidate.

@@ -1,37 +1,28 @@
 package ng.com.chprbn.mobile.feature.assessment.data.api
 
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchEnvelopeDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalScoreSyncBatchRequestDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchEnvelopeDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectScoreSyncBatchRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushRequestDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushItemDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ScorePushResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
- * **SPECULATIVE.** Batched score upload. One HTTP request carries up to
- * N rows; the server returns per-row results so a partial-success batch
- * can be reconciled by the client. Per-row dedup is on the row's
- * composite identity, not [client_id] — the latter is purely a response
- * correlation key.
+ * Served by the jarabawa backend (see [ng.com.chprbn.mobile.feature.exam.data.di.JarabawaNetworkModule]),
+ * not the app-wide API — **no bearer token**; `x-location` is attached by
+ * [ng.com.chprbn.mobile.feature.auth.data.network.LocationHeaderInterceptor].
+ *
+ * Confirmed live per `docs/mobile-api-guide.html` §6 / §7.
  */
 interface AssessmentSyncApiService {
 
-    /**
-     * [idempotencyKey] — see `ExamSyncApiService.uploadAttendanceBatch`;
-     * X3 audit fix, mirrored so a retry of the same batch is server-side
-     * deduplicated rather than double-applied.
-     */
-    @POST("assessments/practical-scores/batch")
+    @POST("practical/push-record")
     suspend fun uploadPracticalScoreBatch(
-        @Header("Idempotency-Key") idempotencyKey: String,
-        @Body body: PracticalScoreSyncBatchRequestDto,
-    ): Response<PracticalScoreSyncBatchEnvelopeDto>
+        @Body body: PracticalPushRequestDto,
+    ): Response<ScorePushResponseDto>
 
-    @POST("assessments/project-scores/batch")
+    @POST("project/push-record")
     suspend fun uploadProjectScoreBatch(
-        @Header("Idempotency-Key") idempotencyKey: String,
-        @Body body: ProjectScoreSyncBatchRequestDto,
-    ): Response<ProjectScoreSyncBatchEnvelopeDto>
+        @Body body: List<ProjectPushItemDto>,
+    ): Response<ScorePushResponseDto>
 }

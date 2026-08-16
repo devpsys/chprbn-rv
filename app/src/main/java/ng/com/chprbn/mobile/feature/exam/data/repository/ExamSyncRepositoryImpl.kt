@@ -6,6 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.sync.SyncBatchRunner
+import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
+import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionDao
+import ng.com.chprbn.mobile.feature.assessment.data.local.SectionQuestionDao
+import ng.com.chprbn.mobile.feature.assessment.data.mappers.toEntity as toAssessmentEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
 import ng.com.chprbn.mobile.feature.exam.data.local.ExamDatabase
@@ -27,15 +31,26 @@ import javax.inject.Inject
  * survive a re-download (the explicit UX contract behind the
  * download-warning prompt).
  *
+ * Practical-assessment reference data (sections + nested questions) also
+ * arrives on the dossier and is persisted here into `assessment.db` in a
+ * second, sequential transaction — the two databases can't share one.
+ * Same UX contract: score rows are never touched, so pending writes
+ * survive a re-download. If the exam-side write succeeded but the
+ * assessment-side write threw, the officer sees an error and the
+ * next re-download replays both sides idempotently.
+ *
  * `syncPending` delegates to the cross-feature [SyncBatchRunner] —
  * running it here flushes assessment-side rows too, which is fine: the
  * user wouldn't want two separate Sync Now buttons.
  */
 class ExamSyncRepositoryImpl @Inject constructor(
     private val db: ExamDatabase,
+    private val assessmentDb: AssessmentDatabase,
     private val centerDao: CenterDao,
     private val paperDao: PaperDao,
     private val candidateDao: CandidateDao,
+    private val practicalSectionDao: PracticalSectionDao,
+    private val sectionQuestionDao: SectionQuestionDao,
     private val remoteSource: ExamDossierRemoteSource,
     private val runner: SyncBatchRunner,
 ) : ExamSyncRepository {
@@ -81,6 +96,18 @@ class ExamSyncRepositoryImpl @Inject constructor(
                     },
                 )
             }
+            // Separate transaction — cross-DB atomicity isn't available,
+            // and the assessment reference data is a pure replace anyway.
+            assessmentDb.withTransaction {
+                bundle.practicalSections.map { it.scheduleId }.distinct().forEach { scheduleId ->
+                    // Delete questions first (dependent on section rows),
+                    // then the sections themselves.
+                    sectionQuestionDao.deleteByScheduleId(scheduleId)
+                    practicalSectionDao.deleteByScheduleId(scheduleId)
+                }
+                practicalSectionDao.upsertAll(bundle.practicalSections.map { it.toAssessmentEntity() })
+                sectionQuestionDao.upsertAll(bundle.practicalQuestions.map { it.toAssessmentEntity() })
+            }
             DownloadDossierResult.Success(
                 papersCount = bundle.papers.size,
                 candidatesCount = bundle.candidates.size,
@@ -94,7 +121,9 @@ class ExamSyncRepositoryImpl @Inject constructor(
                 TAG,
                 "Failed to persist downloaded dossier (center=${bundle.center.id}, " +
                     "papers=${bundle.papers.size}, candidates=${bundle.candidates.size}, " +
-                    "assignments=${bundle.assignments.size})",
+                    "assignments=${bundle.assignments.size}, " +
+                    "sections=${bundle.practicalSections.size}, " +
+                    "questions=${bundle.practicalQuestions.size})",
                 t,
             )
             DownloadDossierResult.Error(t.message ?: "Could not persist downloaded dossier.")

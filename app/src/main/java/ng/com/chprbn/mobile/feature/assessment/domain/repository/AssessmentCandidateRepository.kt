@@ -30,6 +30,23 @@ interface AssessmentCandidateRepository {
 
     suspend fun getCandidate(scheduleId: String, candidateId: String): Candidate?
 
+    /**
+     * Resolves a QR-scanned or manually-entered exam number to the roster
+     * row for [scheduleId]. Returns `null` when the number isn't assigned
+     * to this schedule — the UI then routes to a "not on this schedule"
+     * error state.
+     *
+     * Fallback semantics: if the per-schedule package hasn't been
+     * downloaded yet, the assessment table has no rows for the schedule.
+     * The implementation checks the exam-side dossier roster (same
+     * candidates, keyed by paper id = schedule id) so the sections hub
+     * still resolves the header before the officer downloads the package.
+     */
+    suspend fun getCandidateByExamNumber(
+        scheduleId: String,
+        examNumber: String,
+    ): Candidate?
+
     /** Live count of candidates assigned to [scheduleId]. Denominator for A-S5 progress. */
     fun observeAssignedCount(scheduleId: String): Flow<Int>
 }

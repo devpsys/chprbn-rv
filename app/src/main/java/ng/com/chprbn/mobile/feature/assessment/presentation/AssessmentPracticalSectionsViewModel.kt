@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionCadre
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionSummary
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetPracticalSectionsUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.LookupAssessmentCandidateUseCase
@@ -21,7 +22,10 @@ import javax.inject.Inject
 
 /**
  * Loads the candidate's profile (for the screen header) and the per-section
- * scoring summary for the hub cards. Footer text follows the design:
+ * scoring summary for the hub cards. Sections are filtered to the cadre
+ * encoded in the candidate exam number (see [PracticalSectionCadre]) so a
+ * CHEW candidate never sees JCHEW/CHO/BCHS cards. Footer text follows the
+ * design:
  *
  * - Complete sections: HH:mm timestamp of the most recent score in the section.
  * - Incomplete sections: count of remaining questions (raw integer; the
@@ -36,37 +40,50 @@ class AssessmentPracticalSectionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val scheduleId: String = savedStateHandle.get<String>("scheduleId").orEmpty()
-    private val candidateId: String = savedStateHandle.get<String>("candidateId").orEmpty()
+    // Nav arg is named `candidateId` for historical reasons, but the value
+    // is the QR-extracted registration/exam number — resolved to a domain
+    // id below via [LookupAssessmentCandidateUseCase].
+    private val scannedPayload: String = savedStateHandle.get<String>("candidateId").orEmpty()
 
     private val _uiState = MutableStateFlow(AssessmentPracticalSectionsUiState())
     val uiState: StateFlow<AssessmentPracticalSectionsUiState> = _uiState.asStateFlow()
 
     init {
-        // Candidate header is fetched once — the profile doesn't change during
-        // the visit. Section summaries collect via Flow so any per-question
-        // score upsert re-emits and the pills stay live (A-S6 audit fix).
+        // Resolve the scanned exam number → domain candidate first, then
+        // (only if that succeeds) start collecting sections keyed on the
+        // real DB id. Kicking off both flows in parallel with the raw
+        // scan payload was the original bug — sections joined on the
+        // wrong id and always came back empty.
         viewModelScope.launch {
-            val candidate = lookupCandidate(scheduleId, candidateId)
+            val candidate = lookupCandidate(scheduleId, scannedPayload)
+            if (candidate == null) {
+                _uiState.update {
+                    it.copy(
+                        candidateExamId = scannedPayload,
+                        candidateNotFound = true,
+                    )
+                }
+                return@launch
+            }
             _uiState.update {
                 it.copy(
-                    candidateName = candidate?.fullName.orEmpty(),
-                    candidateExamId = candidate?.examNumber.orEmpty(),
-                    candidatePhotoUrl = candidate?.photoUrl,
+                    candidateName = candidate.fullName,
+                    candidateExamId = candidate.examNumber,
+                    candidatePhotoUrl = candidate.photoUrl,
                 )
             }
-        }
-        viewModelScope.launch {
-            getSections.observe(scheduleId, candidateId).collectLatest { summaries ->
-                val done = summaries.count {
+            getSections.observe(scheduleId, candidate.id).collectLatest { summaries ->
+                val visible = PracticalSectionCadre.filter(summaries, candidate.examNumber)
+                val done = visible.count {
                     it.status ==
                         ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSectionStatus.Complete
                 }
                 _uiState.update {
                     it.copy(
                         sectionsDone = done,
-                        sectionsTotal = summaries.size,
-                        sectionsRemaining = (summaries.size - done).coerceAtLeast(0),
-                        sections = summaries.map { summary -> summary.toSectionUi() },
+                        sectionsTotal = visible.size,
+                        sectionsRemaining = (visible.size - done).coerceAtLeast(0),
+                        sections = visible.map { summary -> summary.toSectionUi() },
                     )
                 }
             }

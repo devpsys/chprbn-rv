@@ -1,6 +1,8 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
 import ng.com.chprbn.mobile.core.domain.model.Candidate
+import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
+import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
 import ng.com.chprbn.mobile.feature.exam.domain.model.Center
 import ng.com.chprbn.mobile.feature.exam.domain.model.Paper
 
@@ -33,4 +35,18 @@ data class ExamDossierBundle(
     val papers: List<Paper>,
     val candidates: List<Candidate>,
     val assignments: List<ExamPaperAssignment>,
+    /**
+     * Practical-assessment reference data (sections + their nested
+     * questions) fanned out per PE/PA paper. `PracticalSection.scheduleId`
+     * equals the paper id for each fan-out — the same section-set is
+     * replicated across every PE/PA paper on the dossier since the wire
+     * carries just one top-level `sections[]` per response.
+     *
+     * Persisted into `assessment.db`'s `practical_sections` +
+     * `section_questions` by
+     * [ng.com.chprbn.mobile.feature.exam.data.repository.ExamSyncRepositoryImpl].
+     * Empty for a dossier without any practical papers.
+     */
+    val practicalSections: List<PracticalSection> = emptyList(),
+    val practicalQuestions: List<SectionQuestion> = emptyList(),
 )

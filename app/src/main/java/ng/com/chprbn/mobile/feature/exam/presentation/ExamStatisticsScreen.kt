@@ -35,7 +35,12 @@ fun ExamStatisticsScreen(
         onExamDashboardTab = onExamDashboardTab,
         onStatisticsTab = onStatisticsTab
     )
-    SyncOverlay(state = syncState, onDismissResult = viewModel::onSyncResultDismissed)
+    SyncOverlay(
+        state = syncState,
+        onDismissResult = viewModel::onSyncResultDismissed,
+        title = stringResource(R.string.exam_statistics_sync_loading_title),
+        subtitle = stringResource(R.string.exam_statistics_sync_loading_subtitle),
+    )
     ClearCacheOverlay(
         state = clearCacheState,
         onConfirm = viewModel::onClearCacheConfirmed,
@@ -44,17 +49,22 @@ fun ExamStatisticsScreen(
 }
 
 /**
- * Shared by [ExamStatisticsScreen], `ExamPaperScreen`, and `ExamPapersScreen`
- * — those two screens' own sync flows never produce [SyncOperationUiState.Result],
- * so [onDismissResult] defaults to a no-op for them.
+ * Shared by [ExamStatisticsScreen], `ExamPaperScreen`, `ExamPapersScreen`,
+ * and the assessment paper-detail screen. Default copy is attendance;
+ * assessment passes practical/project titles.
  */
 @Composable
-internal fun SyncOverlay(state: SyncOperationUiState, onDismissResult: () -> Unit = {}) {
+internal fun SyncOverlay(
+    state: SyncOperationUiState,
+    onDismissResult: () -> Unit = {},
+    title: String = stringResource(R.string.sync_loading_title),
+    subtitle: String = stringResource(R.string.sync_loading_subtitle),
+) {
     when (state) {
         SyncOperationUiState.Idle -> Unit
         SyncOperationUiState.Syncing -> SyncingOverlay(
-            title = stringResource(R.string.sync_loading_title),
-            subtitle = stringResource(R.string.sync_loading_subtitle),
+            title = title,
+            subtitle = subtitle,
             encryptedLabel = stringResource(R.string.sync_loading_encrypted_badge),
         )
         is SyncOperationUiState.Result -> SuccessDialog(

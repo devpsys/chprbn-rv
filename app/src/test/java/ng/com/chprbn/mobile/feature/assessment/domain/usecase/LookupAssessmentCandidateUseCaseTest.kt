@@ -17,34 +17,34 @@ class LookupAssessmentCandidateUseCaseTest {
 
     @Test
     fun `blank schedule short-circuits to null`() = runTest {
-        val result = useCase(scheduleId = "  ", candidateId = "C1")
+        val result = useCase(scheduleId = "  ", scannedPayload = "B2320135")
 
         assertNull(result)
-        coVerify(exactly = 0) { repository.getCandidate(any(), any()) }
+        coVerify(exactly = 0) { repository.getCandidateByExamNumber(any(), any()) }
     }
 
     @Test
-    fun `blank candidate short-circuits to null`() = runTest {
-        val result = useCase(scheduleId = "PE", candidateId = "")
+    fun `blank payload short-circuits to null`() = runTest {
+        val result = useCase(scheduleId = "PE", scannedPayload = "")
 
         assertNull(result)
-        coVerify(exactly = 0) { repository.getCandidate(any(), any()) }
+        coVerify(exactly = 0) { repository.getCandidateByExamNumber(any(), any()) }
     }
 
     @Test
-    fun `trimmed inputs forwarded and candidate returned`() = runTest {
-        val candidate = Candidate("c1", "EX-001", "Jane Doe")
-        coEvery { repository.getCandidate("PE", "C1") } returns candidate
+    fun `trimmed inputs are forwarded as an exam-number lookup`() = runTest {
+        val candidate = Candidate("c1", "B2320135", "Jane Doe")
+        coEvery { repository.getCandidateByExamNumber("PE", "B2320135") } returns candidate
 
-        val result = useCase(scheduleId = " PE ", candidateId = "C1 ")
+        val result = useCase(scheduleId = " PE ", scannedPayload = "B2320135 ")
 
         assertEquals(candidate, result)
-        coVerify(exactly = 1) { repository.getCandidate("PE", "C1") }
+        coVerify(exactly = 1) { repository.getCandidateByExamNumber("PE", "B2320135") }
     }
 
     @Test
     fun `repository miss returns null`() = runTest {
-        coEvery { repository.getCandidate("PE", "MISSING") } returns null
+        coEvery { repository.getCandidateByExamNumber("PE", "MISSING") } returns null
 
         val result = useCase("PE", "MISSING")
 

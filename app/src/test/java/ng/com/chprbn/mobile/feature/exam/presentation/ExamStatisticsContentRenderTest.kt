@@ -43,6 +43,10 @@ class ExamStatisticsContentRenderTest {
             composeRule.onAllNodesWithText("1,250").fetchSemanticsNodes().isNotEmpty(),
         )
         composeRule.onNodeWithText("1,180").assertExists()
+        composeRule.onNodeWithText("42").assertExists()
+        composeRule.onNodeWithText("18").assertExists()
+        composeRule.onNodeWithText("Practical Captured").assertExists()
+        composeRule.onNodeWithText("Project Captured").assertExists()
         composeRule.onNodeWithText("94.4% Completion").assertExists()
         composeRule.onNodeWithText("Updated 5m ago").assertExists()
         composeRule.onNodeWithText(

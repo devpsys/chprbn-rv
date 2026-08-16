@@ -4,12 +4,10 @@ import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 
 /**
- * One candidate row in the assessment-side directory. Aggregates per-question
- * `PracticalScore` rows into a single rolled-up view for list rendering:
+ * One candidate row in the assessment-side directory.
  *
- * - [aggregateScore]: sum of `PracticalScore.score` plus `ProjectScore.score`
- *   (rounded) across all sections for this candidate; computed in SQL via
- *   `SUM(score)` rather than pulled into the JVM.
+ * - [aggregateScore]: the candidate's `ProjectScore.score` (rounded).
+ *   Practical marks are not rolled in.
  * - [scoredQuestions] / [totalQuestions]: drives the "Synced/Unsynced" per-row
  *   pill on `AssessmentPaperDetail`.
  * - [syncStatus]: derived from the candidate's score rows — `Failed` if any

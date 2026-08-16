@@ -89,6 +89,10 @@ class ExamPaperRepositoryImpl @Inject constructor(
         paperDao.getAssessmentPapers().map { it.toDomain() }
     }
 
+    override suspend fun getPaperById(id: String): Paper? = withContext(Dispatchers.IO) {
+        paperDao.getById(id)?.toDomain()
+    }
+
     override suspend fun getPaperDetail(paperId: String): ExamPaperDetailResult =
         withContext(Dispatchers.IO) {
             try {

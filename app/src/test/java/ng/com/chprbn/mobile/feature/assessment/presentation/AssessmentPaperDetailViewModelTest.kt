@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.assessment.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -8,21 +9,25 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.Candidate
+import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.utils.MainDispatcherRule
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateRow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaperDetailResult
-import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
+import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSyncStats
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Facility
 import ng.com.chprbn.mobile.feature.assessment.domain.model.Hall
 import ng.com.chprbn.mobile.feature.assessment.domain.model.ScoreLevel
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentCandidateRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.PracticalScoringRepository
-import ng.com.chprbn.mobile.feature.assessment.domain.usecase.DownloadAssessmentPackageUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentCandidatesUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentPaperDetailUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentSyncStatsUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.SyncAssessmentScoresUseCase
+import ng.com.chprbn.mobile.feature.exam.presentation.SyncOperationUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -36,17 +41,18 @@ class AssessmentPaperDetailViewModelTest {
 
     private val getPaperDetail = mockk<GetAssessmentPaperDetailUseCase>()
     private val getCandidates = mockk<GetAssessmentCandidatesUseCase>()
-    private val downloadPackage = mockk<DownloadAssessmentPackageUseCase>()
+    private val getSyncStats = mockk<GetAssessmentSyncStatsUseCase>()
+    private val syncScores = mockk<SyncAssessmentScoresUseCase>()
     private val candidateRepository = mockk<AssessmentCandidateRepository>()
     private val practicalScoringRepository = mockk<PracticalScoringRepository>()
     private val savedState = SavedStateHandle(mapOf("scheduleId" to "PE-2024"))
+    private val context = mockk<Context>(relaxed = true) {
+        every { getString(R.string.assessment_paper_detail_no_data_yet) } returns "No data yet"
+        every { getString(R.string.assessment_paper_detail_sync_status_cloud_synced) } returns "Cloud Synced"
+        every { getString(R.string.assessment_paper_detail_pending_sync_format, 5) } returns
+            "Pending Sync (5)"
+    }
 
-    /**
-     * Set the (assigned, started) counts the progress-observe flow will
-     * emit. Tests call this before instantiating the VM. Defaults keep
-     * pre-A-S5 behaviour of `totalCount = candidates.size` so the pre-fix
-     * assertions still describe a meaningful state.
-     */
     private fun stubProgress(assigned: Int, started: Int = 0) {
         every { candidateRepository.observeAssignedCount("PE-2024") } returns flowOf(assigned)
         every {
@@ -58,16 +64,17 @@ class AssessmentPaperDetailViewModelTest {
         savedState,
         getPaperDetail,
         getCandidates,
-        downloadPackage,
+        getSyncStats,
+        syncScores,
         candidateRepository,
         practicalScoringRepository,
+        context,
     )
 
     @Before
     fun defaultStubs() {
-        // Default progress emits zeros so init doesn't blow up in tests that
-        // don't care about the counts. Overridden in specific tests.
         stubProgress(assigned = 0, started = 0)
+        coEvery { getSyncStats("PE-2024") } returns AssessmentSyncStats(0, null)
     }
 
     @Test
@@ -88,9 +95,6 @@ class AssessmentPaperDetailViewModelTest {
             candidateRow("c3", "Three", SyncStatus.Synced),
             candidateRow("c4", "Four", SyncStatus.Synced),
         )
-        // A-S5: `totalCount` / `progressFraction` are driven by the live
-        // combine(assigned, started) flow; stub 4 assigned / 4 started to
-        // reproduce the pre-fix behaviour of 100% progress on this case.
         stubProgress(assigned = 4, started = 4)
 
         val vm = makeViewModel()
@@ -109,6 +113,20 @@ class AssessmentPaperDetailViewModelTest {
         assertEquals(CandidateSyncStatus.Synced, state.candidates[0].syncStatus)
         assertEquals("JS", state.candidates[1].initials)
         assertEquals(CandidateSyncStatus.Unsynced, state.candidates[1].syncStatus)
+        assertEquals("No data yet", state.lastUpdatedLabel)
+        assertEquals("Cloud Synced", state.syncStatusLabel)
+    }
+
+    @Test
+    fun `pending sync count surfaces on the progress chrome`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Success(paper())
+        coEvery { getCandidates("PE-2024", "") } returns emptyList()
+        coEvery { getSyncStats("PE-2024") } returns AssessmentSyncStats(pendingSyncCount = 5, lastSyncAt = null)
+
+        val vm = makeViewModel()
+        advanceUntilIdle()
+
+        assertEquals("Pending Sync (5)", vm.uiState.value.syncStatusLabel)
     }
 
     @Test
@@ -152,75 +170,43 @@ class AssessmentPaperDetailViewModelTest {
         )
 
         val vm = makeViewModel()
+        advanceUntilIdle()
 
         assertEquals("C", vm.uiState.value.candidates.single().initials)
     }
 
     @Test
-    fun `download flow Idle to WarningShown on click`() = runTest {
-        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+    fun `onSyncData runs sync, refreshes, and surfaces the sync result`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Success(paper())
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
+        coEvery { syncScores() } returns SyncBatchResult(attempted = 3, succeeded = 2, failed = 1)
 
         val vm = makeViewModel()
-        assertEquals(DownloadPackageUiState.Idle, vm.downloadState.value)
+        advanceUntilIdle()
+        vm.onSyncData()
+        advanceUntilIdle()
 
-        vm.onDownloadPackageClicked()
-
-        assertEquals(DownloadPackageUiState.WarningShown, vm.downloadState.value)
-    }
-
-    @Test
-    fun `download flow confirms with Success and refreshes screen`() = runTest {
-        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
-        coEvery { getCandidates("PE-2024", "") } returns emptyList()
-        coEvery { downloadPackage("PE-2024") } returns DownloadAssessmentPackageResult.Success(
-            scheduleId = "PE-2024",
-            candidatesCount = 42,
-            sectionsCount = 3,
-            questionsCount = 90,
+        assertEquals(
+            SyncOperationUiState.Result(succeeded = 2, failed = 1),
+            vm.syncState.value,
         )
-
-        val vm = makeViewModel()
-        vm.onDownloadPackageClicked()
-        vm.onDownloadConfirmed()
-
-        val terminal = vm.downloadState.value
-        assertTrue("expected Success terminal state, was $terminal", terminal is DownloadPackageUiState.Success)
-        val success = terminal as DownloadPackageUiState.Success
-        assertEquals(42, success.candidatesCount)
-        assertEquals(3, success.sectionsCount)
-        assertEquals(90, success.questionsCount)
-        // init + post-download refresh
+        coVerify(exactly = 1) { syncScores() }
         coVerify(exactly = 2) { getPaperDetail("PE-2024") }
-        coVerify(exactly = 2) { getCandidates("PE-2024", "") }
     }
 
     @Test
-    fun `download flow Error surfaces the use case message`() = runTest {
-        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
+    fun `onSyncResultDismissed resets sync state to Idle`() = runTest {
+        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.Success(paper())
         coEvery { getCandidates("PE-2024", "") } returns emptyList()
-        coEvery { downloadPackage("PE-2024") } returns
-            DownloadAssessmentPackageResult.Error("offline")
+        coEvery { syncScores() } returns SyncBatchResult.Empty
 
         val vm = makeViewModel()
-        vm.onDownloadPackageClicked()
-        vm.onDownloadConfirmed()
+        advanceUntilIdle()
+        vm.onSyncData()
+        advanceUntilIdle()
+        vm.onSyncResultDismissed()
 
-        val terminal = vm.downloadState.value
-        assertTrue("expected Error terminal state, was $terminal", terminal is DownloadPackageUiState.Error)
-        assertEquals("offline", (terminal as DownloadPackageUiState.Error).message)
-    }
-
-    @Test
-    fun `download flow dismiss falls back to Idle from WarningShown`() = runTest {
-        coEvery { getPaperDetail("PE-2024") } returns AssessmentPaperDetailResult.NotFound
-        coEvery { getCandidates("PE-2024", "") } returns emptyList()
-
-        val vm = makeViewModel()
-        vm.onDownloadPackageClicked()
-        vm.onDownloadDismissed()
-
-        assertEquals(DownloadPackageUiState.Idle, vm.downloadState.value)
+        assertEquals(SyncOperationUiState.Idle, vm.syncState.value)
     }
 
     private fun candidateRow(id: String, fullName: String, status: SyncStatus) =

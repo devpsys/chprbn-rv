@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.domain.repository
 
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
+import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSyncStats
 
 /**
  * Triggers a one-shot pass of the assessment-side sync queue (practical
@@ -14,4 +15,7 @@ import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
  */
 interface AssessmentSyncRepository {
     suspend fun syncPending(): SyncBatchResult
+
+    /** Pending/failed count + last successful sync time for [scheduleId]. */
+    suspend fun getSyncStats(scheduleId: String): AssessmentSyncStats
 }

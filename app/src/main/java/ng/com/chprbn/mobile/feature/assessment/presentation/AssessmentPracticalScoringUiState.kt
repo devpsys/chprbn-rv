@@ -16,8 +16,13 @@ data class ScoreQuestionUiState(
 }
 
 data class AssessmentPracticalScoringUiState(
-    /** Section heading rendered above the question list, e.g.
-     *  "Section A — Vital Signs". The screen uppercases for display. */
+    /** Section heading rendered above the question list — the downloaded
+     *  section name (e.g. "CHEW - Patient Assessment"). The screen
+     *  uppercases for display. */
     val sectionTitle: String = "",
     val questions: List<ScoreQuestionUiState> = emptyList(),
+    /** True while [AssessmentPracticalScoringViewModel.onSaveScores] is
+     *  committing the section; the Save FAB shows a spinner and ignores
+     *  further taps. */
+    val isSaving: Boolean = false,
 )

@@ -37,10 +37,29 @@ interface AssessmentCandidateDao {
     ): AssessmentCandidateEntity?
 
     /**
+     * QR/manual-entry candidate lookup. The scanned payload is the
+     * practitioner's registration/exam number, not a DB id — the sections
+     * hub and both scoring VMs use this to resolve the roster row before
+     * running the id-keyed reads and writes.
+     */
+    @Query(
+        """
+        SELECT c.* FROM assessment_candidates c
+        INNER JOIN schedule_candidate_assignments a ON a.candidateId = c.id
+        WHERE a.scheduleId = :scheduleId AND c.examNumber = :examNumber
+        LIMIT 1
+        """,
+    )
+    suspend fun getForScheduleByExamNumber(
+        scheduleId: String,
+        examNumber: String,
+    ): AssessmentCandidateEntity?
+
+    /**
      * Aggregates per-candidate scoring state for the candidates directory.
      *
-     * - `aggregateScore`: SUM of practical scores + the project score
-     *   (rounded to Int) — `0` when nothing is scored.
+     * - `aggregateScore`: the candidate's project score (rounded to Int)
+     *   — `0` when no project row exists. Practical marks are not included.
      * - `scoredQuestions` / `totalQuestions`: counts driving the
      *   "Synced/Unsynced" pill.
      * - `syncStatus`: derived in SQL with explicit priority
@@ -61,10 +80,6 @@ interface AssessmentCandidateDao {
             c.fullName                            AS fullName,
             c.photoUrl                            AS photoUrl,
             COALESCE((
-                SELECT SUM(ps.score) FROM practical_scores ps
-                WHERE ps.scheduleId = :scheduleId AND ps.candidateId = c.id
-            ), 0)
-            + COALESCE((
                 SELECT ROUND(pjs.score) FROM project_scores pjs
                 WHERE pjs.scheduleId = :scheduleId AND pjs.candidateId = c.id
             ), 0)                                 AS aggregateScore,

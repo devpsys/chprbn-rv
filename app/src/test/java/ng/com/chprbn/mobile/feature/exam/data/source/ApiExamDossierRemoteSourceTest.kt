@@ -1,7 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
 import android.util.Log
-import com.google.gson.JsonPrimitive
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -15,7 +14,9 @@ import ng.com.chprbn.mobile.feature.exam.data.dto.ExamDossierDataDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.ExamDossierEnvelopeDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.PaperCandidateAssignmentDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.PaperDto
+import ng.com.chprbn.mobile.feature.exam.data.dto.PracticalSectionWireDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.ScheduleDto
+import ng.com.chprbn.mobile.feature.exam.data.dto.SectionQuestionWireDto
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -327,7 +328,9 @@ class ApiExamDossierRemoteSourceTest {
         coEvery { api.fetchDossier() } returns Response.success(
             envelope(
                 center = CenterDto(id = "ctr_1"),
-                sections = listOf(JsonPrimitive("placeholder")),
+                sections = listOf(
+                    PracticalSectionWireDto(id = 1, name = "S1", status = 1, questions = emptyList()),
+                ),
             ),
         )
 
@@ -343,11 +346,56 @@ class ApiExamDossierRemoteSourceTest {
         assertEquals(false, source.fetchDossier()?.center?.hasSections)
     }
 
+    @Test
+    fun `fans out top-level sections+questions across every practical paper`() = runTest {
+        // Wire has ONE sections[] but two practical papers — the mapper
+        // replicates the section-set against each paper, with PKs
+        // namespaced by paper id so both live in the bundle without
+        // clashing on the assessment DB's PK.
+        coEvery { api.fetchDossier() } returns Response.success(
+            envelope(
+                center = CenterDto(id = "ctr_1"),
+                papers = listOf(
+                    PaperDto(id = "pe1", code = "PE", name = "Practical A"),
+                    PaperDto(id = "pa1", code = "PA", name = "Project B"),
+                    PaperDto(id = "th1", code = "P1", name = "Theory"),
+                ),
+                sections = listOf(
+                    PracticalSectionWireDto(
+                        id = 1,
+                        name = "JCHEW - Common Complaints",
+                        status = 1,
+                        questions = listOf(
+                            SectionQuestionWireDto(id = 1, sectionId = 1, name = "Rapport", mark = 3, status = 1),
+                            SectionQuestionWireDto(id = 2, sectionId = 1, name = "Purpose", mark = 2, status = 1),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val bundle = source.fetchDossier()
+        assertEquals(2, bundle?.practicalSections?.size)
+        assertEquals(
+            setOf("pe1", "pa1"),
+            bundle?.practicalSections?.map { it.scheduleId }?.toSet(),
+        )
+        assertEquals(4, bundle?.practicalQuestions?.size)
+        // PKs must be paper-namespaced.
+        assertEquals(
+            setOf("pe1-sec-1", "pa1-sec-1"),
+            bundle?.practicalSections?.map { it.id }?.toSet(),
+        )
+        // maxScore comes from the wire's `mark` field.
+        val firstQuestion = bundle?.practicalQuestions?.firstOrNull { it.id == "pe1-sec-1-q1" }
+        assertEquals(3, firstQuestion?.maxScore)
+    }
+
     private fun envelope(
         center: CenterDto? = CenterDto(id = "ctr_1"),
         papers: List<PaperDto> = emptyList(),
         schedules: List<ScheduleDto> = emptyList(),
-        sections: List<com.google.gson.JsonElement>? = null,
+        sections: List<PracticalSectionWireDto>? = null,
     ) = ExamDossierEnvelopeDto(
         success = true,
         data = ExamDossierDataDto(

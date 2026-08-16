@@ -113,6 +113,8 @@ class ExamStatisticsViewModel @Inject constructor(
         return ExamStatisticsUiState(
             recordsDownloaded = recordsDownloaded.toString(),
             attendanceCaptured = attendanceCaptured.toString(),
+            practicalCaptured = practicalCaptured.toString(),
+            projectCaptured = projectCaptured.toString(),
             syncedRecords = syncedCount.toString(),
             recordsUpdatedLabel = formatLastUpdated(lastUpdatedAt),
             attendanceSubtitle = if (recordsDownloaded > 0) {
@@ -120,6 +122,8 @@ class ExamStatisticsViewModel @Inject constructor(
             } else {
                 "—"
             },
+            practicalSubtitle = capturedSubtitle(practicalCaptured),
+            projectSubtitle = capturedSubtitle(projectCaptured),
             syncProgressFraction = syncedFrac,
             cachedBarFraction = cachedFrac,
             syncedBarFraction = syncedFrac,
@@ -132,6 +136,13 @@ class ExamStatisticsViewModel @Inject constructor(
             illustrationImageUrl = EXAM_STATISTICS_HERO_IMAGE_URL,
         )
     }
+
+    private fun capturedSubtitle(count: Int): String =
+        if (count == 0) {
+            "—"
+        } else {
+            context.getString(R.string.exam_statistics_captured_on_device)
+        }
 
     private fun formatLastUpdated(at: Long?): String {
         if (at == null || at == 0L) return context.getString(R.string.exam_paper_no_data_yet)

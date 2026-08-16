@@ -18,6 +18,9 @@ import javax.inject.Inject
  * parameter is forwarded directly. The `totalCount` header reflects the
  * **unfiltered** cohort size so it doesn't shrink as the user types; the
  * `candidates` list reflects the filter.
+ *
+ * [refresh] re-reads scores so popping back from a scoring screen doesn't
+ * leave stale pills.
  */
 @HiltViewModel
 class AssessmentCandidatesViewModel @Inject constructor(
@@ -31,12 +34,19 @@ class AssessmentCandidatesViewModel @Inject constructor(
     val uiState: StateFlow<AssessmentCandidatesUiState> = _uiState.asStateFlow()
 
     init {
+        refresh()
+    }
+
+    fun refresh() {
+        val query = _uiState.value.query
         viewModelScope.launch {
-            val all = getCandidates(scheduleId)
-            _uiState.update {
-                it.copy(
+            val all = getCandidates(scheduleId, "")
+            val visible = if (query.isBlank()) all else getCandidates(scheduleId, query)
+            _uiState.update { current ->
+                if (current.query != query) current
+                else current.copy(
                     totalCount = all.size,
-                    candidates = all.map { row -> row.toCard() },
+                    candidates = visible.map { it.toCard() },
                 )
             }
         }

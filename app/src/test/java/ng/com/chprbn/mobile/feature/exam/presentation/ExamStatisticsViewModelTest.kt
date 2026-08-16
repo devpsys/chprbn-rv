@@ -30,6 +30,7 @@ class ExamStatisticsViewModelTest {
     private val context = mockk<Context> {
         every { getString(R.string.exam_paper_no_data_yet) } returns "No data yet"
         every { getString(R.string.exam_statistics_updated_just_now) } returns "Updated just now"
+        every { getString(R.string.exam_statistics_captured_on_device) } returns "On this device"
         // Context.getString(int, vararg Any?) — see SyncViewModelTest for the
         // vararg-matching rationale.
         every { getString(R.string.exam_statistics_updated_minutes_ago_format, *anyVararg()) } answers {
@@ -51,6 +52,8 @@ class ExamStatisticsViewModelTest {
         coEvery { getStatistics() } returns stats(
             recordsDownloaded = 100,
             attendanceCaptured = 80,
+            practicalCaptured = 12,
+            projectCaptured = 4,
             syncedCount = 50,
             cachedCount = 100,
             pendingCount = 30,
@@ -63,8 +66,12 @@ class ExamStatisticsViewModelTest {
         val state = viewModel.uiState.value
         assertEquals("100", state.recordsDownloaded)
         assertEquals("80", state.attendanceCaptured)
+        assertEquals("12", state.practicalCaptured)
+        assertEquals("4", state.projectCaptured)
         assertEquals("50", state.syncedRecords)
         assertEquals("80% Completion", state.attendanceSubtitle)
+        assertEquals("On this device", state.practicalSubtitle)
+        assertEquals("On this device", state.projectSubtitle)
         assertEquals("No data yet", state.recordsUpdatedLabel)
         assertEquals(0.5f, state.syncProgressFraction)
         assertEquals(0.3f, state.cachedBarFraction)
@@ -104,6 +111,8 @@ class ExamStatisticsViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("—", state.attendanceSubtitle)
+        assertEquals("—", state.practicalSubtitle)
+        assertEquals("—", state.projectSubtitle)
         assertTrue(state.syncProgressFraction in 0f..1f)
     }
 
@@ -189,6 +198,8 @@ class ExamStatisticsViewModelTest {
     private fun stats(
         recordsDownloaded: Int = 0,
         attendanceCaptured: Int = 0,
+        practicalCaptured: Int = 0,
+        projectCaptured: Int = 0,
         syncedCount: Int = 0,
         cachedCount: Int = 0,
         pendingCount: Int = 0,
@@ -197,6 +208,8 @@ class ExamStatisticsViewModelTest {
     ) = ExamStatistics(
         recordsDownloaded = recordsDownloaded,
         attendanceCaptured = attendanceCaptured,
+        practicalCaptured = practicalCaptured,
+        projectCaptured = projectCaptured,
         syncedCount = syncedCount,
         cachedCount = cachedCount,
         pendingCount = pendingCount,

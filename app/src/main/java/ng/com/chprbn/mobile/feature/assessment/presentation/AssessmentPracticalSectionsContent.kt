@@ -33,7 +33,10 @@ import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.PendingActions
+import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.icons.outlined.School
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -65,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -128,36 +132,50 @@ fun AssessmentPracticalSectionsContent(
                 PracticalSectionsTopBar(onBack = onBack)
             },
             floatingActionButton = {
-                AssessProjectFab(onClick = onAssessProject)
+                // Suppress the FAB in the "candidate not found" state —
+                // routing to Assess Project without a valid roster
+                // resolution just dead-ends.
+                if (!uiState.candidateNotFound) {
+                    AssessProjectFab(onClick = onAssessProject)
+                }
             },
         ) { paddingValues ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 16.dp,
-                    // Trailing space sized to clear the Extended FAB so the
-                    // last card scrolls fully into view above it.
-                    bottom = 96.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                item {
-                    CandidateSummaryCard(
-                        uiState = uiState,
-                        onPhotoClick = { isPhotoExpanded = true },
-                        onAvatarPositioned = { avatarCenter = it },
-                        avatarVisible = !isMorphActive,
-                    )
-                }
-                items(items = uiState.sections, key = { it.id }) { section ->
-                    SectionCard(
-                        section = section,
-                        onClick = { onSectionClick(section) },
-                    )
+            when {
+                uiState.candidateNotFound -> CandidateNotFoundState(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    scannedExamNumber = uiState.candidateExamId,
+                    onBack = onBack,
+                )
+                else -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        // Trailing space sized to clear the Extended FAB so the
+                        // last card scrolls fully into view above it.
+                        bottom = 96.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    item {
+                        CandidateSummaryCard(
+                            uiState = uiState,
+                            onPhotoClick = { isPhotoExpanded = true },
+                            onAvatarPositioned = { avatarCenter = it },
+                            avatarVisible = !isMorphActive,
+                        )
+                    }
+                    items(items = uiState.sections, key = { it.id }) { section ->
+                        SectionCard(
+                            section = section,
+                            onClick = { onSectionClick(section) },
+                        )
+                    }
                 }
             }
         }
@@ -302,7 +320,7 @@ private fun CandidateSummaryCard(
                 ) {
                     Text(
                         text = uiState.candidateName,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = scheme.onSurface,
                         maxLines = 1,
@@ -426,10 +444,12 @@ private fun SectionCard(
             R.string.assessment_practical_sections_complete_updated_format,
             section.footerText,
         )
+
         PracticalSectionStatus.Incomplete -> stringResource(
             R.string.assessment_practical_sections_incomplete_remaining_format,
             section.footerText.toIntOrNull() ?: 0,
         )
+
         PracticalSectionStatus.NotStarted -> stringResource(
             R.string.assessment_practical_sections_not_started_caption,
         )
@@ -662,6 +682,58 @@ private fun ExpandedPhotoOverlay(
 }
 
 @Composable
+private fun CandidateNotFoundState(
+    modifier: Modifier = Modifier,
+    scannedExamNumber: String,
+    onBack: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier.padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.PersonOff,
+            contentDescription = null,
+            tint = scheme.onSurfaceVariant,
+            modifier = Modifier.size(64.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.assessment_practical_sections_not_found_title),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = scheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(
+                R.string.assessment_practical_sections_not_found_body_format,
+                scannedExamNumber,
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = scheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onBack,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = scheme.primary,
+                contentColor = scheme.onPrimary,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.assessment_practical_sections_not_found_action_back),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
 private fun AssessProjectFab(onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     ExtendedFloatingActionButton(
@@ -692,32 +764,25 @@ private fun AssessmentPracticalSectionsContentPreview() {
         AssessmentPracticalSectionsContent(
             uiState = AssessmentPracticalSectionsUiState(
                 candidateName = "Jane Doe",
-                candidateExamId = "EXAM-2024-001",
+                candidateExamId = "B/213/010/21",
                 candidatePhotoUrl = null,
                 sectionsDone = 1,
-                sectionsTotal = 3,
-                sectionsRemaining = 2,
+                sectionsTotal = 2,
+                sectionsRemaining = 1,
                 sections = listOf(
                     PracticalSectionUiState(
-                        id = "A",
-                        sectionTitle = "Section A",
-                        sectionSubtitle = "Patient Assessment",
+                        id = "chew-1",
+                        sectionTitle = "Section CHEW - Patient Assessment",
+                        sectionSubtitle = "",
                         status = PracticalSectionStatus.Complete,
                         footerText = "09:45 AM",
                     ),
                     PracticalSectionUiState(
-                        id = "B",
-                        sectionTitle = "Section B",
-                        sectionSubtitle = "Clinical Diagnosis",
+                        id = "chew-2",
+                        sectionTitle = "Section CHEW - Clinical Diagnosis",
+                        sectionSubtitle = "",
                         status = PracticalSectionStatus.Incomplete,
                         footerText = "2",
-                    ),
-                    PracticalSectionUiState(
-                        id = "C",
-                        sectionTitle = "Section C",
-                        sectionSubtitle = "Ethical Standards",
-                        status = PracticalSectionStatus.NotStarted,
-                        footerText = "",
                     ),
                 ),
             ),

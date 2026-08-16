@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.assessment.presentation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import org.junit.Rule
@@ -55,5 +56,19 @@ class AssessmentProjectAssessmentContentRenderTest {
 
         // The default-empty scoreText path uses a 0.0 placeholder.
         composeRule.onNodeWithText("0.0").assertExists()
+    }
+
+    @Test
+    fun save_fab_shows_spinner_while_saving() {
+        composeRule.setContent {
+            ChprbnTheme {
+                AssessmentProjectAssessmentContent(
+                    uiState = AssessmentProjectAssessmentUiState(isSaving = true),
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Saving score").assertExists()
+        composeRule.onNodeWithText("Save Score").assertExists()
     }
 }

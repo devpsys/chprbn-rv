@@ -88,6 +88,30 @@ class PracticalScoreDaoTest {
     }
 
     @Test
+    fun globalCountsIgnoreScheduleAndPickLatestScoredAt() = runTest {
+        dao.upsert(score(scheduleId = "s1", questionId = "q1", status = SyncStatus.Pending, scoredAt = 100L))
+        dao.upsert(score(scheduleId = "s1", questionId = "q2", status = SyncStatus.Synced, scoredAt = 300L))
+        dao.upsert(score(scheduleId = "s2", questionId = "q1", status = SyncStatus.Failed, scoredAt = 200L))
+
+        assertEquals(3, dao.totalCount())
+        assertEquals(1, dao.countByStatus(SyncStatus.Pending.name))
+        assertEquals(1, dao.countByStatus(SyncStatus.Synced.name))
+        assertEquals(1, dao.countByStatus(SyncStatus.Failed.name))
+        assertEquals(300L, dao.mostRecentScoredAt())
+    }
+
+    @Test
+    fun assessedCandidateCountIsDistinctPerSchedule() = runTest {
+        dao.upsert(score(scheduleId = "s1", candidateId = "c1", questionId = "q1"))
+        dao.upsert(score(scheduleId = "s1", candidateId = "c1", questionId = "q2"))
+        dao.upsert(score(scheduleId = "s1", candidateId = "c2", questionId = "q1"))
+        dao.upsert(score(scheduleId = "s2", candidateId = "c1", questionId = "q1"))
+
+        assertEquals(3, dao.assessedCandidateCount())
+        assertEquals(4, dao.totalCount())
+    }
+
+    @Test
     fun deleteForScheduleRemovesOnlyThatSchedule() = runTest {
         dao.upsert(score(scheduleId = "s1", questionId = "q1"))
         dao.upsert(score(scheduleId = "s2", questionId = "q1"))
@@ -105,12 +129,13 @@ class PracticalScoreDaoTest {
         questionId: String = "q1",
         score: Int = 5,
         status: SyncStatus = SyncStatus.Pending,
+        scoredAt: Long = 1_700_000_000_000L,
     ) = PracticalScoreEntity(
         scheduleId = scheduleId,
         candidateId = candidateId,
         questionId = questionId,
         score = score,
-        scoredAt = 1_700_000_000_000L,
+        scoredAt = scoredAt,
         syncStatus = status.name,
     )
 }

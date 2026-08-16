@@ -18,6 +18,8 @@ class GetExamStatisticsUseCaseTest {
         val stats = ExamStatistics(
             recordsDownloaded = 100,
             attendanceCaptured = 60,
+            practicalCaptured = 12,
+            projectCaptured = 4,
             syncedCount = 50,
             cachedCount = 100,
             pendingCount = 10,

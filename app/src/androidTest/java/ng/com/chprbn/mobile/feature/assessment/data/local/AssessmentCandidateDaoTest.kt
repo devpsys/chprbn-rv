@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
  * Exercises the `rowsForSchedule` aggregation query — the heaviest piece of
  * SQL in the assessment feature. Covers:
  *
- * - the SUM-based [aggregateScore] across practical + project rows,
+ * - [aggregateScore] as the rounded project score only,
  * - the [scoredQuestions] / [totalQuestions] derivation from `section_questions`,
  * - the `CASE WHEN` syncStatus priority `Failed > Pending > Synced`,
  * - the free-text filter parameter.
@@ -52,7 +52,7 @@ class AssessmentCandidateDaoTest {
     }
 
     @Test
-    fun aggregateScoreSumsPracticalAndProject() = runTest {
+    fun aggregateScoreIsRoundedProjectOnly() = runTest {
         seedScheduleS1()
         candidateDao.upsertAll(listOf(candidate("c1", "EX-1", "Jane Doe")))
         candidateDao.upsertAssignments(listOf(assignment("s1", "c1")))
@@ -63,8 +63,8 @@ class AssessmentCandidateDaoTest {
         val rows = candidateDao.rowsForSchedule("s1", "")
 
         assertEquals(1, rows.size)
-        // 5 + 3 + ROUND(7.6) = 5 + 3 + 8 = 16
-        assertEquals(16, rows.single().aggregateScore)
+        // ROUND(7.6) = 8 — practical marks are not included.
+        assertEquals(8, rows.single().aggregateScore)
         assertEquals(2, rows.single().scoredQuestions)
         assertEquals(2, rows.single().totalQuestions)
     }

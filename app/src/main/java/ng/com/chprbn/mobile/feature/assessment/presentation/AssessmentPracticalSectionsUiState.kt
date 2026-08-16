@@ -29,5 +29,17 @@ data class AssessmentPracticalSectionsUiState(
     val sectionsDone: Int = 0,
     val sectionsTotal: Int = 0,
     val sectionsRemaining: Int = 0,
+    /**
+     * Cadre-filtered section cards for this candidate. The ViewModel keeps
+     * only sections whose name matches the exam-number prefix
+     * (A/B/C/D → CHO/CHEW/JCHEW/BCHS); [sectionsDone]/[sectionsTotal]/
+     * [sectionsRemaining] are counted against this list.
+     */
     val sections: List<PracticalSectionUiState> = emptyList(),
+    /**
+     * The scanned/entered candidate isn't on this schedule's roster.
+     * The screen shows a full-screen "not on this schedule" state and
+     * hides the section list + Assess Project FAB.
+     */
+    val candidateNotFound: Boolean = false,
 )

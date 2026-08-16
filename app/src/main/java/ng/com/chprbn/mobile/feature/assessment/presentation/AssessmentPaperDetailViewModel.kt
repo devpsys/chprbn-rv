@@ -1,25 +1,32 @@
 package ng.com.chprbn.mobile.feature.assessment.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentCandidateRow
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaper
 import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentPaperDetailResult
-import ng.com.chprbn.mobile.feature.assessment.domain.model.DownloadAssessmentPackageResult
+import ng.com.chprbn.mobile.feature.assessment.domain.model.AssessmentSyncStats
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.AssessmentCandidateRepository
 import ng.com.chprbn.mobile.feature.assessment.domain.repository.PracticalScoringRepository
-import ng.com.chprbn.mobile.feature.assessment.domain.usecase.DownloadAssessmentPackageUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentCandidatesUseCase
 import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentPaperDetailUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.GetAssessmentSyncStatsUseCase
+import ng.com.chprbn.mobile.feature.assessment.domain.usecase.SyncAssessmentScoresUseCase
+import ng.com.chprbn.mobile.feature.exam.presentation.SyncOperationUiState
+import java.time.Duration
+import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -31,18 +38,22 @@ import javax.inject.Inject
  * is a pragmatic proxy for check-in until the assessment side models
  * per-paper attendance (A-S5 audit fix; was hardcoded 100%).
  *
- * Also owns the per-schedule package-download flow, triggered from the
- * screen's overflow action: warning dialog → loading overlay → success
- * / error result.
+ * Sync chrome ([AssessmentPaperDetailUiState.lastUpdatedLabel] /
+ * [AssessmentPaperDetailUiState.syncStatusLabel]) is loaded in [refresh]
+ * from practical + project score rows. [onSyncData] runs
+ * [SyncAssessmentScoresUseCase] (both score types share the queue) and
+ * re-reads those stats.
  */
 @HiltViewModel
 class AssessmentPaperDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getPaperDetail: GetAssessmentPaperDetailUseCase,
     private val getCandidates: GetAssessmentCandidatesUseCase,
-    private val downloadPackage: DownloadAssessmentPackageUseCase,
+    private val getSyncStats: GetAssessmentSyncStatsUseCase,
+    private val syncScores: SyncAssessmentScoresUseCase,
     private val candidateRepository: AssessmentCandidateRepository,
     private val practicalScoringRepository: PracticalScoringRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val scheduleId: String = savedStateHandle.get<String>("scheduleId").orEmpty()
@@ -50,9 +61,8 @@ class AssessmentPaperDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AssessmentPaperDetailUiState())
     val uiState: StateFlow<AssessmentPaperDetailUiState> = _uiState.asStateFlow()
 
-    private val _downloadState =
-        MutableStateFlow<DownloadPackageUiState>(DownloadPackageUiState.Idle)
-    val downloadState: StateFlow<DownloadPackageUiState> = _downloadState.asStateFlow()
+    private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
+    val syncState: StateFlow<SyncOperationUiState> = _syncState.asStateFlow()
 
     init {
         refresh()
@@ -92,72 +102,109 @@ class AssessmentPaperDetailViewModel @Inject constructor(
         }
     }
 
-    private fun refresh() {
+    fun refresh() {
         viewModelScope.launch {
             val paperResult = getPaperDetail(scheduleId)
             val candidates = getCandidates(scheduleId)
-            applyResults(paperResult, candidates)
+            val stats = getSyncStats(scheduleId)
+            applyResults(paperResult, candidates, stats)
         }
     }
 
-    fun onDownloadPackageClicked() {
-        if (_downloadState.value !is DownloadPackageUiState.Downloading) {
-            _downloadState.value = DownloadPackageUiState.WarningShown
-        }
-    }
-
-    fun onDownloadConfirmed() {
-        if (_downloadState.value is DownloadPackageUiState.Downloading) return
-        _downloadState.value = DownloadPackageUiState.Downloading
+    fun onSyncData() {
+        if (_syncState.value is SyncOperationUiState.Syncing) return
+        _syncState.value = SyncOperationUiState.Syncing
         viewModelScope.launch {
-            _downloadState.value = when (val result = downloadPackage(scheduleId)) {
-                is DownloadAssessmentPackageResult.Success -> {
-                    refresh()
-                    DownloadPackageUiState.Success(
-                        candidatesCount = result.candidatesCount,
-                        sectionsCount = result.sectionsCount,
-                        questionsCount = result.questionsCount,
-                    )
-                }
-                is DownloadAssessmentPackageResult.Error ->
-                    DownloadPackageUiState.Error(result.message)
-            }
+            val result = syncScores()
+            refresh()
+            _syncState.value = SyncOperationUiState.Result(
+                succeeded = result.succeeded,
+                failed = result.failed,
+            )
         }
     }
 
-    fun onDownloadDismissed() {
-        if (_downloadState.value !is DownloadPackageUiState.Downloading) {
-            _downloadState.value = DownloadPackageUiState.Idle
-        }
+    fun onSyncResultDismissed() {
+        _syncState.value = SyncOperationUiState.Idle
     }
 
     private fun applyResults(
         paperResult: AssessmentPaperDetailResult,
         candidates: List<AssessmentCandidateRow>,
+        stats: AssessmentSyncStats,
     ) {
         val total = candidates.size
         val previewRows = candidates.take(PREVIEW_ROW_COUNT).map { it.toPreviewRow() }
+        val syncChrome = syncChrome(stats)
 
         when (paperResult) {
             is AssessmentPaperDetailResult.Success -> _uiState.update { current ->
-                paperResult.paper.applyTo(current, total, previewRows).copy(errorMessage = null)
+                paperResult.paper.applyTo(current, total, previewRows)
+                    .copy(
+                        errorMessage = null,
+                        lastUpdatedLabel = syncChrome.first,
+                        syncStatusLabel = syncChrome.second,
+                    )
             }
             AssessmentPaperDetailResult.NotFound -> _uiState.update { current ->
                 current.copy(
                     candidates = previewRows,
                     totalCount = total,
-                    errorMessage = "This paper isn't in your cache yet — download the package to view details.",
+                    lastUpdatedLabel = syncChrome.first,
+                    syncStatusLabel = syncChrome.second,
+                    errorMessage = "This paper isn't in the current dossier — pull a fresh dossier from the dashboard to load its details.",
                 )
             }
             is AssessmentPaperDetailResult.Error -> _uiState.update { current ->
                 current.copy(
                     candidates = previewRows,
                     totalCount = total,
+                    lastUpdatedLabel = syncChrome.first,
+                    syncStatusLabel = syncChrome.second,
                     errorMessage = paperResult.message.ifBlank {
                         "Could not load paper details."
                     },
                 )
             }
+        }
+    }
+
+    private fun syncChrome(stats: AssessmentSyncStats): Pair<String, String> {
+        val lastUpdated = formatLastUpdated(stats.lastSyncAt)
+        val syncStatus = if (stats.pendingSyncCount > 0) {
+            context.getString(
+                R.string.assessment_paper_detail_pending_sync_format,
+                stats.pendingSyncCount,
+            )
+        } else {
+            context.getString(R.string.assessment_paper_detail_sync_status_cloud_synced)
+        }
+        return lastUpdated to syncStatus
+    }
+
+    private fun formatLastUpdated(at: Long?): String {
+        if (at == null || at == 0L) {
+            return context.getString(R.string.assessment_paper_detail_no_data_yet)
+        }
+        val elapsed = Duration.between(Instant.ofEpochMilli(at), Instant.now())
+        return when {
+            elapsed.toMinutes() < 1 ->
+                context.getString(R.string.assessment_paper_detail_last_updated_just_now)
+            elapsed.toMinutes() < 60 ->
+                context.getString(
+                    R.string.assessment_paper_detail_last_updated_minutes_format,
+                    elapsed.toMinutes(),
+                )
+            elapsed.toHours() < 24 ->
+                context.getString(
+                    R.string.assessment_paper_detail_last_updated_hours_format,
+                    elapsed.toHours(),
+                )
+            else ->
+                context.getString(
+                    R.string.assessment_paper_detail_last_updated_days_format,
+                    elapsed.toDays(),
+                )
         }
     }
 
@@ -201,16 +248,4 @@ class AssessmentPaperDetailViewModel @Inject constructor(
     private companion object {
         const val PREVIEW_ROW_COUNT = 2
     }
-}
-
-sealed interface DownloadPackageUiState {
-    data object Idle : DownloadPackageUiState
-    data object WarningShown : DownloadPackageUiState
-    data object Downloading : DownloadPackageUiState
-    data class Success(
-        val candidatesCount: Int,
-        val sectionsCount: Int,
-        val questionsCount: Int,
-    ) : DownloadPackageUiState
-    data class Error(val message: String) : DownloadPackageUiState
 }

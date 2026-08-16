@@ -25,8 +25,10 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,9 +92,13 @@ fun ExamStatisticsContent(
             SummaryCardsSection(
                 recordsDownloaded = uiState.recordsDownloaded,
                 attendanceCaptured = uiState.attendanceCaptured,
+                practicalCaptured = uiState.practicalCaptured,
+                projectCaptured = uiState.projectCaptured,
                 syncedRecords = uiState.syncedRecords,
                 recordsUpdatedLabel = uiState.recordsUpdatedLabel,
                 attendanceSubtitle = uiState.attendanceSubtitle,
+                practicalSubtitle = uiState.practicalSubtitle,
+                projectSubtitle = uiState.projectSubtitle,
                 syncProgressFraction = uiState.syncProgressFraction
             )
             SyncComparisonSection(
@@ -217,7 +223,7 @@ private fun ExamStatisticsTopBar(
                 fontWeight = FontWeight.Bold,
                 color = scheme.onBackground,
                 modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Left
             )
             IconButton(
                 onClick = onRefresh,
@@ -238,141 +244,215 @@ private fun ExamStatisticsTopBar(
 private fun SummaryCardsSection(
     recordsDownloaded: String,
     attendanceCaptured: String,
+    practicalCaptured: String,
+    projectCaptured: String,
     syncedRecords: String,
     recordsUpdatedLabel: String,
     attendanceSubtitle: String,
+    practicalSubtitle: String,
+    projectSubtitle: String,
     syncProgressFraction: Float
 ) {
-    val scheme = MaterialTheme.colorScheme
+    val gap = 16.dp
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
         val compact = maxWidth < 400.dp
-        val gap = 16.dp
         if (compact) {
             Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                SummaryMetricCard(
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Download,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_records_downloaded),
-                    value = recordsDownloaded,
-                    footer = {
-                        Text(
-                            recordsUpdatedLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = scheme.onSurfaceVariant
-                        )
-                    }
-                )
-                SummaryMetricCard(
-                    icon = {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.Assignment,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_attendance_captured),
-                    value = attendanceCaptured,
-                    footer = {
-                        Text(
-                            attendanceSubtitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = scheme.primary
-                        )
-                    }
-                )
-                SummaryMetricCard(
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Sync,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_synced_records),
-                    value = syncedRecords,
-                    footer = {
-                        LinearSyncProgress(fraction = syncProgressFraction)
-                    }
-                )
+                DownloadedMetricCard(recordsDownloaded, recordsUpdatedLabel)
+                AttendanceMetricCard(attendanceCaptured, attendanceSubtitle)
+                PracticalMetricCard(practicalCaptured, practicalSubtitle)
+                ProjectMetricCard(projectCaptured, projectSubtitle)
+                SyncedMetricCard(syncedRecords, syncProgressFraction)
             }
         } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(gap)
-            ) {
-                SummaryMetricCard(
-                    modifier = Modifier.weight(1f),
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Download,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_records_downloaded),
-                    value = recordsDownloaded,
-                    footer = {
-                        Text(
-                            recordsUpdatedLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = scheme.onSurfaceVariant
-                        )
-                    }
-                )
-                SummaryMetricCard(
-                    modifier = Modifier.weight(1f),
-                    icon = {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.Assignment,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_attendance_captured),
-                    value = attendanceCaptured,
-                    footer = {
-                        Text(
-                            attendanceSubtitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = scheme.primary
-                        )
-                    }
-                )
-                SummaryMetricCard(
-                    modifier = Modifier.weight(1f),
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Sync,
-                            null,
-                            tint = scheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    label = stringResource(R.string.exam_statistics_stat_synced_records),
-                    value = syncedRecords,
-                    footer = {
-                        LinearSyncProgress(fraction = syncProgressFraction)
-                    }
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    DownloadedMetricCard(
+                        recordsDownloaded,
+                        recordsUpdatedLabel,
+                        modifier = Modifier.weight(1f),
+                    )
+                    AttendanceMetricCard(
+                        attendanceCaptured,
+                        attendanceSubtitle,
+                        modifier = Modifier.weight(1f),
+                    )
+                    PracticalMetricCard(
+                        practicalCaptured,
+                        practicalSubtitle,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    ProjectMetricCard(
+                        projectCaptured,
+                        projectSubtitle,
+                        modifier = Modifier.weight(1f),
+                    )
+                    SyncedMetricCard(
+                        syncedRecords,
+                        syncProgressFraction,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
+}
+
+@Composable
+private fun DownloadedMetricCard(
+    value: String,
+    updatedLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    SummaryMetricCard(
+        modifier = modifier,
+        icon = {
+            Icon(
+                Icons.Outlined.Download,
+                null,
+                tint = scheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        label = stringResource(R.string.exam_statistics_stat_records_downloaded),
+        value = value,
+        footer = {
+            Text(
+                updatedLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = scheme.onSurfaceVariant
+            )
+        }
+    )
+}
+
+@Composable
+private fun AttendanceMetricCard(
+    value: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    SummaryMetricCard(
+        modifier = modifier,
+        icon = {
+            Icon(
+                Icons.AutoMirrored.Outlined.Assignment,
+                null,
+                tint = scheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        label = stringResource(R.string.exam_statistics_stat_attendance_captured),
+        value = value,
+        footer = {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = scheme.primary
+            )
+        }
+    )
+}
+
+@Composable
+private fun PracticalMetricCard(
+    value: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    SummaryMetricCard(
+        modifier = modifier,
+        icon = {
+            Icon(
+                Icons.Outlined.Science,
+                null,
+                tint = scheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        label = stringResource(R.string.exam_statistics_stat_practical_captured),
+        value = value,
+        footer = {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = scheme.primary
+            )
+        }
+    )
+}
+
+@Composable
+private fun ProjectMetricCard(
+    value: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    SummaryMetricCard(
+        modifier = modifier,
+        icon = {
+            Icon(
+                Icons.Outlined.Description,
+                null,
+                tint = scheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        label = stringResource(R.string.exam_statistics_stat_project_captured),
+        value = value,
+        footer = {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = scheme.primary
+            )
+        }
+    )
+}
+
+@Composable
+private fun SyncedMetricCard(
+    value: String,
+    syncProgressFraction: Float,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    SummaryMetricCard(
+        modifier = modifier,
+        icon = {
+            Icon(
+                Icons.Outlined.Sync,
+                null,
+                tint = scheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        label = stringResource(R.string.exam_statistics_stat_synced_records),
+        value = value,
+        footer = {
+            LinearSyncProgress(fraction = syncProgressFraction)
+        }
+    )
 }
 
 @Composable

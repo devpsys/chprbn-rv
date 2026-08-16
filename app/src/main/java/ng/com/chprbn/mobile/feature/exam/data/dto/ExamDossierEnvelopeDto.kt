@@ -1,6 +1,5 @@
 package ng.com.chprbn.mobile.feature.exam.data.dto
 
-import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 
 /**
@@ -38,14 +37,17 @@ data class ExamDossierDataDto(
     /** Confirmed live (`docs/mobile-api-guide.html` §4) — required verbatim on every `attendance/push-record` row. */
     @SerializedName("year") val year: Int? = null,
     /**
-     * Always empty in every real response seen so far — element shape is
-     * unconfirmed, so this is parsed generically via [JsonElement] rather
-     * than a concrete DTO. [ApiExamDossierRemoteSource][ng.com.chprbn.mobile.feature.exam.data.source.ApiExamDossierRemoteSource]
-     * only checks non-emptiness (drives the dashboard's Practical
-     * Assessment card via `Center.hasSections`) — it never reads into an
-     * individual element.
+     * Practical-assessment reference data — one section per row with its
+     * questions nested. Shape confirmed against a live payload
+     * (2026-08-16). The wire carries a single top-level `sections[]` for
+     * the whole dossier, not per-paper; [ApiExamDossierRemoteSource]
+     * [ng.com.chprbn.mobile.feature.exam.data.source.ApiExamDossierRemoteSource]
+     * fans this out to every PE/PA paper on the response.
+     *
+     * Also drives the dashboard's Practical Assessment card via
+     * `Center.hasSections` (non-emptiness only).
      */
-    @SerializedName("sections") val sections: List<JsonElement>? = null,
+    @SerializedName("sections") val sections: List<PracticalSectionWireDto>? = null,
 )
 
 /**

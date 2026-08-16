@@ -482,7 +482,12 @@
     <string name="exam_statistics_action_clear_cached">Clear Cached Records</string>
     <string name="exam_statistics_stat_records_downloaded">Records Downloaded</string>
     <string name="exam_statistics_stat_attendance_captured">Attendance Captured</string>
+    <string name="exam_statistics_stat_practical_captured">Practical Captured</string>
+    <string name="exam_statistics_stat_project_captured">Project Captured</string>
     <string name="exam_statistics_stat_synced_records">Synced Records</string>
+    <string name="exam_statistics_captured_on_device">On this device</string>
+    <string name="exam_statistics_sync_loading_title">Syncing Attendance, Practical &amp; Project Records…</string>
+    <string name="exam_statistics_sync_loading_subtitle">Securely uploading attendance and scored records to the central server. This may take a few moments.</string>
     <string name="exam_statistics_section_sync_status">Sync Status Comparison</string>
     <string name="exam_statistics_caption_cached">Cached</string>
     <string name="exam_statistics_caption_synced">Synced</string>
@@ -543,6 +548,16 @@
     <string name="assessment_paper_detail_directory_status_unsynced">UNSYNCED</string>
     <string name="assessment_paper_detail_view_full_directory">VIEW FULL DIRECTORY</string>
     <string name="assessment_paper_detail_action_scan_qr">Scan QR Code</string>
+    <string name="assessment_paper_detail_action_sync_data">Sync Data</string>
+    <string name="assessment_paper_detail_no_data_yet">No data yet</string>
+    <string name="assessment_paper_detail_sync_status_cloud_synced">Cloud Synced</string>
+    <string name="assessment_paper_detail_pending_sync_format">Pending Sync (%1$d)</string>
+    <string name="assessment_paper_detail_last_updated_just_now">Last updated: just now</string>
+    <string name="assessment_paper_detail_last_updated_minutes_format">Last updated: %1$d min ago</string>
+    <string name="assessment_paper_detail_last_updated_hours_format">Last updated: %1$d h ago</string>
+    <string name="assessment_paper_detail_last_updated_days_format">Last updated: %1$d d ago</string>
+    <string name="assessment_sync_loading_title">Syncing Practical &amp; Project Assessments…</string>
+    <string name="assessment_sync_loading_subtitle">Securely uploading scored records to the central server. This may take a few moments.</string>
 
     <!-- ============== Assessment — candidates directory ============== -->
     <string name="assessment_candidates_header_title">Candidates</string>
@@ -554,7 +569,6 @@
     <string name="assessment_candidates_view_toggle_list_cd">List view</string>
     <string name="assessment_candidates_view_toggle_grid_cd">Grid view</string>
     <string name="assessment_candidates_score_label">SCR</string>
-    <string name="assessment_candidates_action_add_remark_cd">Add remark</string>
     <string name="assessment_candidates_empty_title">No candidates found</string>
     <string name="assessment_candidates_empty_subtitle">No candidates match your current search criteria. Try adjusting your filters or search term.</string>
 
@@ -577,6 +591,9 @@
     <string name="assessment_practical_sections_action_assess_project">Assess Project</string>
     <string name="assessment_practical_sections_photo_open_cd">View enlarged photo</string>
     <string name="assessment_practical_sections_photo_close_cd">Close enlarged photo</string>
+    <string name="assessment_practical_sections_not_found_title">Candidate not on this schedule</string>
+    <string name="assessment_practical_sections_not_found_body_format">No candidate with exam number %1$s is assigned to this practical. Check the roster or scan a different code.</string>
+    <string name="assessment_practical_sections_not_found_action_back">Back to Scan</string>
 
     <!-- ============== Assessment — practical scoring ============== -->
     <string name="assessment_practical_scoring_header_title">Practical Questions</string>
@@ -590,6 +607,7 @@
     <string name="assessment_practical_scoring_decrement_cd_format">Decrement question %1$d</string>
     <string name="assessment_practical_scoring_increment_cd_format">Increment question %1$d</string>
     <string name="assessment_practical_scoring_action_save">Save Scores</string>
+    <string name="assessment_practical_scoring_action_saving_cd">Saving scores</string>
 
     <!-- ============== Assessment — project assessment ============== -->
     <string name="assessment_project_header_title">Project Assessment</string>
@@ -604,4 +622,5 @@
     <string name="assessment_project_score_info">Numerical value based on CHPRBN criteria Section 4.2. Ensure all rubrics are reviewed before final submission.</string>
     <string name="assessment_project_action_cancel">Cancel</string>
     <string name="assessment_project_action_save">Save Score</string>
+    <string name="assessment_project_action_saving_cd">Saving score</string>
 </resources>

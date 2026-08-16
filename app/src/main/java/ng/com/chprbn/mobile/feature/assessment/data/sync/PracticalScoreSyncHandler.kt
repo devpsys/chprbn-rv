@@ -7,20 +7,22 @@ import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.practicalScoreClientId
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
+import ng.com.chprbn.mobile.feature.assessment.data.source.PracticalScoreUploadRow
+import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import javax.inject.Inject
 
 /**
  * Plugs the practical-score row uploader into the cross-feature
- * `core.sync.SyncWorker` via Hilt multibinding. The runner hands in the
- * batch's slash-delimited entity keys; the handler resolves the rows,
- * sends a single batched HTTP request, and flips per-row score syncStatus.
+ * `core.sync.SyncWorker` via Hilt multibinding.
  *
- * The schedules-list pill's aggregate status is derived at read time in
- * `AssessmentScheduleRepositoryImpl.getSchedules`, so no explicit
- * per-schedule status refresh is needed here.
+ * `practical/push-record` needs `scheduledCandidateId` / venue `scheduleId`
+ * from the cached dossier assignment (paper id == local score `scheduleId`).
+ * A row whose assignment can't be resolved fails with a clear message
+ * rather than being dropped.
  */
 class PracticalScoreSyncHandler @Inject constructor(
     private val practicalScoreDao: PracticalScoreDao,
+    private val candidateDao: CandidateDao,
     private val remoteSource: AssessmentSyncRemoteSource,
 ) : SyncEntityHandler {
 
@@ -37,8 +39,16 @@ class PracticalScoreSyncHandler @Inject constructor(
             val (scheduleId, candidateId, questionId) = parsed
             val entity = practicalScoreDao.getOne(scheduleId, candidateId, questionId)
             if (entity == null) {
-                // Ghost sync job — see PracticalScoringRepositoryImpl.recordScore.
                 outcomes[key] = SyncOutcome.Drop
+                continue
+            }
+            val assignment = candidateDao.getAssignment(scheduleId, candidateId)
+                ?.takeIf { it.scheduledCandidateId.isNotBlank() && it.scheduleId.isNotBlank() }
+            if (assignment == null) {
+                outcomes[key] = SyncOutcome.Failure(
+                    "Missing scheduledCandidateId/scheduleId for this candidate — " +
+                        "re-download today's dossier and retry.",
+                )
                 continue
             }
             val domain = entity.toDomain()
@@ -49,13 +59,24 @@ class PracticalScoreSyncHandler @Inject constructor(
                     clientId = practicalScoreClientId(
                         domain.scheduleId, domain.candidateId, domain.questionId,
                     ),
+                    uploadRow = PracticalScoreUploadRow(
+                        clientId = practicalScoreClientId(
+                            domain.scheduleId, domain.candidateId, domain.questionId,
+                        ),
+                        paperId = domain.scheduleId,
+                        candidateId = domain.candidateId,
+                        questionId = domain.questionId,
+                        scheduledCandidateId = assignment.scheduledCandidateId,
+                        scheduleId = assignment.scheduleId,
+                        score = domain.score,
+                    ),
                 ),
             )
         }
 
         if (toUpload.isEmpty()) return outcomes
 
-        val remoteResults = remoteSource.uploadPracticalScoreBatch(toUpload.map { it.domain })
+        val remoteResults = remoteSource.uploadPracticalScoreBatch(toUpload.map { it.uploadRow })
 
         for (row in toUpload) {
             val result = remoteResults[row.clientId]
@@ -92,5 +113,6 @@ class PracticalScoreSyncHandler @Inject constructor(
         val entityKey: String,
         val domain: ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalScore,
         val clientId: String,
+        val uploadRow: PracticalScoreUploadRow,
     )
 }

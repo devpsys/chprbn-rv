@@ -12,6 +12,10 @@ interface ProjectScoreDao {
     @Query("SELECT * FROM project_scores WHERE scheduleId = :scheduleId AND candidateId = :candidateId")
     suspend fun getOne(scheduleId: String, candidateId: String): ProjectScoreEntity?
 
+    /** All project scores for a schedule — directory aggregate overlay. */
+    @Query("SELECT * FROM project_scores WHERE scheduleId = :scheduleId")
+    suspend fun getForSchedule(scheduleId: String): List<ProjectScoreEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(score: ProjectScoreEntity): Long
 
@@ -39,6 +43,23 @@ interface ProjectScoreDao {
         """,
     )
     suspend fun countByStatusForSchedule(scheduleId: String, syncStatus: String): Int
+
+    @Query("SELECT COUNT(*) FROM project_scores")
+    suspend fun totalCount(): Int
+
+    @Query("SELECT COUNT(*) FROM project_scores WHERE syncStatus = :syncStatus")
+    suspend fun countByStatus(syncStatus: String): Int
+
+    @Query("SELECT MAX(scoredAt) FROM project_scores")
+    suspend fun mostRecentScoredAt(): Long?
+
+    @Query(
+        """
+        SELECT MAX(scoredAt) FROM project_scores
+        WHERE scheduleId = :scheduleId AND syncStatus = 'Synced'
+        """,
+    )
+    suspend fun mostRecentSyncedAt(scheduleId: String): Long?
 
     @Query("DELETE FROM project_scores WHERE scheduleId = :scheduleId")
     suspend fun deleteForSchedule(scheduleId: String): Int

@@ -38,6 +38,8 @@ class AssessmentPaperDetailContentRenderTest {
                 CandidateRowUiState("c2", "JS", "John Smith", CandidateSyncStatus.Unsynced),
             ),
             heroImageUrl = null,
+            lastUpdatedLabel = "Last updated: 2 min ago",
+            syncStatusLabel = "Pending Sync (3)",
         )
 
         composeRule.setContent {
@@ -49,6 +51,9 @@ class AssessmentPaperDetailContentRenderTest {
         composeRule.onNodeWithText("Pharmacology — Paper A").assertExists()
         composeRule.onNodeWithText("Jane Doe").assertExists()
         composeRule.onNodeWithText("John Smith").assertExists()
+        composeRule.onNodeWithText("Last updated: 2 min ago").assertExists()
+        composeRule.onNodeWithText("Pending Sync (3)").assertExists()
+        composeRule.onNodeWithText("Sync Data").assertExists()
     }
 
     @Test

@@ -7,11 +7,14 @@ import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.projectScoreClientId
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toDomain
 import ng.com.chprbn.mobile.feature.assessment.data.source.AssessmentSyncRemoteSource
+import ng.com.chprbn.mobile.feature.assessment.data.source.ProjectScoreUploadRow
+import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import javax.inject.Inject
 
-/** Project-score equivalent of [PracticalScoreSyncHandler]. */
+/** Project-score equivalent of [PracticalScoreSyncHandler] for `POST /project/push-record`. */
 class ProjectScoreSyncHandler @Inject constructor(
     private val projectScoreDao: ProjectScoreDao,
+    private val candidateDao: CandidateDao,
     private val remoteSource: AssessmentSyncRemoteSource,
 ) : SyncEntityHandler {
 
@@ -28,23 +31,40 @@ class ProjectScoreSyncHandler @Inject constructor(
             val (scheduleId, candidateId) = parsed
             val entity = projectScoreDao.getOne(scheduleId, candidateId)
             if (entity == null) {
-                // Ghost sync job — see ProjectScoringRepositoryImpl.recordProjectScore.
                 outcomes[key] = SyncOutcome.Drop
                 continue
             }
+            val assignment = candidateDao.getAssignment(scheduleId, candidateId)
+                ?.takeIf { it.scheduledCandidateId.isNotBlank() && it.scheduleId.isNotBlank() }
+            if (assignment == null) {
+                outcomes[key] = SyncOutcome.Failure(
+                    "Missing scheduledCandidateId/scheduleId for this candidate — " +
+                        "re-download today's dossier and retry.",
+                )
+                continue
+            }
             val domain = entity.toDomain()
+            val clientId = projectScoreClientId(domain.scheduleId, domain.candidateId)
             toUpload.add(
                 UploadRow(
                     entityKey = key,
                     domain = domain,
-                    clientId = projectScoreClientId(domain.scheduleId, domain.candidateId),
+                    clientId = clientId,
+                    uploadRow = ProjectScoreUploadRow(
+                        clientId = clientId,
+                        paperId = domain.scheduleId,
+                        candidateId = domain.candidateId,
+                        scheduledCandidateId = assignment.scheduledCandidateId,
+                        scheduleId = assignment.scheduleId,
+                        score = domain.score,
+                    ),
                 ),
             )
         }
 
         if (toUpload.isEmpty()) return outcomes
 
-        val remoteResults = remoteSource.uploadProjectScoreBatch(toUpload.map { it.domain })
+        val remoteResults = remoteSource.uploadProjectScoreBatch(toUpload.map { it.uploadRow })
 
         for (row in toUpload) {
             val result = remoteResults[row.clientId]
@@ -79,5 +99,6 @@ class ProjectScoreSyncHandler @Inject constructor(
         val entityKey: String,
         val domain: ng.com.chprbn.mobile.feature.assessment.domain.model.ProjectScore,
         val clientId: String,
+        val uploadRow: ProjectScoreUploadRow,
     )
 }

@@ -29,10 +29,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Vaccines
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.PersonSearch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,7 +71,6 @@ fun AssessmentCandidatesContent(
     onQueryChange: (String) -> Unit = {},
     onViewModeChange: (CandidatesViewMode) -> Unit = {},
     onCandidateClick: (CandidateCardUiState) -> Unit = {},
-    onAddRemark: (CandidateCardUiState) -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     Surface(
@@ -104,7 +101,6 @@ fun AssessmentCandidatesContent(
                     CandidatesList(
                         candidates = uiState.candidates,
                         onCandidateClick = onCandidateClick,
-                        onAddRemark = onAddRemark,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -113,7 +109,6 @@ fun AssessmentCandidatesContent(
                     CandidatesGrid(
                         candidates = uiState.candidates,
                         onCandidateClick = onCandidateClick,
-                        onAddRemark = onAddRemark,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -290,7 +285,6 @@ private fun ViewModeButton(
 private fun CandidatesList(
     candidates: List<CandidateCardUiState>,
     onCandidateClick: (CandidateCardUiState) -> Unit,
-    onAddRemark: (CandidateCardUiState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -310,7 +304,6 @@ private fun CandidatesList(
             CandidateListRow(
                 candidate = candidate,
                 onClick = { onCandidateClick(candidate) },
-                onAddRemark = { onAddRemark(candidate) },
             )
         }
     }
@@ -320,7 +313,6 @@ private fun CandidatesList(
 private fun CandidatesGrid(
     candidates: List<CandidateCardUiState>,
     onCandidateClick: (CandidateCardUiState) -> Unit,
-    onAddRemark: (CandidateCardUiState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
@@ -342,7 +334,6 @@ private fun CandidatesGrid(
             CandidateGridCard(
                 candidate = candidate,
                 onClick = { onCandidateClick(candidate) },
-                onAddRemark = { onAddRemark(candidate) },
             )
         }
     }
@@ -352,7 +343,6 @@ private fun CandidatesGrid(
 private fun CandidateListRow(
     candidate: CandidateCardUiState,
     onClick: () -> Unit,
-    onAddRemark: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val accentColor = if (candidate.level == ScoreLevel.Low) LowScoreColor else scheme.primary
@@ -399,12 +389,6 @@ private fun CandidateListRow(
                     color = scheme.onSurfaceVariant,
                 )
             }
-            AddRemarkButton(
-                onClick = onAddRemark,
-                tint = accentColor,
-                background = scheme.surfaceVariant.copy(alpha = 0.6f),
-                useBubbleIcon = false,
-            )
             ScoreBox(
                 score = candidate.score,
                 accentColor = accentColor,
@@ -418,7 +402,6 @@ private fun CandidateListRow(
 private fun CandidateGridCard(
     candidate: CandidateCardUiState,
     onClick: () -> Unit,
-    onAddRemark: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val accentColor = if (candidate.level == ScoreLevel.Low) LowScoreColor else scheme.primary
@@ -494,20 +477,6 @@ private fun CandidateGridCard(
                     color = scheme.onSurfaceVariant,
                 )
             }
-            // Top-right corner add-remark button (uses chat bubble per the
-            // grid design).
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp),
-            ) {
-                AddRemarkButton(
-                    onClick = onAddRemark,
-                    tint = accentColor,
-                    background = scheme.surfaceVariant.copy(alpha = 0.6f),
-                    useBubbleIcon = false,
-                )
-            }
         }
     }
 }
@@ -544,34 +513,6 @@ private fun CandidateAvatar(
                 contentDescription = fullName,
                 tint = scheme.onSurfaceVariant,
                 modifier = Modifier.size(size / 2),
-            )
-        }
-    }
-}
-
-@Composable
-private fun AddRemarkButton(
-    onClick: () -> Unit,
-    tint: Color,
-    background: Color,
-    useBubbleIcon: Boolean,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.size(36.dp),
-        shape = if (useBubbleIcon) CircleShape else RoundedCornerShape(10.dp),
-        color = background,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = if (useBubbleIcon) {
-                    Icons.Outlined.ChatBubbleOutline
-                } else {
-                    Icons.Filled.RateReview
-                },
-                contentDescription = stringResource(R.string.assessment_candidates_action_add_remark_cd),
-                tint = tint,
-                modifier = Modifier.size(20.dp),
             )
         }
     }

@@ -8,9 +8,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Practical Sections Hub — landed by the assessment-side QR scan once a
- * candidate's code has been read. Shows the candidate summary, three
- * section progress cards (Complete / Incomplete / Not Started), and a
- * single "Assess Project" Extended FAB.
+ * candidate's code has been read. Shows the candidate summary, the
+ * cadre-filtered section progress cards (Complete / Incomplete / Not
+ * Started), and a single "Assess Project" Extended FAB. Sections are
+ * filtered from the candidate exam number's leading letter (A/B/C/D →
+ * CHO/CHEW/JCHEW/BCHS).
  */
 @Composable
 fun AssessmentPracticalSectionsScreen(
