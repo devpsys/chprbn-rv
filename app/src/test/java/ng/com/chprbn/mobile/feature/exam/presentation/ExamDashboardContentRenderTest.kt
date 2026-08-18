@@ -102,6 +102,43 @@ class ExamDashboardContentRenderTest {
     }
 
     @Test
+    fun loaded_state_with_only_practical_hides_attendance_card_but_keeps_practical() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = loadedPlaceholder().copy(hasAttendanceCard = false),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Attendance Monitoring").assertDoesNotExist()
+        composeRule.onNodeWithText("Practical Assessment").assertExists()
+    }
+
+    @Test
+    fun loaded_state_with_neither_attendance_nor_practical_shows_admin_only_message() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamDashboardScreenContent(
+                    uiState = loadedPlaceholder().copy(
+                        hasAttendanceCard = false,
+                        hasPracticalAssessment = false,
+                    ),
+                )
+            }
+        }
+
+        // Admin-only state — cards suppressed, empty message names the centre.
+        composeRule.onNodeWithText("Attendance Monitoring").assertDoesNotExist()
+        composeRule.onNodeWithText("Practical Assessment").assertDoesNotExist()
+        composeRule.onNodeWithText("Administrative Day").assertExists()
+        composeRule.onNodeWithText(
+            "No attendance or practical tasks scheduled for National Institute of Health Sciences today. " +
+                "Check with your coordinator for administrative duties.",
+        ).assertExists()
+    }
+
+    @Test
     fun logout_icon_invokes_callback() {
         var loggedOut = 0
         composeRule.setContent {

@@ -257,46 +257,60 @@ internal fun ExamDashboardScreenContent(
                                 color = scheme.onBackground,
                                 modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
                             )
-                            if (uiState.hasSchedules) {
-                                ExamTaskCard(
-                                    imageUrl = uiState.attendanceTask.imageUrl,
-                                    imageContentDescription = uiState.attendanceTask.imageContentDescription,
-                                    chipPrimaryLabel = uiState.attendanceTask.chipPrimaryLabel,
-                                    chipPrimaryContainer = scheme.secondaryContainer,
-                                    chipPrimaryText = scheme.onSecondaryContainer,
-                                    chipSecondaryLabel = uiState.attendanceTask.chipSecondaryLabel,
-                                    chipSecondaryContainer = scheme.tertiaryContainer,
-                                    chipSecondaryText = scheme.onTertiaryContainer,
-                                    title = uiState.attendanceTask.title,
-                                    description = uiState.attendanceTask.description,
-                                    primaryActionLabel = uiState.attendanceTask.primaryActionLabel,
-                                    onPrimaryAction = onLogAttendance,
-                                    trailingIcon = Icons.Filled.MoreHoriz,
-                                    onTrailingClick = onAttendanceMore,
-                                    trailingContentDescription = stringResource(R.string.exam_dashboard_more_options_cd)
-                                )
-                                if (uiState.hasPracticalAssessment) {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    ExamTaskCard(
-                                        imageUrl = uiState.practicalTask.imageUrl,
-                                        imageContentDescription = uiState.practicalTask.imageContentDescription,
-                                        chipPrimaryLabel = uiState.practicalTask.chipPrimaryLabel,
-                                        chipPrimaryContainer = scheme.primaryContainer,
-                                        chipPrimaryText = scheme.onPrimaryContainer,
-                                        chipSecondaryLabel = uiState.practicalTask.chipSecondaryLabel,
-                                        chipSecondaryContainer = scheme.surfaceVariant,
-                                        chipSecondaryText = scheme.onSurfaceVariant,
-                                        title = uiState.practicalTask.title,
-                                        description = uiState.practicalTask.description,
-                                        primaryActionLabel = uiState.practicalTask.primaryActionLabel,
-                                        onPrimaryAction = onGradePractical,
-                                        trailingIcon = Icons.Filled.Info,
-                                        onTrailingClick = onPracticalInfo,
-                                        trailingContentDescription = stringResource(R.string.exam_dashboard_information_cd)
-                                    )
+                            // Three states for the tasks section:
+                            //   1. hasSchedules = false                    → NoSchedulesMessage (dossier empty)
+                            //   2. hasSchedules && !attendance && !practical → AdminOnlyMessage (papers exist but nothing to do here)
+                            //   3. otherwise                                → whichever cards apply, independently
+                            when {
+                                !uiState.hasSchedules -> ExamDashboardNoSchedulesMessage()
+                                !uiState.hasAttendanceCard && !uiState.hasPracticalAssessment ->
+                                    ExamDashboardAdminOnlyMessage(centreName = uiState.institutionName)
+                                else -> {
+                                    if (uiState.hasAttendanceCard) {
+                                        ExamTaskCard(
+                                            imageUrl = uiState.attendanceTask.imageUrl,
+                                            imageContentDescription = uiState.attendanceTask.imageContentDescription,
+                                            chipPrimaryLabel = uiState.attendanceTask.chipPrimaryLabel,
+                                            chipPrimaryContainer = scheme.secondaryContainer,
+                                            chipPrimaryText = scheme.onSecondaryContainer,
+                                            chipSecondaryLabel = uiState.attendanceTask.chipSecondaryLabel,
+                                            chipSecondaryContainer = scheme.tertiaryContainer,
+                                            chipSecondaryText = scheme.onTertiaryContainer,
+                                            title = uiState.attendanceTask.title,
+                                            description = uiState.attendanceTask.description,
+                                            primaryActionLabel = uiState.attendanceTask.primaryActionLabel,
+                                            onPrimaryAction = onLogAttendance,
+                                            trailingIcon = Icons.Filled.MoreHoriz,
+                                            onTrailingClick = onAttendanceMore,
+                                            trailingContentDescription = stringResource(R.string.exam_dashboard_more_options_cd)
+                                        )
+                                    }
+                                    if (uiState.hasPracticalAssessment) {
+                                        // Only pad above the practical card when the
+                                        // attendance card is also being drawn — otherwise
+                                        // it doubles up with the section header spacing.
+                                        if (uiState.hasAttendanceCard) {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                        }
+                                        ExamTaskCard(
+                                            imageUrl = uiState.practicalTask.imageUrl,
+                                            imageContentDescription = uiState.practicalTask.imageContentDescription,
+                                            chipPrimaryLabel = uiState.practicalTask.chipPrimaryLabel,
+                                            chipPrimaryContainer = scheme.primaryContainer,
+                                            chipPrimaryText = scheme.onPrimaryContainer,
+                                            chipSecondaryLabel = uiState.practicalTask.chipSecondaryLabel,
+                                            chipSecondaryContainer = scheme.surfaceVariant,
+                                            chipSecondaryText = scheme.onSurfaceVariant,
+                                            title = uiState.practicalTask.title,
+                                            description = uiState.practicalTask.description,
+                                            primaryActionLabel = uiState.practicalTask.primaryActionLabel,
+                                            onPrimaryAction = onGradePractical,
+                                            trailingIcon = Icons.Filled.Info,
+                                            onTrailingClick = onPracticalInfo,
+                                            trailingContentDescription = stringResource(R.string.exam_dashboard_information_cd)
+                                        )
+                                    }
                                 }
-                            } else {
-                                ExamDashboardNoSchedulesMessage()
                             }
                             Spacer(modifier = Modifier.height(88.dp))
                         }
@@ -398,6 +412,61 @@ private fun ExamDashboardNoSchedulesMessage(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.exam_dashboard_no_schedules_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
+    }
+}
+
+/**
+ * Shown when the dossier has papers scheduled today but none of them
+ * are actionable from this dashboard — i.e., the centre has been
+ * downloaded, papersCount > 0, but there's neither a Theory paper
+ * (attendance) nor practical sections (grading). Distinct from
+ * [ExamDashboardNoSchedulesMessage] which handles the truly-empty case;
+ * this one names the centre so the officer can confirm they're at the
+ * right site.
+ */
+@Composable
+private fun ExamDashboardAdminOnlyMessage(
+    centreName: String,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = scheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, scheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventBusy,
+                contentDescription = null,
+                tint = scheme.onSurfaceVariant,
+                modifier = Modifier.size(32.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.exam_dashboard_admin_only_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = scheme.onSurface,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(
+                    R.string.exam_dashboard_admin_only_subtitle_format,
+                    centreName,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = scheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,

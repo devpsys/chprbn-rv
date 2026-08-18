@@ -236,6 +236,7 @@ class ExamDashboardViewModelTest {
                 attendanceCard = ExamTaskSummary("Active", "x"),
                 practicalCard = ExamTaskSummary("Pending", "y"),
                 papersCount = 1,
+                hasPracticalAssessment = true,
             ),
         )
 
@@ -253,12 +254,49 @@ class ExamDashboardViewModelTest {
                 attendanceCard = ExamTaskSummary("Active", "x"),
                 practicalCard = ExamTaskSummary("Pending", "y"),
                 papersCount = 1,
+                hasPracticalAssessment = false,
             ),
         )
 
         val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
 
         assertEquals(false, viewModel.uiState.value.hasPracticalAssessment)
+    }
+
+    @Test
+    fun `Success with Theory paper sets hasAttendanceCard true`() = runTest {
+        coEvery { getDashboard() } returns ExamDashboardResult.Success(
+            ExamDashboardSummary(
+                session = OfficerSession("o1", "c1", "2026-06-12"),
+                center = Center("c1", "Kano Centre", "KAN", "Kano"),
+                attendanceCard = ExamTaskSummary("Active", "x"),
+                practicalCard = ExamTaskSummary("Pending", "y"),
+                papersCount = 1,
+                hasAttendancePapers = true,
+            ),
+        )
+
+        val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
+
+        assertTrue(viewModel.uiState.value.hasAttendanceCard)
+    }
+
+    @Test
+    fun `Success with only PE_PA papers sets hasAttendanceCard false`() = runTest {
+        coEvery { getDashboard() } returns ExamDashboardResult.Success(
+            ExamDashboardSummary(
+                session = OfficerSession("o1", "c1", "2026-06-12"),
+                center = Center("c1", "Kano Centre", "KAN", "Kano"),
+                attendanceCard = ExamTaskSummary("Active", "x"),
+                practicalCard = ExamTaskSummary("Pending", "y"),
+                papersCount = 1,
+                hasAttendancePapers = false,
+            ),
+        )
+
+        val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
+
+        assertEquals(false, viewModel.uiState.value.hasAttendanceCard)
     }
 
     @Test

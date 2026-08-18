@@ -22,8 +22,19 @@ data class ExamDashboardUiState(
     val hasDownloadedData: Boolean = false,
     /** True until the first [ExamDashboardViewModel.refresh] completes — gates the loading spinner. */
     val isLoading: Boolean = true,
-    /** True when the downloaded center has at least one paper scheduled today. */
+    /**
+     * True when the downloaded center has at least one paper scheduled
+     * today (any kind, including PE/PA). Distinguishes the "downloaded
+     * but truly empty" state from the "downloaded but only PE/PA" state
+     * so the two get different empty-message copy.
+     */
     val hasSchedules: Boolean = true,
+    /**
+     * True when at least one Theory paper is on the dossier — gates the
+     * Attendance card. False when only PE/PA papers exist (they route
+     * through the assessment scan → sections flow, not attendance).
+     */
+    val hasAttendanceCard: Boolean = true,
     /** True when the dossier's `sections` array was non-empty — gates the Practical Assessment card. */
     val hasPracticalAssessment: Boolean = true,
 ) {

@@ -68,7 +68,8 @@ class ExamDashboardViewModel @Inject constructor(
                             heroImageUrl = summary.center.heroImageUrl ?: current.heroImageUrl,
                             hasDownloadedData = true,
                             hasSchedules = summary.papersCount > 0,
-                            hasPracticalAssessment = summary.center.hasSections,
+                            hasAttendanceCard = summary.hasAttendancePapers,
+                            hasPracticalAssessment = summary.hasPracticalAssessment,
                             attendanceTask = current.attendanceTask.copy(
                                 chipSecondaryLabel = summary.attendanceCard.statusLabel,
                             ),

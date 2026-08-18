@@ -51,6 +51,16 @@ class ExamPaperRepositoryImpl @Inject constructor(
                     attendanceDao.countMarkedForPaper(paperId = it.id)
                 } ?: 0
 
+                val centerDomain = centerEntity.toDomain()
+                // Attendance is a Theory-paper concept — PE/PA route through
+                // the scan → sections flow. `PaperKind.fromWireCode` is the
+                // single source of truth for the code→kind mapping (see the
+                // 38c353b commit); relying on the parsed enum keeps this
+                // gate correct even if the backend adds new non-attendance
+                // wire codes later.
+                val hasAttendancePapers = papers.any {
+                    it.paperKind == ng.com.chprbn.mobile.core.domain.model.PaperKind.Theory.name
+                }
                 ExamDashboardResult.Success(
                     ExamDashboardSummary(
                         // Placeholder OfficerSession — wire to auth feature
@@ -60,8 +70,10 @@ class ExamPaperRepositoryImpl @Inject constructor(
                             centerId = centerEntity.id,
                             dayIso = LocalDate.now().toString(),
                         ),
-                        center = centerEntity.toDomain(),
+                        center = centerDomain,
                         papersCount = papers.size,
+                        hasAttendancePapers = hasAttendancePapers,
+                        hasPracticalAssessment = centerDomain.hasSections,
                         attendanceCard = ExamTaskSummary(
                             statusLabel = if (papers.isNotEmpty()) "Active Session" else "No Session",
                             countLabel = "$checkedIn / $totalCandidates checked in",

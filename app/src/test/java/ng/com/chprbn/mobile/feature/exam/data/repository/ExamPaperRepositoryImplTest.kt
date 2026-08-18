@@ -66,6 +66,42 @@ class ExamPaperRepositoryImplTest {
     }
 
     @Test
+    fun `hasAttendancePapers is false when only Practical papers are cached`() = runTest {
+        coEvery { centerDao.getFirst() } returns centerEntity
+        // Fixture: paperEntity is Practical — attendance card must be
+        // suppressed so the officer isn't offered the Log-Attendance flow
+        // for a paper that routes through scan → sections instead.
+        coEvery { paperDao.getForCenter("c1") } returns listOf(paperEntity)
+        coEvery { attendanceDao.countMarkedForPaper("p1") } returns 0
+
+        val summary = (repository.getDashboardSummary() as ExamDashboardResult.Success).summary
+        assertEquals(false, summary.hasAttendancePapers)
+    }
+
+    @Test
+    fun `hasAttendancePapers is true when any Theory paper is cached`() = runTest {
+        coEvery { centerDao.getFirst() } returns centerEntity
+        coEvery { paperDao.getForCenter("c1") } returns listOf(
+            paperEntity,
+            paperEntity.copy(id = "p2", paperKind = PaperKind.Theory.name),
+        )
+        coEvery { attendanceDao.countMarkedForPaper("p1") } returns 0
+
+        val summary = (repository.getDashboardSummary() as ExamDashboardResult.Success).summary
+        assertEquals(true, summary.hasAttendancePapers)
+    }
+
+    @Test
+    fun `hasPracticalAssessment mirrors Center hasSections`() = runTest {
+        coEvery { centerDao.getFirst() } returns centerEntity.copy(hasSections = true)
+        coEvery { paperDao.getForCenter("c1") } returns listOf(paperEntity)
+        coEvery { attendanceDao.countMarkedForPaper("p1") } returns 0
+
+        val summary = (repository.getDashboardSummary() as ExamDashboardResult.Success).summary
+        assertEquals(true, summary.hasPracticalAssessment)
+    }
+
+    @Test
     fun `dashboard builds a Success with zero papers when centre has no schedule today`() = runTest {
         coEvery { centerDao.getFirst() } returns centerEntity
         coEvery { paperDao.getForCenter("c1") } returns emptyList()

@@ -378,6 +378,8 @@
     <string name="exam_dashboard_empty_subtitle">Download today\'s dossier to see your centre, papers, and candidate roster.</string>
     <string name="exam_dashboard_no_schedules_title">No Papers Scheduled Today</string>
     <string name="exam_dashboard_no_schedules_subtitle">There are no exam papers assigned to this centre for today.</string>
+    <string name="exam_dashboard_admin_only_title">Administrative Day</string>
+    <string name="exam_dashboard_admin_only_subtitle_format">No attendance or practical tasks scheduled for %1$s today. Check with your coordinator for administrative duties.</string>
 
     <!-- ============== Exam — download dossier warning + loading ============== -->
     <string name="exam_download_warning_title">Refresh Candidate Records</string>
