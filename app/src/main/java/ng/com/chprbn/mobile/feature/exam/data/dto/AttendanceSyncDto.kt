@@ -1,12 +1,28 @@
 package ng.com.chprbn.mobile.feature.exam.data.dto
 
 import com.google.gson.annotations.SerializedName
+import ng.com.chprbn.mobile.core.sync.dto.AssessorDto
 
 /**
- * Confirmed live per `docs/mobile-api-guide.html` §5. The request body is
- * a **top-level JSON array** of these — never wrapped in `{ "items": [...] }`
- * — and must NOT carry `client_id`, `status`, or `marked_at`; the docs
- * call out that sending those shapes causes a server-side failure
+ * `POST /attendance/push-record` request body (confirmed live per
+ * `docs/mobile-api-guide.html` §5). The wire wrapper is an **object** with
+ * an `attendances` array and an `assessor` block — the older bare-array
+ * body is gone. Missing the `assessor` block returns:
+ *
+ * ```
+ * { "status": false, "message": "Failed",
+ *   "data": "Assessor is required. Include an \"assessor\" object with id and username." }
+ * ```
+ */
+data class AttendancePushRequestDto(
+    @SerializedName("attendances") val attendances: List<AttendanceSyncItemDto>,
+    @SerializedName("assessor") val assessor: AssessorDto,
+)
+
+/**
+ * One `attendances[]` row inside [AttendancePushRequestDto]. Must NOT
+ * carry `client_id`, `status`, or `marked_at`; the docs call out that
+ * sending those shapes causes a server-side failure
  * (`Attempt to read property "candidate_id" on array"`).
  *
  * The server's upsert key is `(scheduled_candidate_id, paper_id, year)`,

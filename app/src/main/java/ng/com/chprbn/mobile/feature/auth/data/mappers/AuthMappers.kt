@@ -7,9 +7,12 @@ import ng.com.chprbn.mobile.feature.auth.data.local.UserEntity
 import ng.com.chprbn.mobile.feature.auth.domain.model.User
 
 fun AdhocProfileDataDto.toDomain(accessToken: String): User {
-    val publicId = id?.let { num ->
-        if (num % 1.0 == 0.0) "adhoc_${num.toLong()}" else "adhoc_${num}"
-    } ?: "adhoc_unknown"
+    val rawNumericId = id?.takeIf { it % 1.0 == 0.0 }?.toLong()
+    val publicId = when {
+        rawNumericId != null -> "adhoc_$rawNumericId"
+        id != null -> "adhoc_$id"
+        else -> "adhoc_unknown"
+    }
     val roleNames = roles.orEmpty()
     return User(
         id = publicId,
@@ -25,6 +28,11 @@ fun AdhocProfileDataDto.toDomain(accessToken: String): User {
         organization = null,
         lastLoginAt = null,
         location = location,
+        // Fields new to schema v10 — needed by the sync layer to build
+        // the `assessor` block on push-record requests.
+        phone = phone,
+        status = status,
+        assessorId = rawNumericId,
     )
 }
 
@@ -58,6 +66,9 @@ fun User.toEntity(): UserEntity = UserEntity(
     organization = organization,
     lastLoginAt = lastLoginAt,
     location = location,
+    phone = phone,
+    status = status,
+    assessorId = assessorId,
 )
 
 fun UserEntity.toDomain(accessToken: String): User = User(
@@ -74,4 +85,7 @@ fun UserEntity.toDomain(accessToken: String): User = User(
     organization = organization,
     lastLoginAt = lastLoginAt,
     location = location,
+    phone = phone,
+    status = status,
+    assessorId = assessorId,
 )

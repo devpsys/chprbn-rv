@@ -2,6 +2,8 @@ package ng.com.chprbn.mobile.feature.exam.data.api
 
 import com.google.gson.JsonParser
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.core.sync.dto.AssessorDto
+import ng.com.chprbn.mobile.feature.exam.data.dto.AttendancePushRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncItemDto
@@ -46,22 +48,25 @@ class ExamSyncApiServiceTest {
     // region uploadAttendanceBatch
 
     @Test
-    fun `uploadAttendanceBatch posts a bare JSON array with snake_case fields, no client_id status or marked_at`() =
+    fun `uploadAttendanceBatch posts { attendances, assessor } with snake_case fields, no client_id status or marked_at`() =
         runTest {
             server.enqueue(jsonOk("""{"status":true,"message":"Successful","data":[101]}"""))
 
             api.uploadAttendanceBatch(
-                body = listOf(
-                    AttendanceSyncItemDto(
-                        scheduledCandidateId = 501L,
-                        scheduleId = 45L,
-                        candidateId = 101L,
-                        paperId = 8L,
-                        signIn = 1,
-                        signOut = 0,
-                        remark = "AE",
-                        year = 2026,
+                body = AttendancePushRequestDto(
+                    attendances = listOf(
+                        AttendanceSyncItemDto(
+                            scheduledCandidateId = 501L,
+                            scheduleId = 45L,
+                            candidateId = 101L,
+                            paperId = 8L,
+                            signIn = 1,
+                            signOut = 0,
+                            remark = "AE",
+                            year = 2026,
+                        ),
                     ),
+                    assessor = sampleAssessor(),
                 ),
             )
 
@@ -70,9 +75,10 @@ class ExamSyncApiServiceTest {
             assertEquals("/attendance/push-record", recorded.path)
 
             // Confirmed live contract (docs/mobile-api-guide.html §5): the
-            // body IS the array, not `{ "items": [...] }`.
-            val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonArray
-            val item = body.single().asJsonObject
+            // body is `{ "attendances": [...], "assessor": {...} }`.
+            val body = JsonParser.parseString(recorded.body.readUtf8()).asJsonObject
+            val attendances = body.getAsJsonArray("attendances")
+            val item = attendances.single().asJsonObject
             assertEquals(501L, item["scheduled_candidate_id"].asLong)
             assertEquals(45L, item["schedule_id"].asLong)
             assertEquals(101L, item["candidate_id"].asLong)
@@ -85,9 +91,11 @@ class ExamSyncApiServiceTest {
             assertFalse("must not send client_id", item.has("client_id"))
             assertFalse("must not send status", item.has("status"))
             assertFalse("must not send marked_at", item.has("marked_at"))
-            // `body` was already parsed with .asJsonArray above — a JsonObject
-            // (the old `{ "items": [...] }` wrapper) would have thrown there,
-            // so reaching this line already proves the bare-array shape.
+
+            // Assessor block is present and load-bearing fields are set.
+            val assessor = body.getAsJsonObject("assessor")
+            assertEquals(12L, assessor["id"].asLong)
+            assertEquals("jane.field", assessor["username"].asString)
         }
 
     @Test
@@ -95,9 +103,12 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"status":true,"message":"Successful","data":[101,102]}"""))
 
         val response = api.uploadAttendanceBatch(
-            body = listOf(
-                AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026),
-                AttendanceSyncItemDto(502L, 45L, 102L, 8L, 1, 1, null, 2026),
+            body = AttendancePushRequestDto(
+                attendances = listOf(
+                    AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026),
+                    AttendanceSyncItemDto(502L, 45L, 102L, 8L, 1, 1, null, 2026),
+                ),
+                assessor = sampleAssessor(),
             ),
         )
 
@@ -112,7 +123,10 @@ class ExamSyncApiServiceTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val response = api.uploadAttendanceBatch(
-            body = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
+            body = AttendancePushRequestDto(
+                attendances = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
+                assessor = sampleAssessor(),
+            ),
         )
 
         assertFalse(response.isSuccessful)
@@ -124,7 +138,9 @@ class ExamSyncApiServiceTest {
     fun `uploadAttendanceBatch tolerates missing data field`() = runTest {
         server.enqueue(jsonOk("""{"status":true,"message":"empty"}"""))
 
-        val response = api.uploadAttendanceBatch(body = emptyList())
+        val response = api.uploadAttendanceBatch(
+            body = AttendancePushRequestDto(attendances = emptyList(), assessor = sampleAssessor()),
+        )
 
         assertTrue(response.isSuccessful)
         val body = response.body()!!
@@ -137,11 +153,27 @@ class ExamSyncApiServiceTest {
         server.enqueue(jsonOk("""{"success":true,"message":"ok","data":[101]}"""))
 
         val response = api.uploadAttendanceBatch(
-            body = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
+            body = AttendancePushRequestDto(
+                attendances = listOf(AttendanceSyncItemDto(501L, 45L, 101L, 8L, 1, 0, null, 2026)),
+                assessor = sampleAssessor(),
+            ),
         )
 
         assertTrue(response.body()!!.status)
     }
+
+    /** Sample matches the docs (`docs/mobile-api-guide.html` §5 example) so drift shows here. */
+    private fun sampleAssessor() = AssessorDto(
+        id = 12L,
+        name = "Jane Field Officer",
+        email = "jane.field@example.com",
+        phone = "08012345678",
+        username = "jane.field",
+        status = 1,
+        department = "ACC",
+        location = "Lagos",
+        roles = listOf("Inspector", "Verify Practitioners"),
+    )
 
     // endregion
 

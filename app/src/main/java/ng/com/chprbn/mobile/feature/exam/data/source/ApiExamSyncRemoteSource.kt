@@ -1,7 +1,9 @@
 package ng.com.chprbn.mobile.feature.exam.data.source
 
+import ng.com.chprbn.mobile.core.sync.AssessorProvider
 import ng.com.chprbn.mobile.core.sync.foldBatchResults
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamSyncApiService
+import ng.com.chprbn.mobile.feature.exam.data.dto.AttendancePushRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncItemDto
@@ -16,6 +18,7 @@ import javax.inject.Inject
 
 class ApiExamSyncRemoteSource @Inject constructor(
     private val api: ExamSyncApiService,
+    private val assessorProvider: AssessorProvider,
 ) : ExamSyncRemoteSource {
 
     override suspend fun uploadAttendanceBatch(
@@ -45,11 +48,18 @@ class ApiExamSyncRemoteSource @Inject constructor(
 
         if (items.isEmpty()) return outcomes
 
+        // Server rejects the whole batch with a 4xx if `assessor` is
+        // absent. Fail fast so rows stay queued for a later retry rather
+        // than being marked Failed for what is really a session issue.
+        val assessor = assessorProvider.current() ?: return failAllWithAssessorMissing(itemKeys, outcomes)
+
         // The endpoint returns no per-row results — just the batch's own
         // status + a list of processed candidate_ids (docs/mobile-api-guide.html
         // §5) — so every well-formed row in the batch shares one outcome.
         val transportOutcome: Result<Unit> = runCatching {
-            val response = api.uploadAttendanceBatch(body = items)
+            val response = api.uploadAttendanceBatch(
+                body = AttendancePushRequestDto(attendances = items, assessor = assessor),
+            )
             response.requireSuccessOrThrow()
             val envelope = response.body()
                 ?: error("Attendance batch: empty response body.")
@@ -117,5 +127,24 @@ class ApiExamSyncRemoteSource @Inject constructor(
         if (!isSuccessful) {
             error("Upload failed: HTTP ${code()} ${message()}")
         }
+    }
+
+    /**
+     * Marks every well-formed row as failed with the same "no assessor"
+     * message. The message is user-actionable ("Sign in again") because
+     * the only way this fires locally is a cache carried over from
+     * schema < v10 that never signed in online since — the assessor id
+     * lands only through the fresh `adhoc/profile` fetch on the online
+     * login path.
+     */
+    private fun failAllWithAssessorMissing(
+        itemKeys: List<String>,
+        outcomes: LinkedHashMap<String, Result<Unit>>,
+    ): Map<String, Result<Unit>> {
+        val error = IllegalStateException(
+            "Missing assessor identity — sign in online once to refresh it, then retry sync.",
+        )
+        itemKeys.forEach { outcomes[it] = Result.failure(error) }
+        return outcomes
     }
 }

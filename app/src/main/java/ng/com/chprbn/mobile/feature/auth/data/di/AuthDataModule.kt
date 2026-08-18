@@ -17,6 +17,8 @@ import ng.com.chprbn.mobile.feature.auth.data.local.AuthDatabase
 import ng.com.chprbn.mobile.feature.auth.data.local.AuthSeedCallback
 import ng.com.chprbn.mobile.feature.auth.data.local.UserDao
 import ng.com.chprbn.mobile.feature.auth.data.network.AuthorizationInterceptor
+import ng.com.chprbn.mobile.core.sync.AssessorProvider
+import ng.com.chprbn.mobile.feature.auth.data.UserAssessorProvider
 import ng.com.chprbn.mobile.feature.auth.data.repository.AuthRepositoryImpl
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.AndroidConnectivityChecker
 import ng.com.chprbn.mobile.feature.auth.data.connectivity.ConnectivityChecker
@@ -109,4 +111,14 @@ abstract class AuthRepositoryModule {
 
     @Binds
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    /**
+     * The sync layer (exam + assessment features) attaches the current
+     * user as an `assessor` block on every push-record request. Auth
+     * owns the cached user, so it owns this binding — sync depends on
+     * auth, never the other way around.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAssessorProvider(impl: UserAssessorProvider): AssessorProvider
 }

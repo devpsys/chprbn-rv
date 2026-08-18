@@ -1,6 +1,6 @@
 package ng.com.chprbn.mobile.feature.exam.data.api
 
-import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
+import ng.com.chprbn.mobile.feature.exam.data.dto.AttendancePushRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncResponseDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchEnvelopeDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.RemarkSyncBatchRequestDto
@@ -17,8 +17,9 @@ import retrofit2.http.POST
  * from the officer's `adhoc/profile` location — no param needed here.
  *
  * `uploadAttendanceBatch` is confirmed **live** per `docs/mobile-api-guide.html`
- * §5 — see [AttendanceSyncItemDto]'s doc comment for the exact body-shape
- * constraints. `uploadRemarkBatch` (the free-text remark log write) has
+ * §5 — see [AttendancePushRequestDto]'s doc comment for the exact
+ * body-shape constraints, including the mandatory `assessor` block.
+ * `uploadRemarkBatch` (the free-text remark log write) has
  * no confirmed live contract as of this writing — the guide only
  * documents `GET attendance-remarks` (a lookup catalog, not a write) —
  * kept speculative pending confirmation.
@@ -27,7 +28,7 @@ interface ExamSyncApiService {
 
     @POST("attendance/push-record")
     suspend fun uploadAttendanceBatch(
-        @Body body: List<AttendanceSyncItemDto>,
+        @Body body: AttendancePushRequestDto,
     ): Response<AttendanceSyncResponseDto>
 
     /**

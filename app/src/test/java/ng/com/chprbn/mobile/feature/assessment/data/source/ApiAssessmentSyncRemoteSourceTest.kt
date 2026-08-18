@@ -4,6 +4,8 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.core.sync.AssessorProvider
+import ng.com.chprbn.mobile.core.sync.dto.AssessorDto
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentSyncApiService
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushRequestDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.ScorePushResponseDto
@@ -18,7 +20,21 @@ import java.io.IOException
 class ApiAssessmentSyncRemoteSourceTest {
 
     private val api = mockk<AssessmentSyncApiService>()
-    private val source = ApiAssessmentSyncRemoteSource(api)
+    private val assessor = AssessorDto(
+        id = 12L,
+        name = "Jane Field Officer",
+        email = "jane.field@example.com",
+        phone = "08012345678",
+        username = "jane.field",
+        status = 1,
+        department = "ACC",
+        location = "Lagos",
+        roles = listOf("Inspector"),
+    )
+    private val assessorProvider = mockk<AssessorProvider> {
+        coEvery { current() } returns assessor
+    }
+    private val source = ApiAssessmentSyncRemoteSource(api, assessorProvider)
 
     @Test
     fun `successful batch marks every well-formed row Success`() = runTest {
@@ -32,7 +48,7 @@ class ApiAssessmentSyncRemoteSourceTest {
     }
 
     @Test
-    fun `single HTTP call carries practicals object with empty projects`() = runTest {
+    fun `single HTTP call carries practicals object with empty projects and the assessor block`() = runTest {
         val captured = slot<PracticalPushRequestDto>()
         coEvery { api.uploadPracticalScoreBatch(capture(captured)) } returns
             Response.success(ScorePushResponseDto(status = true))
@@ -42,6 +58,22 @@ class ApiAssessmentSyncRemoteSourceTest {
         assertEquals(2, captured.captured.practicals.size)
         assertTrue(captured.captured.projects.isEmpty())
         assertEquals(listOf(1L, 2L), captured.captured.practicals.map { it.questionId })
+        assertEquals(assessor, captured.captured.assessor)
+    }
+
+    @Test
+    fun `missing assessor identity fails every practical row without an HTTP call`() = runTest {
+        coEvery { assessorProvider.current() } returns null
+
+        val results = source.uploadPracticalScoreBatch(listOf(row("q1"), row("q2")))
+
+        assertTrue(results.getValue("8:101:8-sec-1-q1").isFailure)
+        assertTrue(results.getValue("8:101:8-sec-1-q2").isFailure)
+        val message = results.getValue("8:101:8-sec-1-q1").exceptionOrNull()!!.message!!
+        assertTrue(
+            "expected an assessor-related failure, was: $message",
+            message.contains("assessor", ignoreCase = true),
+        )
     }
 
     @Test

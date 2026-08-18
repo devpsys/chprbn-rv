@@ -1,9 +1,11 @@
 package ng.com.chprbn.mobile.feature.assessment.data.source
 
+import ng.com.chprbn.mobile.core.sync.AssessorProvider
 import ng.com.chprbn.mobile.feature.assessment.data.api.AssessmentSyncApiService
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushItemDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushRequestDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushItemDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushRequestDto
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.wireQuestionId
 import retrofit2.Response
 import javax.inject.Inject
@@ -15,6 +17,7 @@ import javax.inject.Inject
  */
 class ApiAssessmentSyncRemoteSource @Inject constructor(
     private val api: AssessmentSyncApiService,
+    private val assessorProvider: AssessorProvider,
 ) : AssessmentSyncRemoteSource {
 
     override suspend fun uploadPracticalScoreBatch(
@@ -43,10 +46,18 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
         }
 
         if (items.isEmpty()) return outcomes
+        // Server rejects the batch with a clear "Assessor is required"
+        // 4xx if the block is missing. Fail fast so rows stay queued
+        // for a later retry rather than being permanently marked Failed.
+        val assessor = assessorProvider.current() ?: return failAllWithAssessorMissing(itemKeys, outcomes)
 
         val transportOutcome: Result<Unit> = runCatching {
             val response = api.uploadPracticalScoreBatch(
-                PracticalPushRequestDto(practicals = items, projects = emptyList()),
+                PracticalPushRequestDto(
+                    practicals = items,
+                    projects = emptyList(),
+                    assessor = assessor,
+                ),
             )
             response.requireSuccessOrThrow()
             val envelope = response.body()
@@ -88,9 +99,12 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
         }
 
         if (items.isEmpty()) return outcomes
+        val assessor = assessorProvider.current() ?: return failAllWithAssessorMissing(itemKeys, outcomes)
 
         val transportOutcome: Result<Unit> = runCatching {
-            val response = api.uploadProjectScoreBatch(items)
+            val response = api.uploadProjectScoreBatch(
+                ProjectPushRequestDto(projects = items, assessor = assessor),
+            )
             response.requireSuccessOrThrow()
             val envelope = response.body()
                 ?: error("Project-score batch: empty response body.")
@@ -103,6 +117,18 @@ class ApiAssessmentSyncRemoteSource @Inject constructor(
             onSuccess = { itemKeys.forEach { outcomes[it] = Result.success(Unit) } },
             onFailure = { t -> itemKeys.forEach { outcomes[it] = Result.failure(t) } },
         )
+        return outcomes
+    }
+
+    /** Same guard rationale as `ApiExamSyncRemoteSource.failAllWithAssessorMissing`. */
+    private fun failAllWithAssessorMissing(
+        itemKeys: List<String>,
+        outcomes: LinkedHashMap<String, Result<Unit>>,
+    ): Map<String, Result<Unit>> {
+        val error = IllegalStateException(
+            "Missing assessor identity — sign in online once to refresh it, then retry sync.",
+        )
+        itemKeys.forEach { outcomes[it] = Result.failure(error) }
         return outcomes
     }
 

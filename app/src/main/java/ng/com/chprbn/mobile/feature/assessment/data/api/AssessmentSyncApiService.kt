@@ -1,7 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.data.api
 
 import ng.com.chprbn.mobile.feature.assessment.data.dto.PracticalPushRequestDto
-import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushItemDto
+import ng.com.chprbn.mobile.feature.assessment.data.dto.ProjectPushRequestDto
 import ng.com.chprbn.mobile.feature.assessment.data.dto.ScorePushResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -23,6 +23,6 @@ interface AssessmentSyncApiService {
 
     @POST("project/push-record")
     suspend fun uploadProjectScoreBatch(
-        @Body body: List<ProjectPushItemDto>,
+        @Body body: ProjectPushRequestDto,
     ): Response<ScorePushResponseDto>
 }

@@ -4,8 +4,10 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import ng.com.chprbn.mobile.core.sync.AssessorProvider
+import ng.com.chprbn.mobile.core.sync.dto.AssessorDto
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamSyncApiService
-import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncItemDto
+import ng.com.chprbn.mobile.feature.exam.data.dto.AttendancePushRequestDto
 import ng.com.chprbn.mobile.feature.exam.data.dto.AttendanceSyncResponseDto
 import ng.com.chprbn.mobile.feature.exam.domain.model.AttendanceStatus
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -19,7 +21,21 @@ import java.io.IOException
 class ApiExamSyncRemoteSourceTest {
 
     private val api = mockk<ExamSyncApiService>()
-    private val source = ApiExamSyncRemoteSource(api)
+    private val assessor = AssessorDto(
+        id = 12L,
+        name = "Jane Field Officer",
+        email = "jane.field@example.com",
+        phone = "08012345678",
+        username = "jane.field",
+        status = 1,
+        department = "ACC",
+        location = "Lagos",
+        roles = listOf("Inspector"),
+    )
+    private val assessorProvider = mockk<AssessorProvider> {
+        coEvery { current() } returns assessor
+    }
+    private val source = ApiExamSyncRemoteSource(api, assessorProvider)
 
     @Test
     fun `successful batch marks every well-formed row Success — server gives no per-row results`() = runTest {
@@ -33,15 +49,31 @@ class ApiExamSyncRemoteSourceTest {
     }
 
     @Test
-    fun `single HTTP call carries every row as a bare list DTO`() = runTest {
-        val captured = slot<List<AttendanceSyncItemDto>>()
+    fun `single HTTP call carries every row + the assessor block`() = runTest {
+        val captured = slot<AttendancePushRequestDto>()
         coEvery { api.uploadAttendanceBatch(capture(captured)) } returns
             Response.success(AttendanceSyncResponseDto(status = true))
 
         source.uploadAttendanceBatch(listOf(row("c1"), row("c2")))
 
-        assertEquals(2, captured.captured.size)
-        assertEquals(listOf(101L, 102L), captured.captured.map { it.candidateId })
+        assertEquals(2, captured.captured.attendances.size)
+        assertEquals(listOf(101L, 102L), captured.captured.attendances.map { it.candidateId })
+        assertEquals(assessor, captured.captured.assessor)
+    }
+
+    @Test
+    fun `missing assessor identity fails every row without making the HTTP call`() = runTest {
+        coEvery { assessorProvider.current() } returns null
+
+        val results = source.uploadAttendanceBatch(listOf(row("c1"), row("c2")))
+
+        assertTrue(results.getValue(key("c1")).isFailure)
+        assertTrue(results.getValue(key("c2")).isFailure)
+        val message = results.getValue(key("c1")).exceptionOrNull()!!.message!!
+        assertTrue(
+            "expected an assessor-related failure, was: $message",
+            message.contains("assessor", ignoreCase = true),
+        )
     }
 
     @Test
@@ -95,7 +127,7 @@ class ApiExamSyncRemoteSourceTest {
 
     @Test
     fun `row with non-numeric id fails individually and is excluded from the HTTP call`() = runTest {
-        val captured = slot<List<AttendanceSyncItemDto>>()
+        val captured = slot<AttendancePushRequestDto>()
         coEvery { api.uploadAttendanceBatch(capture(captured)) } returns
             Response.success(AttendanceSyncResponseDto(status = true))
 
@@ -105,7 +137,7 @@ class ApiExamSyncRemoteSourceTest {
 
         assertTrue(results.getValue(key("c1")).isSuccess)
         assertTrue(results.getValue(key("c2")).isFailure)
-        assertEquals(1, captured.captured.size)
+        assertEquals(1, captured.captured.attendances.size)
     }
 
     @Test

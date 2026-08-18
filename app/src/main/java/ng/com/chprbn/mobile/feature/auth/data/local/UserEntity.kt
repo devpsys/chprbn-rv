@@ -33,4 +33,13 @@ data class UserEntity(
     val passwordSalt: String? = null,
     val passwordVerifier: String? = null,
     val passwordAlgorithm: String? = null,
+    /**
+     * Added in schema v10 so the sync layer can build the `assessor`
+     * block that `attendance/push-record`, `project/push-record`, and
+     * `practical/push-record` require. Rows carried over from v9 have
+     * these as null and must sign in online at least once to backfill.
+     */
+    val phone: String? = null,
+    val status: Int? = null,
+    val assessorId: Long? = null,
 )

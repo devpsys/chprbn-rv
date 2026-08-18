@@ -759,45 +759,62 @@
             <span class="status-chip live">Live</span>
           </div>
           <p style="margin:0;color:var(--muted)">
-            Upserts attendance rows. Body must be a <strong>top-level JSON array</strong>
-            (not wrapped in <code>{ "items": [...] }</code>). Unique key:
+            Upserts attendance rows. Body is an <strong>object</strong> with an
+            <code>attendances</code> array and a mandatory <code>assessor</code>
+            block. Unique key:
             <code>(scheduled_candidate_id, paper_id, year)</code>.
           </p>
 
-          <div class="label">Request body (JSON array)</div>
-<pre>[
-  {
-    "scheduled_candidate_id": 501,
-    "schedule_id": 45,
-    "candidate_id": 101,
-    "paper_id": 8,
-    "sign_in": 1,
-    "sign_out": 0,
-    "remark": "AE",
-    "year": 2026
+          <div class="label">Request body</div>
+<pre>{
+  "attendances": [
+    {
+      "scheduled_candidate_id": 501,
+      "schedule_id": 45,
+      "candidate_id": 101,
+      "paper_id": 8,
+      "sign_in": 1,
+      "sign_out": 0,
+      "remark": "AE",
+      "year": 2026
+    }
+  ],
+  "assessor": {
+    "id": 12,
+    "name": "Jane Field Officer",
+    "email": "jane.field@example.com",
+    "phone": "08012345678",
+    "username": "jane.field",
+    "status": 1,
+    "department": "ACC",
+    "location": "Lagos",
+    "roles": ["Inspector", "Verify Practitioners"]
   }
-]</pre>
+}</pre>
 
           <table>
             <thead>
               <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
             </thead>
             <tbody>
-              <tr><td><code>scheduled_candidate_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>paper_candidates[].scheduled_candidate_id</code></td></tr>
-              <tr><td><code>schedule_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>schedules[].id</code></td></tr>
-              <tr><td><code>candidate_id</code></td><td>int</td><td>From <code>candidates[].id</code> / <code>paper_candidates[].candidate_id</code></td></tr>
-              <tr><td><code>paper_id</code></td><td>int</td><td>From <code>paper_candidates[].paper_id</code> / <code>papers[].id</code></td></tr>
-              <tr><td><code>sign_in</code> / <code>sign_out</code></td><td>int</td><td>Usually <code>0</code> or <code>1</code> (map client statuses like <code>signed_out</code> to these)</td></tr>
-              <tr><td><code>remark</code></td><td>string\|null</td><td>Prefer a code from attendance remarks (e.g. <code>AE</code>)</td></tr>
-              <tr><td><code>year</code></td><td>int</td><td>Prefer <code>data.year</code> from the fetch pack</td></tr>
+              <tr><td><code>attendances[].scheduled_candidate_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>paper_candidates[].scheduled_candidate_id</code></td></tr>
+              <tr><td><code>attendances[].schedule_id</code></td><td>int</td><td>From <code>fetch-record</code> → <code>schedules[].id</code></td></tr>
+              <tr><td><code>attendances[].candidate_id</code></td><td>int</td><td>From <code>candidates[].id</code> / <code>paper_candidates[].candidate_id</code></td></tr>
+              <tr><td><code>attendances[].paper_id</code></td><td>int</td><td>From <code>paper_candidates[].paper_id</code> / <code>papers[].id</code></td></tr>
+              <tr><td><code>attendances[].sign_in</code> / <code>sign_out</code></td><td>int</td><td>Usually <code>0</code> or <code>1</code> (map client statuses like <code>signed_out</code> to these)</td></tr>
+              <tr><td><code>attendances[].remark</code></td><td>string\|null</td><td>Prefer a code from attendance remarks (e.g. <code>AE</code>)</td></tr>
+              <tr><td><code>attendances[].year</code></td><td>int</td><td>Prefer <code>data.year</code> from the fetch pack</td></tr>
+              <tr><td><code>assessor</code></td><td>object</td><td>See <a href="#assessor-block">Assessor block</a> — same shape for all three push endpoints. Required.</td></tr>
             </tbody>
           </table>
 
           <div class="note warn">
-            Do <strong>not</strong> send <code>{ "items": [...] }</code>,
-            <code>status</code>, <code>client_id</code>, or <code>marked_at</code>.
-            Those shapes cause failures such as
-            <em>Attempt to read property "candidate_id" on array</em>.
+            Do <strong>not</strong> send <code>{ "items": [...] }</code>, a bare
+            top-level array, <code>status</code>, <code>client_id</code>, or
+            <code>marked_at</code>. Those shapes cause failures such as
+            <em>Attempt to read property "candidate_id" on array</em>. Omitting
+            <code>assessor</code> returns <em>Assessor is required. Include an
+            "assessor" object with id and username.</em>
           </div>
 
           <div class="label">Success response</div>
@@ -813,7 +830,40 @@
   -H "Accept: application/json" \
   -H "X-Location: mchst213" \
   -H "Content-Type: application/json" \
-  -d '[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":8,"sign_in":1,"sign_out":0,"remark":null,"year":2026}]'</pre>
+  -d '{
+    "attendances":[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":8,"sign_in":1,"sign_out":0,"remark":null,"year":2026}],
+    "assessor":{"id":12,"username":"jane.field","name":"Jane Field Officer","email":"jane.field@example.com","phone":"08012345678","status":1,"department":"ACC","location":"Lagos","roles":["Inspector"]}
+  }'</pre>
+        </div>
+
+        <!-- ASSESSOR BLOCK — shared spec referenced from §5 / §6 / §7 -->
+        <div class="card" id="assessor-block" style="margin-top:16px">
+          <div class="label" style="margin-top:0">Assessor block (shared by push-record endpoints)</div>
+          <p style="margin:0 0 8px;color:var(--muted)">
+            Identifies the logged-in field officer submitting the batch. The
+            same shape is required on <code>attendance/push-record</code>,
+            <code>project/push-record</code>, and <code>practical/push-record</code>.
+            Missing it returns the exact envelope:
+          </p>
+<pre>{ "status": false, "message": "Failed",
+  "data": "Assessor is required. Include an \"assessor\" object with id and username." }</pre>
+
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Required</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>int</td><td>Yes</td><td>Numeric <code>id</code> from <code>GET /adhoc/profile</code></td></tr>
+              <tr><td><code>username</code></td><td>string</td><td>Yes</td><td><code>adhoc/profile.username</code></td></tr>
+              <tr><td><code>name</code></td><td>string</td><td>No</td><td><code>adhoc/profile.name</code></td></tr>
+              <tr><td><code>email</code></td><td>string</td><td>No</td><td><code>adhoc/profile.email</code></td></tr>
+              <tr><td><code>phone</code></td><td>string</td><td>No</td><td><code>adhoc/profile.phone</code></td></tr>
+              <tr><td><code>status</code></td><td>int</td><td>No</td><td><code>adhoc/profile.status</code> (e.g. <code>1</code>)</td></tr>
+              <tr><td><code>department</code></td><td>string</td><td>No</td><td><code>adhoc/profile.department</code></td></tr>
+              <tr><td><code>location</code></td><td>string</td><td>No</td><td><code>adhoc/profile.location</code></td></tr>
+              <tr><td><code>roles</code></td><td>string[]</td><td>No</td><td><code>adhoc/profile.roles</code></td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -828,21 +878,37 @@
             <span class="status-chip live">Live</span>
           </div>
           <p style="margin:0;color:var(--muted)">
-            Upserts project scores into <code>project_assessments</code>.
-            Unique key used by the app:
+            Upserts project scores into <code>project_assessments</code>. Body
+            is an <strong>object</strong> with a <code>projects</code> array
+            and a mandatory <code>assessor</code> block (see
+            <a href="#assessor-block">Assessor block</a> — shared spec). Unique
+            key used by the app:
             <code>(scheduled_candidate_id, candidate_id, paper_id, schedule_id)</code>.
           </p>
 
-          <div class="label">Request body (JSON array)</div>
-<pre>[
-  {
-    "scheduled_candidate_id": 501,
-    "schedule_id": 45,
-    "candidate_id": 101,
-    "paper_id": 9,
-    "score": 72.5
+          <div class="label">Request body</div>
+<pre>{
+  "projects": [
+    {
+      "scheduled_candidate_id": 501,
+      "schedule_id": 45,
+      "candidate_id": 101,
+      "paper_id": 9,
+      "score": 72.5
+    }
+  ],
+  "assessor": {
+    "id": 12,
+    "username": "jane.field",
+    "name": "Jane Field Officer",
+    "email": "jane.field@example.com",
+    "phone": "08012345678",
+    "status": 1,
+    "department": "ACC",
+    "location": "Lagos",
+    "roles": ["Inspector", "Verify Practitioners"]
   }
-]</pre>
+}</pre>
 
           <div class="label">Success response</div>
 <pre>{
@@ -852,7 +918,10 @@
 }</pre>
           <div class="note warn">
             Unlike attendance push, success <code>data</code> here is a list of
-            <code>scheduled_candidate_id</code> values.
+            <code>scheduled_candidate_id</code> values. Do <strong>not</strong>
+            send a bare top-level array — that shape is no longer accepted.
+            Omitting <code>assessor</code> returns
+            <em>Assessor is required. Include an "assessor" object with id and username.</em>
           </div>
 
           <div class="label">cURL example</div>
@@ -860,7 +929,10 @@
   -H "Accept: application/json" \
   -H "X-Location: mchst213" \
   -H "Content-Type: application/json" \
-  -d '[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":9,"score":72.5}]'</pre>
+  -d '{
+    "projects":[{"scheduled_candidate_id":501,"schedule_id":45,"candidate_id":101,"paper_id":9,"score":72.5}],
+    "assessor":{"id":12,"username":"jane.field","name":"Jane Field Officer","email":"jane.field@example.com","phone":"08012345678","status":1,"department":"ACC","location":"Lagos","roles":["Inspector"]}
+  }'</pre>
         </div>
       </section>
 
@@ -876,12 +948,17 @@
           </div>
           <p style="margin:0;color:var(--muted)">
             Primary practical endpoint. Body is an <strong>object</strong> with
-            <code>practicals</code> and <code>projects</code> arrays. Either array may be empty.
+            <code>practicals</code> and <code>projects</code> arrays plus a
+            mandatory <code>assessor</code> block (see
+            <a href="#assessor-block">Assessor block</a> — shared spec).
+            Either array may be empty.
           </p>
 
           <div class="note warn">
             Mobile field <code>question_id</code> is stored as DB column
-            <code>practical_question_id</code>.
+            <code>practical_question_id</code>. Omitting <code>assessor</code>
+            returns <em>Assessor is required. Include an "assessor" object with
+            id and username.</em>
           </div>
 
           <div class="label">Request body</div>
@@ -904,7 +981,18 @@
       "paper_id": 9,
       "score": 70.0
     }
-  ]
+  ],
+  "assessor": {
+    "id": 12,
+    "username": "jane.field",
+    "name": "Jane Field Officer",
+    "email": "jane.field@example.com",
+    "phone": "08012345678",
+    "status": 1,
+    "department": "ACC",
+    "location": "Lagos",
+    "roles": ["Inspector", "Verify Practitioners"]
+  }
 }</pre>
 
           <table>
@@ -939,7 +1027,8 @@
   -H "Content-Type: application/json" \
   -d '{
     "practicals":[{"scheduled_candidate_id":501,"candidate_id":101,"paper_id":8,"question_id":11,"schedule_id":45,"score":8}],
-    "projects":[]
+    "projects":[],
+    "assessor":{"id":12,"username":"jane.field","name":"Jane Field Officer","email":"jane.field@example.com","phone":"08012345678","status":1,"department":"ACC","location":"Lagos","roles":["Inspector"]}
   }'</pre>
         </div>
       </section>
@@ -1001,20 +1090,26 @@
               </tr>
               <tr>
                 <td><em>Attempt to read property "candidate_id" on array</em></td>
-                <td>Attendance push body wrapped as <code>{ "items": [...] }</code> instead of a top-level array</td>
+                <td>Attendance push body sent as a bare array or wrapped as <code>{ "items": [...] }</code> instead of the <code>{ "attendances": [...], "assessor": {...} }</code> object</td>
+              </tr>
+              <tr>
+                <td><em>Assessor is required. Include an "assessor" object with id and username.</em></td>
+                <td>Push body missing the <code>assessor</code> block (all three push-record endpoints — attendance, project, practical). See <a href="#assessor-block">Assessor block</a>.</td>
               </tr>
               <tr>
                 <td>Practical scores not saving</td>
-                <td>Sending array instead of object, or using <code>practical_question_id</code> instead of <code>question_id</code></td>
+                <td>Sending array instead of object, missing the <code>assessor</code> block, or using <code>practical_question_id</code> instead of <code>question_id</code></td>
               </tr>
             </tbody>
           </table>
 
           <div class="label">Recommended client flow</div>
-<pre>1) GET  /attendance-remarks   (X-Location)
-2) POST /attendance/fetch-record   → keep schedule id, times, paper_candidates, year
-3) POST /attendance/push-record    → top-level JSON array
-4) POST /practical/push-record     (or /project/push-record)</pre>
+<pre>1) GET  /attendance-remarks     (X-Location)
+2) GET  /adhoc/profile          → cache assessor identity (id, username, name, …)
+3) POST /attendance/fetch-record  → keep schedule id, times, paper_candidates, year
+4) POST /attendance/push-record   → { "attendances": [...], "assessor": {...} }
+5) POST /practical/push-record    → { "practicals": [...], "projects": [...], "assessor": {...} }
+   POST /project/push-record      → { "projects": [...], "assessor": {...} }</pre>
         </div>
       </section>
 

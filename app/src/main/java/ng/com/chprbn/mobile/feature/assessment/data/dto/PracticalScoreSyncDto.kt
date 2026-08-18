@@ -1,17 +1,25 @@
 package ng.com.chprbn.mobile.feature.assessment.data.dto
 
 import com.google.gson.annotations.SerializedName
+import ng.com.chprbn.mobile.core.sync.dto.AssessorDto
 
 /**
  * Confirmed live per `docs/mobile-api-guide.html` §7.
- * `POST /practical/push-record` body is an **object** with `practicals`
- * and `projects` arrays — never a bare list, and never `{ "items": [...] }`.
- * Either array may be empty. This feature's practical handler always
- * sends `projects: []`; project scores go to `/project/push-record`.
+ * `POST /practical/push-record` body is an **object** with `practicals`,
+ * `projects`, and an [assessor] block — never a bare list, and never
+ * `{ "items": [...] }`. Either array may be empty. This feature's
+ * practical handler always sends `projects: []`; project scores go to
+ * `/project/push-record`. Missing the assessor yields:
+ *
+ * ```
+ * { "status": false, "message": "Failed",
+ *   "data": "Assessor is required. Include an \"assessor\" object with id and username." }
+ * ```
  */
 data class PracticalPushRequestDto(
     @SerializedName("practicals") val practicals: List<PracticalPushItemDto>,
     @SerializedName("projects") val projects: List<ProjectPushItemDto> = emptyList(),
+    @SerializedName("assessor") val assessor: AssessorDto,
 )
 
 /**

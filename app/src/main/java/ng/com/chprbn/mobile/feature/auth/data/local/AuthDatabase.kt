@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [UserEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = true,
     autoMigrations = [
         // v7 → v8: adds nullable passwordSalt / passwordVerifier / passwordAlgorithm
@@ -17,6 +17,10 @@ import androidx.room.RoomDatabase
         // v8 → v9: adds nullable `location` column mirroring the
         // `AdhocProfileDataDto.location` wire field.
         AutoMigration(from = 8, to = 9),
+        // v9 → v10: adds nullable `phone`, `status`, `assessorId` columns so
+        // the sync layer can build the `assessor` block that the three
+        // push-record endpoints now require. See UserEntity's doc.
+        AutoMigration(from = 9, to = 10),
     ],
 )
 @TypeConverters(JsonStringListTypeConverter::class)
