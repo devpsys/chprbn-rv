@@ -95,7 +95,6 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                         popUpTo<Routes.Login> { inclusive = true }
                     }
                 },
-                onRecovery = { /* TODO: recovery flow */ },
                 onRequestAccess = { /* TODO: request access */ }
             )
         }

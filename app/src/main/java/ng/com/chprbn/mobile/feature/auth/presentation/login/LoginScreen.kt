@@ -37,7 +37,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -93,7 +92,6 @@ private val DarkMeshBackground = Brush.verticalGradient(
 fun LoginScreen(
     modifier: Modifier = Modifier,
     onSignIn: () -> Unit = {},
-    onRecovery: () -> Unit = {},
     onRequestAccess: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
@@ -105,12 +103,11 @@ fun LoginScreen(
             viewModel.consumeAuthSuccess()
         }
     }
-    
+
     LoginContent(
         modifier = modifier,
         uiState = uiState,
         onSignInClick = { username, password -> viewModel.signIn(username, password) },
-        onRecovery = onRecovery,
         onRequestAccess = onRequestAccess
     )
 }
@@ -120,7 +117,6 @@ fun LoginContent(
     modifier: Modifier = Modifier,
     uiState: LoginUiState,
     onSignInClick: (String, String) -> Unit,
-    onRecovery: () -> Unit = {},
     onRequestAccess: () -> Unit = {},
 ) {
     var username by rememberSaveable { mutableStateOf("") }
@@ -180,7 +176,11 @@ fun LoginContent(
                                 imageVector = Icons.Filled.VerifiedUser,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                // Was onSurfaceVariant — near-invisible against
+                                // the filled container in light theme; PrimaryGreen
+                                // matches the focused-state colour so unfocused
+                                // fields aren't visually deadweight.
+                                tint = PrimaryGreen
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -199,30 +199,27 @@ fun LoginContent(
                             focusedLabelColor = PrimaryGreen,
                             cursorColor = PrimaryGreen,
                             focusedLeadingIconColor = PrimaryGreen,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.5f
-                            ),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.5f
-                            )
+                            // surfaceContainerHighest is the M3 token designed
+                            // for filled TextField backgrounds — visibly darker
+                            // than `surface` in light theme, so the field reads
+                            // as an input surface instead of a blank patch.
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                         )
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.login_access_key_label),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        TextButton(onClick = onRecovery) {
-                            Text(stringResource(R.string.login_recovery_action), color = PrimaryGreen)
-                        }
-                    }
+                    // Recovery flow was removed — this is now just the form
+                    // label above the password field, styled to match the
+                    // OutlinedTextField's own labels.
+                    Text(
+                        text = stringResource(R.string.login_access_key_label),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -232,7 +229,7 @@ fun LoginContent(
                                 imageVector = Icons.Filled.Lock,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = PrimaryGreen
                             )
                         },
                         trailingIcon = {
@@ -247,7 +244,9 @@ fun LoginContent(
                                         else R.string.login_password_show
                                     ),
                                     modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    // onSurface (not onSurfaceVariant) reads
+                                    // cleanly against surfaceContainerHighest.
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         },
@@ -261,12 +260,8 @@ fun LoginContent(
                             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             cursorColor = PrimaryGreen,
                             focusedLeadingIconColor = PrimaryGreen,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.5f
-                            ),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.5f
-                            )
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                         )
                     )
                     Spacer(modifier = Modifier.height(32.dp))
@@ -392,7 +387,11 @@ private fun SyncIllustration() {
             .fillMaxWidth()
             .height(80.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            // Was surfaceVariant @ 0.5α — nearly identical to `surface` in
+            // light theme, so the panel and its pill icons vanished into the
+            // card. surfaceContainerHigh gives the panel a distinct
+            // tinted-neutral tone the icons can stand out against.
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -423,7 +422,11 @@ private fun IllustrationIcon(icon: ImageVector) {
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        // outline (not outlineVariant) + shadowElevation give the pill a
+        // clear edge against the tinted panel behind it. Without the shadow
+        // the pill in light theme reads as flat-white on light-neutral.
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shadowElevation = 2.dp
     ) {
         Icon(
             imageVector = icon,
@@ -441,7 +444,6 @@ private fun LoginScreenPreview() {
         LoginContent(
             uiState = LoginUiState(),
             onSignInClick = { _, _ -> },
-            onRecovery = {},
             onRequestAccess = {}
         )
     }

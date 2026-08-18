@@ -27,7 +27,6 @@
     <string name="login_username_label">Username</string>
     <string name="login_username_placeholder">Enter your username</string>
     <string name="login_access_key_label">Access Key</string>
-    <string name="login_recovery_action">Recovery</string>
     <string name="login_password_show">Show password</string>
     <string name="login_password_hide">Hide password</string>
     <string name="login_password_placeholder">••••••••</string>
