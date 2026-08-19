@@ -167,15 +167,41 @@ class ExamDashboardViewModelTest {
     }
 
     @Test
-    fun `download flow Idle to WarningShown on click`() = runTest {
-        coEvery { getDashboard() } returns ExamDashboardResult.Loading
+    fun `download flow Idle to WarningShown flags an initial download when no dossier cached`() = runTest {
+        // Empty puts hasDownloadedData at false — the officer has never
+        // pulled a dossier, so the initial-download dialog copy applies.
+        coEvery { getDashboard() } returns ExamDashboardResult.Empty
         val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
 
         assertEquals(DownloadDossierUiState.Idle, viewModel.downloadState.value)
 
         viewModel.onDownloadDossierClicked()
 
-        assertEquals(DownloadDossierUiState.WarningShown, viewModel.downloadState.value)
+        assertEquals(
+            DownloadDossierUiState.WarningShown(isInitialDownload = true),
+            viewModel.downloadState.value,
+        )
+    }
+
+    @Test
+    fun `WarningShown flags a refresh when a dossier is already cached`() = runTest {
+        coEvery { getDashboard() } returns ExamDashboardResult.Success(
+            ExamDashboardSummary(
+                session = OfficerSession("o1", "c1", "2026-06-12"),
+                center = Center("c1", "Kano Centre", "KAN", "Kano"),
+                attendanceCard = ExamTaskSummary("Active", "x"),
+                practicalCard = ExamTaskSummary("Pending", "y"),
+                papersCount = 1,
+            ),
+        )
+        val viewModel = ExamDashboardViewModel(getDashboard, downloadDossier, logoutUseCase)
+
+        viewModel.onDownloadDossierClicked()
+
+        assertEquals(
+            DownloadDossierUiState.WarningShown(isInitialDownload = false),
+            viewModel.downloadState.value,
+        )
     }
 
     @Test

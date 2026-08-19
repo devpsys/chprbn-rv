@@ -381,6 +381,12 @@
     <string name="exam_dashboard_admin_only_subtitle_format">No attendance or practical tasks scheduled for %1$s today. Check with your coordinator for administrative duties.</string>
 
     <!-- ============== Exam — download dossier warning + loading ============== -->
+    <!-- First-time download (no dossier cached yet) -->
+    <string name="exam_download_initial_warning_title">Download Candidate Records</string>
+    <string name="exam_download_initial_warning_message">This will pull today\'s dossier — your centre, papers, candidates, and practical questions. It usually takes less than a minute on a good connection.</string>
+    <string name="exam_download_initial_warning_footnote">Attendance, remarks and practical/project scores you capture on this device are always preserved on future refreshes.</string>
+    <string name="exam_download_initial_warning_confirm">Download</string>
+    <!-- Refresh (dossier already cached — additive merge) -->
     <string name="exam_download_warning_title">Refresh Candidate Records</string>
     <string name="exam_download_warning_message">This will pull the latest dossier and add any new candidates the server has assigned. Candidates already on this device are kept as-is.</string>
     <string name="exam_download_warning_footnote">Attendance, remarks and practical/project scores you\'ve already captured are always preserved — this refresh never touches them.</string>

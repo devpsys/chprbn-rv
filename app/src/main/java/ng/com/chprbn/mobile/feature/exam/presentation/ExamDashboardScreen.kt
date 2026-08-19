@@ -114,6 +114,18 @@ fun ExamDashboardScreen(
     )
 }
 
+/**
+ * Four string resource ids that make one warning-dialog rendering — used
+ * to pick between the initial-download and refresh copies with a
+ * single destructuring call site.
+ */
+private data class DialogCopy(
+    val title: Int,
+    val message: Int,
+    val footnote: Int,
+    val confirm: Int,
+)
+
 @Composable
 private fun ExamDownloadDossierOverlay(
     state: DownloadDossierUiState,
@@ -122,15 +134,35 @@ private fun ExamDownloadDossierOverlay(
 ) {
     when (state) {
         DownloadDossierUiState.Idle -> Unit
-        DownloadDossierUiState.WarningShown -> DownloadWarningDialog(
-            title = stringResource(R.string.exam_download_warning_title),
-            message = stringResource(R.string.exam_download_warning_message),
-            footnote = stringResource(R.string.exam_download_warning_footnote),
-            primaryButtonText = stringResource(R.string.exam_download_warning_confirm),
-            secondaryButtonText = stringResource(R.string.exam_download_warning_cancel),
-            onConfirm = onConfirm,
-            onCancel = onDismiss,
-        )
+        is DownloadDossierUiState.WarningShown -> {
+            // Two dialog copies for the same downstream action:
+            // - initial: describes what's about to land on a fresh device
+            // - refresh: reassures the officer that captured records stay put
+            val (titleRes, messageRes, footnoteRes, confirmRes) = if (state.isInitialDownload) {
+                DialogCopy(
+                    R.string.exam_download_initial_warning_title,
+                    R.string.exam_download_initial_warning_message,
+                    R.string.exam_download_initial_warning_footnote,
+                    R.string.exam_download_initial_warning_confirm,
+                )
+            } else {
+                DialogCopy(
+                    R.string.exam_download_warning_title,
+                    R.string.exam_download_warning_message,
+                    R.string.exam_download_warning_footnote,
+                    R.string.exam_download_warning_confirm,
+                )
+            }
+            DownloadWarningDialog(
+                title = stringResource(titleRes),
+                message = stringResource(messageRes),
+                footnote = stringResource(footnoteRes),
+                primaryButtonText = stringResource(confirmRes),
+                secondaryButtonText = stringResource(R.string.exam_download_warning_cancel),
+                onConfirm = onConfirm,
+                onCancel = onDismiss,
+            )
+        }
         DownloadDossierUiState.Downloading -> DownloadingOverlay(
             title = stringResource(R.string.exam_download_loading_title),
             subtitle = stringResource(R.string.exam_download_loading_subtitle),

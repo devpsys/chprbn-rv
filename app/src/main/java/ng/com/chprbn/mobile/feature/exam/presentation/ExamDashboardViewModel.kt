@@ -104,7 +104,16 @@ class ExamDashboardViewModel @Inject constructor(
 
     fun onDownloadDossierClicked() {
         if (_downloadState.value !is DownloadDossierUiState.Downloading) {
-            _downloadState.value = DownloadDossierUiState.WarningShown
+            // First-time download vs later refresh get different copy —
+            // the initial dialog explains what will land on the device,
+            // the refresh dialog explains that already-captured work is
+            // preserved. Reading hasDownloadedData off the current
+            // dashboard uiState (populated by refresh()) keeps the two
+            // flows in the same VM without duplicating the "have we
+            // ever synced?" check.
+            _downloadState.value = DownloadDossierUiState.WarningShown(
+                isInitialDownload = !_uiState.value.hasDownloadedData,
+            )
         }
     }
 
@@ -137,7 +146,16 @@ class ExamDashboardViewModel @Inject constructor(
 
 sealed interface DownloadDossierUiState {
     data object Idle : DownloadDossierUiState
-    data object WarningShown : DownloadDossierUiState
+
+    /**
+     * Warning dialog is up. [isInitialDownload] flips the dialog copy:
+     * `true` when no dossier has ever been cached (first-time download —
+     * emphasise what will land on the device), `false` on any subsequent
+     * click (refresh — emphasise that captured attendance / remarks /
+     * scores stay put).
+     */
+    data class WarningShown(val isInitialDownload: Boolean) : DownloadDossierUiState
+
     data object Downloading : DownloadDossierUiState
     /**
      * Additive-merge summary. [newCandidatesCount] is how many candidates
