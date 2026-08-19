@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 
 @Composable
 fun ExamStatisticsContent(
@@ -83,6 +84,20 @@ fun ExamStatisticsContent(
             )
         }
     ) { paddingValues ->
+        if (uiState.isLoading) {
+            // Full-content spinner in place of the summary/comparison
+            // sections — the placeholder's fake counts would otherwise
+            // flash for a frame before getStatistics() lands.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center,
+            ) {
+                LoadingState()
+            }
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()

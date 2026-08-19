@@ -1,10 +1,13 @@
 package ng.com.chprbn.mobile.feature.exam.presentation
 
 import android.app.Application
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import ng.com.chprbn.mobile.core.designsystem.components.LOADING_STATE_TEST_TAG
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -52,6 +55,28 @@ class ExamStatisticsContentRenderTest {
         composeRule.onNodeWithText(
             "* 70 records remain uncaptured from the total downloaded set.",
         ).assertExists()
+    }
+
+    @Test
+    fun loading_state_shows_the_spinner_and_hides_placeholder_counts() {
+        composeRule.setContent {
+            ChprbnTheme {
+                ExamStatisticsContent(
+                    uiState = ExamStatisticsUiState.placeholder().copy(isLoading = true),
+                    onBack = {},
+                    onRefresh = {},
+                    onSyncNow = {},
+                    onClearCached = {},
+                    onExamDashboardTab = {},
+                    onStatisticsTab = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LOADING_STATE_TEST_TAG).assertIsDisplayed()
+        // Fake placeholder counts must NOT paint while loading.
+        composeRule.onNodeWithText("1,250").assertDoesNotExist()
+        composeRule.onNodeWithText("94.4% Completion").assertDoesNotExist()
     }
 
     @Test

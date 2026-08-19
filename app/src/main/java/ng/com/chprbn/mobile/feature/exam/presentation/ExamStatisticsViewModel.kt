@@ -44,7 +44,10 @@ class ExamStatisticsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ExamStatisticsUiState.placeholder())
+    // isLoading = true so the Content shows a spinner immediately —
+    // the placeholder's fake counts are otherwise painted for a frame
+    // or two before getStatistics() resolves.
+    private val _uiState = MutableStateFlow(ExamStatisticsUiState.placeholder().copy(isLoading = true))
     val uiState: StateFlow<ExamStatisticsUiState> = _uiState.asStateFlow()
 
     private val _syncState = MutableStateFlow<SyncOperationUiState>(SyncOperationUiState.Idle)
@@ -134,6 +137,10 @@ class ExamStatisticsViewModel @Inject constructor(
             successfullySyncedLegendCount = syncedCount.toString(),
             footnote = if (failedCount > 0) "* $failedCount records failed to sync." else "",
             illustrationImageUrl = EXAM_STATISTICS_HERO_IMAGE_URL,
+            // A refresh() that lands after init also clears the spinner
+            // (harmless no-op on subsequent refreshes since we never
+            // re-set isLoading = true).
+            isLoading = false,
         )
     }
 

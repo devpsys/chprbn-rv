@@ -19,7 +19,16 @@ data class ExamStatisticsUiState(
     val pendingSyncLegendCount: String,
     val successfullySyncedLegendCount: String,
     val footnote: String,
-    val illustrationImageUrl: String
+    val illustrationImageUrl: String,
+    /**
+     * `true` until the first `getStatistics()` resolves. The Content
+     * hides the summary/comparison sections and shows a full-screen
+     * spinner instead — before this flag existed the placeholder's
+     * fake counts (`"1,250"`, `"94.4% Completion"`, …) flashed for a
+     * frame or two while the query ran. Kept `false` on the placeholder
+     * so Compose previews and render tests still see the full layout.
+     */
+    val isLoading: Boolean = false
 ) {
     companion object {
         fun placeholder(): ExamStatisticsUiState = ExamStatisticsUiState(
