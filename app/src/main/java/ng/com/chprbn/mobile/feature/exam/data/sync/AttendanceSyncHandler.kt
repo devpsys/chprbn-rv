@@ -2,6 +2,7 @@ package ng.com.chprbn.mobile.feature.exam.data.sync
 
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.Clock
+import ng.com.chprbn.mobile.core.network.toUserFacingMessage
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
@@ -116,7 +117,11 @@ class AttendanceSyncHandler @Inject constructor(
                     SyncOutcome.Success
                 },
                 onFailure = { t ->
-                    val message = t.message ?: "Upload failed."
+                    // t.message from OkHttp / URLConnection carries the
+                    // full URL and hostname on transport failures — those
+                    // must not surface to the officer via `syncError` on
+                    // the sync-history / statistics screens.
+                    val message = t.toUserFacingMessage(default = "Attendance upload failed.")
                     attendanceDao.updateSyncMetadata(
                         paperId = row.domain.paperId,
                         candidateId = row.domain.candidateId,

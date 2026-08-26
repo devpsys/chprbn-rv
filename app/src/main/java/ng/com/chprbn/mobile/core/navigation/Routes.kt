@@ -6,7 +6,18 @@ import kotlinx.serialization.Serializable
  * Identifies which feature opened the QR scan / manual-entry flow so the
  * downstream destinations (scan result *and* manual-entry verify) can
  * route to the correct screen for that flow.
+ *
+ * `@Serializable` is load-bearing in release builds: this enum is a
+ * field on [Routes.ManualLicenseEntry] (itself `@Serializable`), and
+ * Compose Nav resolves the arg with kotlinx.serialization. Without the
+ * annotation, the encoder falls back to a runtime `Class.forName` lookup
+ * by the enum's fully-qualified name — which R8 obfuscates in release,
+ * producing an `IllegalArgumentException: Cannot find class with name
+ * "…ScanSource"` at nav-graph inflation time. Adding it here generates
+ * a `$serializer` at compile time; the serialization plugin's own
+ * consumer keep rules then preserve the enum's name through R8.
  */
+@Serializable
 enum class ScanSource {
     /** License verification flow (scan -> RecordDetail). */
     Verification,

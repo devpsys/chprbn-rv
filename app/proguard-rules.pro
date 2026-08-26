@@ -63,6 +63,68 @@
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory
 
 
+# ---- kotlinx.serialization + Compose Navigation (type-safe routes) --------
+# Compose Nav 2.8+ inflates the graph by calling kotlinx.serialization on
+# every @Serializable route arg — including via runtime FQN class lookups
+# (see `NavType.parseSerializableType` on androidx.navigation). The
+# serialization plugin ships consumer rules for the `$serializer` companion
+# but does NOT keep the annotated class's name — R8 was free to rename
+# `ScanSource`, whose runtime FQN lookup then blew up at NavHost
+# setContent with `IllegalArgumentException: Cannot find class with name
+# "...ScanSource"`. See Routes.kt's block comment on the enum for the
+# original failure mode.
+#
+# The following block:
+#   1. Preserves the standard JetBrains-recommended keep set for
+#      companion serializers and `INSTANCE.serializer()` accessors.
+#   2. Preserves every @Serializable class's NAME (not members — the
+#      plugin already handles those) so nav-arg FQN lookups can't fail.
+#   3. Preserves the whole core.navigation package wholesale as
+#      belt-and-braces: every class there is a route or arg type, and
+#      the FQN lookup is one string-compare from breaking.
+
+# `<class>.Companion` field on @Serializable classes.
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1> {
+    static <1>$Companion Companion;
+}
+# `Companion.serializer()` — the entry point kotlinx.serialization calls.
+-if @kotlinx.serialization.Serializable class ** {
+    static **$Companion Companion;
+}
+-keepclassmembers class <2>$Companion {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+# `INSTANCE.serializer()` on @Serializable objects — no such usage today
+# in Routes.kt (only data classes and one enum), but cheap future-proofing
+# for a future @Serializable object route.
+-if @kotlinx.serialization.Serializable class ** {
+    public static ** INSTANCE;
+}
+-keepclassmembers class <1> {
+    public static <1> INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Keep every @Serializable class's NAME across the whole app so a future
+# @Serializable arg on any route can't repeat the ScanSource crash.
+-keepnames @kotlinx.serialization.Serializable class **
+
+# Nav routes — keep the whole package. Anything here is either a Route
+# (@Serializable object/data class) or an arg type (like ScanSource); one
+# missed keep = one crash at NavHost inflation. The wholesale rule keeps
+# names, members, and inner classes intact.
+-keep class ng.com.chprbn.mobile.core.navigation.** { *; }
+
+
+# ---- Room AutoMigrationSpec (reflectively instantiated) -------------------
+# Room's generated migration code instantiates AutoMigrationSpec subclasses
+# by reflection — see `AssessmentDatabase.DropSchedulesTableSpec`. The
+# wildcard `feature/**/data/local/**` already covers this via the package
+# match, but this explicit rule survives a future move of any spec class.
+-keep class * extends androidx.room.migration.AutoMigrationSpec { *; }
+
+
 # ---- Stack traces ----------------------------------------------------------
 # Keep file/line information so production crash reports stay readable. The
 # obfuscation map (build/outputs/mapping/release/mapping.txt) is what's needed

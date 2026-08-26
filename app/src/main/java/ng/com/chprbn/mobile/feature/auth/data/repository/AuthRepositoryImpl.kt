@@ -9,6 +9,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import ng.com.chprbn.mobile.core.network.toUserFacingMessage
 import ng.com.chprbn.mobile.feature.auth.data.api.AuthApiService
 import ng.com.chprbn.mobile.feature.auth.data.dto.ApiErrorDto
 import ng.com.chprbn.mobile.feature.auth.data.dto.LoginRequestDto
@@ -96,7 +97,9 @@ class AuthRepositoryImpl @Inject constructor(
             if (t is IOException || !connectivityChecker.isConnected()) {
                 return offlineLogin(trimmedUsername, password, cachedEntity)
             }
-            AuthResult.Error(t.message ?: "Login failed.")
+            // Never surface `t.message` directly — a socket / DNS / TLS
+            // failure carries the backend hostname or a cert chain string.
+            AuthResult.Error(t.toUserFacingMessage(default = "Login failed."))
         }
     }
 

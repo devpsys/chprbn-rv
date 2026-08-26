@@ -2,6 +2,8 @@ package ng.com.chprbn.mobile.feature.exam.data.source
 
 import android.util.Log
 import ng.com.chprbn.mobile.core.domain.model.PaperKind
+import ng.com.chprbn.mobile.core.network.stripHostsAndUrls
+import ng.com.chprbn.mobile.core.network.toUserFacingMessage
 import ng.com.chprbn.mobile.feature.assessment.domain.model.PracticalSection
 import ng.com.chprbn.mobile.feature.assessment.domain.model.SectionQuestion
 import ng.com.chprbn.mobile.feature.exam.data.api.ExamDossierApiService
@@ -72,15 +74,25 @@ class ApiExamDossierRemoteSource @Inject constructor(
         val response = try {
             api.fetchDossier()
         } catch (e: IOException) {
-            error("Network error fetching exam dossier: ${e.message ?: e.javaClass.simpleName}")
+            // Log the raw exception for on-device debugging, then throw
+            // with a message that carries no hostname / URL / cert text —
+            // this string is what surfaces in the Download Failed dialog
+            // (see UserFacingError.kt for the rationale).
+            Log.w(TAG, "Dossier network fetch failed", e)
+            error(e.toUserFacingMessage(default = "Could not download the dossier."))
         }
         if (!response.isSuccessful) {
-            error("Exam dossier request failed: HTTP ${response.code()} ${response.message()}")
+            // HTTP status is safe to name — code() is a number, message()
+            // is a canned status phrase like "Internal Server Error".
+            error("Couldn't reach the dossier service (HTTP ${response.code()}). Please try again.")
         }
         val envelope = response.body()
-            ?: error("Exam dossier response had an empty body.")
+            ?: error("The dossier service returned an empty response.")
         if (!envelope.success) {
-            error(envelope.message ?: "Exam dossier request was rejected.")
+            // envelope.message is server-authored — should be safe, but
+            // route it through the last-mile stripper in case a URL / host
+            // ever slips in.
+            error(envelope.message?.stripHostsAndUrls() ?: "The dossier service rejected the request.")
         }
         val data = envelope.data
         if (data == null) {

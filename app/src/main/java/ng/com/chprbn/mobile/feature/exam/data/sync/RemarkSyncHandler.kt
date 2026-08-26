@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.exam.data.sync
 
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.core.network.toUserFacingMessage
 import ng.com.chprbn.mobile.core.sync.Clock
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
@@ -55,7 +56,8 @@ class RemarkSyncHandler @Inject constructor(
                     SyncOutcome.Success
                 },
                 onFailure = { t ->
-                    val message = t.message ?: "Upload failed."
+                    // See AttendanceSyncHandler for the sanitiser rationale.
+                    val message = t.toUserFacingMessage(default = "Remark upload failed.")
                     remarkDao.updateSyncMetadata(
                         id = row.id,
                         syncStatus = SyncStatus.Failed.name,

@@ -1,6 +1,7 @@
 package ng.com.chprbn.mobile.feature.assessment.data.sync
 
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.core.network.toUserFacingMessage
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncOutcome
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
@@ -93,7 +94,8 @@ class PracticalScoreSyncHandler @Inject constructor(
                     SyncOutcome.Success
                 },
                 onFailure = { t ->
-                    val message = t.message ?: "Upload failed."
+                    // See AttendanceSyncHandler for the sanitiser rationale.
+                    val message = t.toUserFacingMessage(default = "Practical-score upload failed.")
                     practicalScoreDao.updateSyncMetadata(
                         scheduleId = row.domain.scheduleId,
                         candidateId = row.domain.candidateId,
