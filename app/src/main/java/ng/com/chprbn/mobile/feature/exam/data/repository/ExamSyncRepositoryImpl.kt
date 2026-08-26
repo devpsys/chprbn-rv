@@ -5,19 +5,28 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.SyncBatchResult
+import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.core.sync.Clock
 import ng.com.chprbn.mobile.core.sync.SyncBatchRunner
+import ng.com.chprbn.mobile.core.sync.SyncEntityType
+import ng.com.chprbn.mobile.core.sync.SyncJobDao
+import ng.com.chprbn.mobile.core.sync.SyncJobEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.AssessmentDatabase
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalSectionDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.SectionQuestionDao
 import ng.com.chprbn.mobile.feature.assessment.data.mappers.toEntity as toAssessmentEntity
+import ng.com.chprbn.mobile.feature.exam.data.local.AttendanceDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CandidateDao
 import ng.com.chprbn.mobile.feature.exam.data.local.CenterDao
 import ng.com.chprbn.mobile.feature.exam.data.local.ExamDatabase
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperCandidateAssignmentEntity
 import ng.com.chprbn.mobile.feature.exam.data.local.PaperDao
+import ng.com.chprbn.mobile.feature.exam.data.local.RemarkDao
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.exam.data.mappers.toExamCandidateEntity
 import ng.com.chprbn.mobile.feature.exam.data.source.ExamDossierRemoteSource
+import ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceKey
+import ng.com.chprbn.mobile.feature.exam.data.sync.RemarkKey
 import ng.com.chprbn.mobile.feature.exam.domain.model.DownloadDossierResult
 import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamSyncRepository
 import javax.inject.Inject
@@ -60,10 +69,14 @@ class ExamSyncRepositoryImpl @Inject constructor(
     private val centerDao: CenterDao,
     private val paperDao: PaperDao,
     private val candidateDao: CandidateDao,
+    private val attendanceDao: AttendanceDao,
+    private val remarkDao: RemarkDao,
     private val practicalSectionDao: PracticalSectionDao,
     private val sectionQuestionDao: SectionQuestionDao,
     private val remoteSource: ExamDossierRemoteSource,
     private val runner: SyncBatchRunner,
+    private val syncJobDao: SyncJobDao,
+    private val clock: Clock,
 ) : ExamSyncRepository {
 
     override suspend fun downloadDossier(): DownloadDossierResult = withContext(Dispatchers.IO) {
@@ -159,7 +172,39 @@ class ExamSyncRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncPending(): SyncBatchResult = withContext(Dispatchers.IO) {
-        runner.runBatch()
+        // syncPending is the entry point for the Statistics "Sync Now"
+        // button — an explicit user gesture. Reconcile the queue from
+        // the feature tables first so any row whose queue entry has
+        // been deleted (e.g. by a Success-path race that flipped the
+        // feature row back to Failed later) gets re-enqueued and
+        // becomes retryable. See AssessmentSyncRepositoryImpl for the
+        // full rationale + why the enqueue is idempotent.
+        reconcileFromCaptureTables()
+        runner.runBatch(resetAbandoned = true)
+    }
+
+    private suspend fun reconcileFromCaptureTables() {
+        val now = clock.nowMillis()
+        attendanceDao.pendingAndFailed(limit = Int.MAX_VALUE).forEach { row ->
+            syncJobDao.enqueue(
+                SyncJobEntity(
+                    entityType = SyncEntityType.Attendance.name,
+                    entityKey = AttendanceKey.encode(row.paperId, row.candidateId),
+                    enqueuedAt = now,
+                    status = SyncStatus.Pending.name,
+                ),
+            )
+        }
+        remarkDao.pendingAndFailed(limit = Int.MAX_VALUE).forEach { row ->
+            syncJobDao.enqueue(
+                SyncJobEntity(
+                    entityType = SyncEntityType.Remark.name,
+                    entityKey = RemarkKey.encode(row.id),
+                    enqueuedAt = now,
+                    status = SyncStatus.Pending.name,
+                ),
+            )
+        }
     }
 
     private companion object {

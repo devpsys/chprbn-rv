@@ -46,12 +46,16 @@ class SyncRepositoryImpl @Inject constructor(
 
     override suspend fun syncAllPendingAndFailed(): SyncBatchResult = withContext(Dispatchers.IO) {
         backfillQueue(verifiedLicenseDao.getPendingOrFailed())
-        batchRunner.runBatch().toFeatureResult()
+        // Both entry points are user-initiated (Sync screen buttons).
+        // See ExamSyncRepositoryImpl.syncPending for the rationale.
+        batchRunner.runBatch(resetAbandoned = true).toFeatureResult()
     }
 
     override suspend fun retryFailed(): SyncBatchResult = withContext(Dispatchers.IO) {
         backfillQueue(verifiedLicenseDao.getFailed())
-        batchRunner.runBatch().toFeatureResult()
+        // Both entry points are user-initiated (Sync screen buttons).
+        // See ExamSyncRepositoryImpl.syncPending for the rationale.
+        batchRunner.runBatch(resetAbandoned = true).toFeatureResult()
     }
 
     private suspend fun backfillQueue(rows: List<VerifiedLicenseEntity>) {

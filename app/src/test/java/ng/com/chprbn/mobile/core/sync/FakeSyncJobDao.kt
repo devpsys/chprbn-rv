@@ -79,6 +79,19 @@ internal class FakeSyncJobDao : SyncJobDao {
         return before - rows.size
     }
 
+    override suspend fun resetAbandonedForRetry(): Int {
+        var healed = 0
+        rows.keys.toList().forEach { id ->
+            val row = rows[id] ?: return@forEach
+            if (row.status == "Abandoned") {
+                rows[id] = row.copy(status = "Failed", attemptCount = 0)
+                healed++
+            }
+        }
+        if (healed > 0) publish()
+        return healed
+    }
+
     override suspend fun clearAll(): Int {
         val before = rows.size
         rows.clear()

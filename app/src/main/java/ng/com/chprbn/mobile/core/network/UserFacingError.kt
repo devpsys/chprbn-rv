@@ -53,16 +53,52 @@ private val HOSTNAME_PATTERN = Regex(
     """\b(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.){1,}[A-Za-z]{2,}\b""",
 )
 
+// Matches an IPv4 address optionally prefixed with '/' (OkHttp formats
+// exception messages as `/216.219.94.166`) and optionally suffixed with
+// `:port`. The leading `/` is consumed so `[server]` reads cleanly.
+private val IPV4_PATTERN = Regex(
+    """/?\b(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?\b""",
+)
+
+// Matches an IPv6 address in brackets (URL form) or bare with at least
+// two colons — restrictive on the bare form so we don't accidentally
+// eat innocent `hh:mm:ss` timestamps in the same message.
+private val IPV6_PATTERN = Regex(
+    """\[?[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){2,7}\]?(?::\d{1,5})?""",
+)
+
+// OkHttp's `SocketException` message includes phrases like "(port 443)"
+// after the IP. Strips those trailing port disclosures — the port
+// identifies the service (443 = HTTPS, or a non-standard proxy port)
+// and shouldn't survive sanitisation on its own.
+private val PORT_PHRASE_PATTERN = Regex(
+    """\s*\(port\s+\d{1,5}\)""",
+    RegexOption.IGNORE_CASE,
+)
+
 /**
  * Belt-and-braces sanitiser for messages the app renders through a
- * dialog verbatim (e.g. server-side envelope messages). Strips
- * `http(s)://…` and dotted hostnames — replaces both with
- * `[server]` so the sentence still reads. Safe to call on any string;
- * a message that carries no URL/host is returned unchanged.
+ * dialog verbatim (e.g. server-side envelope messages, cached
+ * `syncError` rows). Strips URLs, FQDNs, IPv4 + IPv6 addresses, and
+ * `"(port NNN)"` phrases — replaces each with `[server]` (or an empty
+ * string, for the port suffix) so the sentence still reads. Safe to
+ * call on any string; a message that carries none of those is
+ * returned unchanged.
+ *
+ * The pre-fix Failed tab surfaced messages like
+ * *"failed to connect to [server]/216.219.94.166 (port 443) from
+ * /10.106.176.217 (port 38944) after 15000ms"* — the FQDN got
+ * scrubbed by an earlier version of this helper, but the resolved
+ * public IP + officer's private LAN IP were still both visible. That
+ * exact leak is what the IPv4/IPv6/port patterns exist to close.
  *
  * Prefer [toUserFacingMessage] at the exception site — this is the
- * last-mile fallback for messages that originate outside the client.
+ * last-mile fallback for messages that originate outside the client
+ * or that were persisted before the write-side sanitiser landed.
  */
 fun String.stripHostsAndUrls(): String =
     replace(URL_PATTERN, "[server]")
         .replace(HOSTNAME_PATTERN, "[server]")
+        .replace(IPV6_PATTERN, "[server]")
+        .replace(IPV4_PATTERN, "[server]")
+        .replace(PORT_PHRASE_PATTERN, "")

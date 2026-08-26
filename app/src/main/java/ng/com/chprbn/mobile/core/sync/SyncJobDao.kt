@@ -59,6 +59,28 @@ interface SyncJobDao {
     @Query("DELETE FROM sync_jobs WHERE status = 'Synced'")
     suspend fun pruneSynced(): Int
 
+    /**
+     * Re-enables retry on every row that was auto-flipped to
+     * `Abandoned` after [SyncBatchRunner.MAX_ATTEMPTS] consecutive
+     * failures. Resets both `status` (back to `Failed` so
+     * [pendingAndFailed] picks it up) and `attemptCount = 0` (so it
+     * gets a fresh 5-attempt window before it can be abandoned again).
+     *
+     * Called only from user-initiated Sync Now — the background
+     * WorkManager retry stream deliberately leaves abandoned rows
+     * alone so a poison row can't burn bandwidth forever. Returns the
+     * number of rows healed so the caller can log it.
+     */
+    @Query(
+        """
+        UPDATE sync_jobs
+        SET status = 'Failed',
+            attemptCount = 0
+        WHERE status = 'Abandoned'
+        """,
+    )
+    suspend fun resetAbandonedForRetry(): Int
+
     @Query("DELETE FROM sync_jobs")
     suspend fun clearAll(): Int
 }

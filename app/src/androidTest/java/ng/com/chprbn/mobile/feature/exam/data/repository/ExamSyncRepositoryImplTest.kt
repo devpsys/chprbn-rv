@@ -68,10 +68,14 @@ class ExamSyncRepositoryImplTest {
             centerDao = db.centerDao(),
             paperDao = db.paperDao(),
             candidateDao = db.candidateDao(),
+            attendanceDao = db.attendanceDao(),
+            remarkDao = db.remarkDao(),
             practicalSectionDao = assessmentDb.sectionDao(),
             sectionQuestionDao = assessmentDb.questionDao(),
             remoteSource = remoteSource,
             runner = runner,
+            syncJobDao = mockk(relaxed = true),
+            clock = mockk(relaxed = true),
         )
     }
 

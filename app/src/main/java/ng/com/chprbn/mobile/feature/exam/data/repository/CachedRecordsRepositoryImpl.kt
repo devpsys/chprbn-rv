@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
+import ng.com.chprbn.mobile.core.network.stripHostsAndUrls
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreDao
 import ng.com.chprbn.mobile.feature.assessment.data.local.PracticalScoreEntity
 import ng.com.chprbn.mobile.feature.assessment.data.local.ProjectScoreDao
@@ -96,7 +97,7 @@ class CachedRecordsRepositoryImpl @Inject constructor(
                 paperTitle = paper?.title.orEmpty(),
                 recordType = RecordType.PracticalScore,
                 syncStatus = row.syncStatus.toSyncStatus(),
-                syncError = row.syncError,
+                syncError = row.syncError.sanitiseForDisplay(),
                 capturedAt = row.scoredAt,
                 // Practical/project score entities don't carry a
                 // last-attempt column; the repo surfaces null so the
@@ -115,7 +116,7 @@ class CachedRecordsRepositoryImpl @Inject constructor(
                 paperTitle = paper?.title.orEmpty(),
                 recordType = RecordType.ProjectScore,
                 syncStatus = row.syncStatus.toSyncStatus(),
-                syncError = row.syncError,
+                syncError = row.syncError.sanitiseForDisplay(),
                 capturedAt = row.scoredAt,
                 lastAttemptAt = null,
             )
@@ -137,7 +138,7 @@ class CachedRecordsRepositoryImpl @Inject constructor(
             paperTitle = paperTitle,
             recordType = recordType,
             syncStatus = syncStatus.toSyncStatus(),
-            syncError = syncError,
+            syncError = syncError.sanitiseForDisplay(),
             capturedAt = capturedAt,
             lastAttemptAt = lastAttemptAt,
         )
@@ -146,6 +147,24 @@ class CachedRecordsRepositoryImpl @Inject constructor(
     /** Defensive: a corrupted stored string degrades to Pending. */
     private fun String.toSyncStatus(): SyncStatus =
         runCatching { SyncStatus.valueOf(this) }.getOrDefault(SyncStatus.Pending)
+
+    /**
+     * Last-mile scrub of any stored `syncError` before it reaches the
+     * screen. The sync handlers already call `toUserFacingMessage` at
+     * write time, but this defends against two paths that would
+     * otherwise leak the backend host into the Failed tab:
+     *
+     * 1. **Historical rows** — anything captured before the sanitiser
+     *    landed still has the raw hostname on disk until the next sync
+     *    attempt overwrites the column. This scrub covers those in
+     *    place, no migration or rewrite needed.
+     * 2. **New write paths we haven't audited yet** — any future
+     *    handler that forgets to route through `toUserFacingMessage`
+     *    gets scrubbed here anyway, so the domain never surfaces even
+     *    if the write-side sanitiser is bypassed.
+     */
+    private fun String?.sanitiseForDisplay(): String? =
+        this?.stripHostsAndUrls()
 
     private companion object {
         val PENDING_STATUSES = listOf(SyncStatus.Pending.name)

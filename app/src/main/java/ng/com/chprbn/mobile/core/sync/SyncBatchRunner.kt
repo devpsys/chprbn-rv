@@ -32,7 +32,22 @@ class SyncBatchRunner @Inject constructor(
     private val clock: Clock,
 ) {
 
-    suspend fun runBatch(batchSize: Int = DEFAULT_BATCH_SIZE): SyncBatchResult {
+    /**
+     * @param resetAbandoned when `true`, every queue row currently
+     * flipped to [SyncStatus.Abandoned] is re-enabled for retry
+     * (status → Failed, attemptCount → 0) BEFORE the batch is picked.
+     * Only user-initiated flows (Statistics "Sync Now") should pass
+     * `true`; the background WorkManager keeps the current
+     * cap-and-forget behaviour so a poison row can't burn bandwidth.
+     * Fixes the "Sync Complete — nothing to sync" bug that stranded
+     * abandoned rows on the Cached Records Failed tab with no user
+     * recourse to retry them.
+     */
+    suspend fun runBatch(
+        batchSize: Int = DEFAULT_BATCH_SIZE,
+        resetAbandoned: Boolean = false,
+    ): SyncBatchResult {
+        if (resetAbandoned) syncJobDao.resetAbandonedForRetry()
         val jobs = syncJobDao.pendingAndFailed(limit = batchSize)
         if (jobs.isEmpty()) return SyncBatchResult.Empty
 
