@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -19,16 +21,25 @@ import ng.com.chprbn.mobile.feature.assessment.domain.usecase.RecordProjectScore
 import javax.inject.Inject
 
 /**
- * Loads the candidate profile and any previously saved project score, then
- * holds edits locally until [onSaveScore]. Persistence is the Save FAB
- * gesture (not per-keystroke) so the spinner on that FAB has real work to
- * cover; [scoreSaved] fires on success so the Screen layer can pop back
- * to the practical-sections hub.
+ * Loads the candidate profile and any previously saved project score,
+ * then auto-saves on every valid keystroke with a short debounce.
+ * Officers were regularly leaving the screen without tapping the Save
+ * FAB, losing captured scores — the debounced write ensures the last
+ * fully-parseable value is on disk within ~[AUTO_SAVE_DEBOUNCE_MS] of
+ * the user pausing. Range/precision rules live in
+ * [RecordProjectScoreUseCase], so a misbehaving caller can't slip a
+ * bad value past persistence.
  *
- * Mid-entry strings like `"8."` stay in [AssessmentProjectAssessmentUiState.scoreText]
- * without being written. Range/precision rules live in
- * [RecordProjectScoreUseCase], so a misbehaving caller can't slip a bad
- * value past persistence.
+ * The Save FAB stays as an explicit confirm gesture: it re-issues the
+ * write (harmless — REPLACE is idempotent on the same PK) and emits
+ * [scoreSaved] so the Screen layer can pop back to the
+ * practical-sections hub.
+ *
+ * Mid-entry strings like `"8."` still land in
+ * [AssessmentProjectAssessmentUiState.scoreText] because `"8."` parses
+ * as `8.0` and is a valid write; the moment the user types `"8.5"` the
+ * debounce cancel-and-restart replaces that intermediate write with
+ * the final value.
  */
 @HiltViewModel
 class AssessmentProjectAssessmentViewModel @Inject constructor(
@@ -45,6 +56,13 @@ class AssessmentProjectAssessmentViewModel @Inject constructor(
 
     /** Populated once the scanned payload resolves against the roster. */
     private var resolvedCandidateId: String? = null
+
+    /**
+     * The inflight auto-save. Cancelled and replaced on every new
+     * keystroke so a fast typer's intermediate values (`"8"` → `"8."` →
+     * `"8.5"`) never race the final write; only the last one lands.
+     */
+    private var autoSaveJob: Job? = null
 
     private val _uiState = MutableStateFlow(AssessmentProjectAssessmentUiState())
     val uiState: StateFlow<AssessmentProjectAssessmentUiState> = _uiState.asStateFlow()
@@ -74,6 +92,11 @@ class AssessmentProjectAssessmentViewModel @Inject constructor(
 
     fun onScoreChange(text: String) {
         if (text.isEmpty()) {
+            // Cancel any pending write — user cleared the field and
+            // will type a new value. Their previously-persisted score
+            // stays as-is (we never delete on clear; there's no UI
+            // gesture for "erase this score").
+            autoSaveJob?.cancel()
             _uiState.update { it.copy(scoreText = "") }
             return
         }
@@ -83,6 +106,28 @@ class AssessmentProjectAssessmentViewModel @Inject constructor(
         val max = _uiState.value.maxScore.toDouble()
         if (parsed == null || parsed in 0.0..max) {
             _uiState.update { it.copy(scoreText = text) }
+            if (parsed != null) scheduleAutoSave(parsed)
+        }
+    }
+
+    /**
+     * Debounces + cancel-previous so a burst of keystrokes results in
+     * at most one persistence attempt for the final settled value.
+     * Silent on the UI (no [AssessmentProjectAssessmentUiState.isSaving]
+     * flip) — the loading spinner is reserved for the FAB gesture.
+     */
+    private fun scheduleAutoSave(score: Double) {
+        val candidateId = resolvedCandidateId ?: return
+        val maxScore = _uiState.value.maxScore
+        autoSaveJob?.cancel()
+        autoSaveJob = viewModelScope.launch {
+            delay(AUTO_SAVE_DEBOUNCE_MS)
+            recordProjectScore(
+                scheduleId = scheduleId,
+                candidateId = candidateId,
+                score = score,
+                maxScore = maxScore,
+            )
         }
     }
 
@@ -91,6 +136,10 @@ class AssessmentProjectAssessmentViewModel @Inject constructor(
         val candidateId = resolvedCandidateId ?: return
         val parsed = _uiState.value.scoreText.toDoubleOrNull() ?: return
         val maxScore = _uiState.value.maxScore
+        // Preempt the debounced auto-save so we don't write twice for
+        // the same value or race the FAB path. The explicit call below
+        // is authoritative.
+        autoSaveJob?.cancel()
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             when (
@@ -108,6 +157,13 @@ class AssessmentProjectAssessmentViewModel @Inject constructor(
     }
 
     private companion object {
+        /**
+         * Long enough to swallow a burst of keystrokes for a two-digit
+         * score (`"8.5"` = three onScoreChange fires in <100ms typical),
+         * short enough that a user pausing to look at the field sees
+         * their work land almost instantly.
+         */
+        private const val AUTO_SAVE_DEBOUNCE_MS = 300L
         private val SCORE_PATTERN = Regex("^\\d{1,2}(\\.\\d?)?$")
 
         fun formatScoreForInput(score: Double): String {

@@ -6,6 +6,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import ng.com.chprbn.mobile.core.domain.model.Candidate
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
@@ -94,37 +95,82 @@ class AssessmentProjectAssessmentViewModelTest {
     }
 
     @Test
-    fun `empty input clears the score text and skips persistence`() = runTest {
+    fun `clearing the field cancels the pending auto-save and never persists`() = runTest {
         coEvery { lookup(any(), any()) } returns Candidate("c1", "EX-1", "X")
         val vm = makeVm()
 
+        // Rapid type-then-clear inside the debounce window: the "8"
+        // write must be cancelled by the clear, so nothing lands.
         vm.onScoreChange("8")
         vm.onScoreChange("")
+        advanceUntilIdle()
 
         assertEquals("", vm.uiState.value.scoreText)
         coVerify(exactly = 0) { recordProjectScore(any(), any(), any(), any()) }
     }
 
     @Test
-    fun `parseable input updates the field without persisting`() = runTest {
+    fun `parseable input auto-saves after the debounce window`() = runTest {
         coEvery { lookup(any(), any()) } returns Candidate("c1", "EX-1", "X")
         val vm = makeVm()
 
         vm.onScoreChange("8")
+        advanceUntilIdle()
 
         assertEquals("8", vm.uiState.value.scoreText)
-        coVerify(exactly = 0) { recordProjectScore(any(), any(), any(), any()) }
+        coVerify(exactly = 1) {
+            recordProjectScore(
+                scheduleId = "PE-2024",
+                candidateId = "c1",
+                score = 8.0,
+                maxScore = 10,
+            )
+        }
     }
 
     @Test
-    fun `trailing-decimal input is kept locally`() = runTest {
+    fun `trailing-decimal input is kept locally and auto-saves as the integer double`() = runTest {
         coEvery { lookup(any(), any()) } returns Candidate("c1", "EX-1", "X")
         val vm = makeVm()
 
+        // "8." parses as 8.0. The debounced write persists that; a
+        // subsequent "8.5" would cancel-and-replace it.
         vm.onScoreChange("8.")
+        advanceUntilIdle()
 
         assertEquals("8.", vm.uiState.value.scoreText)
-        coVerify(exactly = 0) { recordProjectScore(any(), any(), any(), any()) }
+        coVerify(exactly = 1) {
+            recordProjectScore(
+                scheduleId = "PE-2024",
+                candidateId = "c1",
+                score = 8.0,
+                maxScore = 10,
+            )
+        }
+    }
+
+    @Test
+    fun `rapid burst only persists the final value`() = runTest {
+        coEvery { lookup(any(), any()) } returns Candidate("c1", "EX-1", "X")
+        val vm = makeVm()
+
+        // Simulates a fast typer entering "8.5" — three onScoreChange
+        // fires in quick succession. Debounce + cancel-previous means
+        // only the last one survives the delay window.
+        vm.onScoreChange("8")
+        vm.onScoreChange("8.")
+        vm.onScoreChange("8.5")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { recordProjectScore(any(), any(), any(), any()) }
+        coVerify(exactly = 1) {
+            recordProjectScore(
+                scheduleId = "PE-2024",
+                candidateId = "c1",
+                score = 8.5,
+                maxScore = 10,
+            )
+        }
     }
 
     @Test
@@ -149,14 +195,18 @@ class AssessmentProjectAssessmentViewModelTest {
     }
 
     @Test
-    fun `onSaveScore persists the parsed value then emits scoreSaved`() = runTest {
+    fun `onSaveScore preempts the pending auto-save and emits scoreSaved with exactly one write`() = runTest {
         coEvery { lookup(any(), any()) } returns Candidate("c1", "EX-1", "X")
         val vm = makeVm()
         vm.onScoreChange("8.5")
 
         var emitted = false
         val job = launch { vm.scoreSaved.collect { emitted = true } }
-        advanceUntilIdle()
+        // runCurrent lets the collector attach WITHOUT advancing the
+        // virtual clock past the auto-save's 300 ms debounce, so the
+        // pending write is still queued when Save is tapped below —
+        // that's the preempt path we're testing.
+        runCurrent()
 
         vm.onSaveScore()
         advanceUntilIdle()
@@ -184,7 +234,8 @@ class AssessmentProjectAssessmentViewModelTest {
 
         var emitted = false
         val job = launch { vm.scoreSaved.collect { emitted = true } }
-        advanceUntilIdle()
+        // Same preempt-before-debounce timing as the success test above.
+        runCurrent()
 
         vm.onSaveScore()
         advanceUntilIdle()
