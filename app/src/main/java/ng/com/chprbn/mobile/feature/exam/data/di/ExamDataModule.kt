@@ -12,6 +12,7 @@ import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
 import ng.com.chprbn.mobile.feature.exam.data.repository.AttendanceRepositoryImpl
+import ng.com.chprbn.mobile.feature.exam.data.repository.CachedRecordsRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamCandidateRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamPaperRepositoryImpl
 import ng.com.chprbn.mobile.feature.exam.data.repository.ExamSessionCleaner
@@ -25,6 +26,7 @@ import ng.com.chprbn.mobile.feature.exam.data.source.ExamSyncRemoteSource
 import ng.com.chprbn.mobile.feature.exam.data.sync.AttendanceSyncHandler
 import ng.com.chprbn.mobile.feature.exam.data.sync.RemarkSyncHandler
 import ng.com.chprbn.mobile.feature.exam.domain.repository.AttendanceRepository
+import ng.com.chprbn.mobile.feature.exam.domain.repository.CachedRecordsRepository
 import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamCandidateRepository
 import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamPaperRepository
 import ng.com.chprbn.mobile.feature.exam.domain.repository.ExamStatisticsRepository
@@ -82,6 +84,12 @@ abstract class ExamDataModule {
     abstract fun bindExamStatisticsRepository(
         impl: ExamStatisticsRepositoryImpl,
     ): ExamStatisticsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCachedRecordsRepository(
+        impl: CachedRecordsRepositoryImpl,
+    ): CachedRecordsRepository
 
     @Binds
     @Singleton

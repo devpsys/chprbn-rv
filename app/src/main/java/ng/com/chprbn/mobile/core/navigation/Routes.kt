@@ -60,6 +60,10 @@ object Routes {
     @Serializable
     data object ExamStatistics
 
+    /** Officer-facing list of pending + failed sync-queued records. */
+    @Serializable
+    data object CachedRecords
+
     /** Single paper's detail screen. [paperId] is captured via SavedStateHandle. */
     @Serializable
     data class ExamPaper(val paperId: String)

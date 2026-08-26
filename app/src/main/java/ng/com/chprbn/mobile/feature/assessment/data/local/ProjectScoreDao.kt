@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 @JvmSuppressWildcards
@@ -35,6 +36,16 @@ interface ProjectScoreDao {
 
     @Query("SELECT * FROM project_scores WHERE syncStatus IN ('Pending', 'Failed') LIMIT :limit")
     suspend fun pendingAndFailed(limit: Int = 50): List<ProjectScoreEntity>
+
+    /** See [PracticalScoreDao.observeByStatus] — same shape, project-side. */
+    @Query(
+        """
+        SELECT * FROM project_scores
+        WHERE syncStatus IN (:statuses)
+        ORDER BY scoredAt DESC
+        """,
+    )
+    fun observeByStatus(statuses: List<String>): Flow<List<ProjectScoreEntity>>
 
     @Query(
         """

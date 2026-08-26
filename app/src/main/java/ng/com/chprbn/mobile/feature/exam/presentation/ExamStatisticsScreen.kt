@@ -21,7 +21,8 @@ fun ExamStatisticsScreen(
     viewModel: ExamStatisticsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onExamDashboardTab: () -> Unit = {},
-    onStatisticsTab: () -> Unit = {}
+    onStatisticsTab: () -> Unit = {},
+    onViewCachedRecords: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
@@ -33,7 +34,8 @@ fun ExamStatisticsScreen(
         onSyncNow = viewModel::onSyncNow,
         onClearCached = viewModel::onClearCachedClicked,
         onExamDashboardTab = onExamDashboardTab,
-        onStatisticsTab = onStatisticsTab
+        onStatisticsTab = onStatisticsTab,
+        onViewCachedRecords = onViewCachedRecords,
     )
     SyncOverlay(
         state = syncState,
@@ -142,7 +144,8 @@ private fun ExamStatisticsScreenPreview() {
             onSyncNow = {},
             onClearCached = {},
             onExamDashboardTab = {},
-            onStatisticsTab = {}
+            onStatisticsTab = {},
+            onViewCachedRecords = {},
         )
     }
 }

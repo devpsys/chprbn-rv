@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Description
@@ -63,7 +64,8 @@ fun ExamStatisticsContent(
     onSyncNow: () -> Unit,
     onClearCached: () -> Unit,
     onExamDashboardTab: () -> Unit,
-    onStatisticsTab: () -> Unit
+    onStatisticsTab: () -> Unit,
+    onViewCachedRecords: () -> Unit = {},
 ) {
     val scheme = MaterialTheme.colorScheme
     Scaffold(
@@ -125,6 +127,14 @@ fun ExamStatisticsContent(
                 pendingSyncLegendCount = uiState.pendingSyncLegendCount,
                 successfullySyncedLegendCount = uiState.successfullySyncedLegendCount,
                 footnote = uiState.footnote
+            )
+            // Entry into the officer-facing Cached Records screen. Kept
+            // between the sync-comparison summary and the destructive
+            // action buttons so it reads as a natural follow-up to the
+            // aggregated counters ("open the list this bar is summarising").
+            CachedRecordsEntryCard(
+                pendingCountLabel = uiState.pendingSyncLegendCount,
+                onClick = onViewCachedRecords,
             )
             Column(
                 modifier = Modifier
@@ -196,6 +206,64 @@ fun ExamStatisticsContent(
             }
             StatisticsIllustration(imageUrl = uiState.illustrationImageUrl)
             Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+/**
+ * Entry into the officer-facing Cached Records list. Sits between the
+ * sync-comparison summary and the destructive Clear-Cache action so
+ * the officer can drill into "which rows are queued / stuck" before
+ * deciding to wipe them.
+ */
+@Composable
+private fun CachedRecordsEntryCard(pendingCountLabel: String, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = scheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, scheme.outlineVariant),
+        shadowElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.Assignment,
+                contentDescription = null,
+                tint = scheme.primary,
+                modifier = Modifier.size(28.dp),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.exam_statistics_cached_records_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = scheme.onSurface,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.exam_statistics_cached_records_subtitle_format,
+                        pendingCountLabel,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                contentDescription = null,
+                tint = scheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

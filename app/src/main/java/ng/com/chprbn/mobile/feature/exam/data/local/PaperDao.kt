@@ -40,6 +40,10 @@ interface PaperDao {
     @Query("SELECT * FROM papers WHERE id = :paperId")
     suspend fun getById(paperId: String): PaperEntity?
 
+    /** Batch label-lookup for cross-DB score-record hydration. */
+    @Query("SELECT * FROM papers WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<String>): List<PaperEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(papers: List<PaperEntity>): List<Long>
 

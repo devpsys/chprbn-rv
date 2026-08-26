@@ -487,6 +487,25 @@
     <string name="exam_statistics_action_refresh">Refresh</string>
     <string name="exam_statistics_action_sync_now">Sync Now</string>
     <string name="exam_statistics_action_clear_cached">Clear Cached Records</string>
+    <string name="exam_statistics_cached_records_title">Cached Records</string>
+    <string name="exam_statistics_cached_records_subtitle_format">%1$s awaiting sync — tap to view which candidates and see any errors.</string>
+
+    <!-- ============== Cached Records screen ============== -->
+    <string name="cached_records_title">Cached Records</string>
+    <string name="cached_records_tab_pending_format">Pending (%1$d)</string>
+    <string name="cached_records_tab_failed_format">Failed (%1$d)</string>
+    <string name="cached_records_search_placeholder">Search by candidate name or exam number</string>
+    <string name="cached_records_type_attendance">Attendance</string>
+    <string name="cached_records_type_remark">Remark</string>
+    <string name="cached_records_type_practical">Practical</string>
+    <string name="cached_records_type_project">Project</string>
+    <string name="cached_records_captured_format">Captured %1$s</string>
+    <string name="cached_records_abandoned_hint">Automatic retries have stopped. Fix the issue at the server and tap Sync Now to try again.</string>
+    <string name="cached_records_pending_empty_title">Nothing awaiting sync</string>
+    <string name="cached_records_pending_empty_subtitle">Anything you capture on this device will land here until it uploads to the server.</string>
+    <string name="cached_records_failed_empty_title">No failed records</string>
+    <string name="cached_records_failed_empty_subtitle">Records the server rejected or that ran out of retry attempts will appear here.</string>
+    <string name="action_back">Back</string>
     <string name="exam_statistics_stat_records_downloaded">Records Downloaded</string>
     <string name="exam_statistics_stat_attendance_captured">Attendance Captured</string>
     <string name="exam_statistics_stat_practical_captured">Practical Captured</string>

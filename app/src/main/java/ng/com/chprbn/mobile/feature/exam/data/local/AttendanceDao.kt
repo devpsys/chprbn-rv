@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 @JvmSuppressWildcards
@@ -60,4 +61,36 @@ interface AttendanceDao {
 
     @Query("DELETE FROM attendance")
     suspend fun clearAll(): Int
+
+    /**
+     * Live projection for the Cached Records screen — joins attendance
+     * with candidate + paper reference data so the row is displayable
+     * without a second DAO hop. `COALESCE`s protect against a dossier
+     * refresh dropping a candidate/paper mid-day: the row still shows
+     * (with the id as the fallback label) rather than disappearing
+     * from the officer's queue silently. [statuses] is caller-side
+     * filtered so the same query serves both the Pending tab
+     * (`['Pending']`) and the Failed tab (`['Failed', 'Abandoned']`).
+     */
+    @Query(
+        """
+        SELECT
+            'Attendance'                                       AS recordType,
+            a.candidateId                                       AS candidateId,
+            COALESCE(c.fullName, 'Candidate #' || a.candidateId) AS candidateName,
+            COALESCE(c.examNumber, '')                          AS examNumber,
+            a.paperId                                           AS paperId,
+            COALESCE(p.title, '')                               AS paperTitle,
+            a.syncStatus                                        AS syncStatus,
+            a.syncError                                         AS syncError,
+            a.markedAt                                          AS capturedAt,
+            a.lastSyncAttemptAt                                 AS lastAttemptAt
+        FROM attendance a
+        LEFT JOIN candidates c ON c.id = a.candidateId
+        LEFT JOIN papers p ON p.id = a.paperId
+        WHERE a.syncStatus IN (:statuses)
+        ORDER BY a.markedAt DESC
+        """,
+    )
+    fun observeCachedRecords(statuses: List<String>): Flow<List<CachedRecordProjection>>
 }

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 @JvmSuppressWildcards
@@ -47,4 +48,27 @@ interface RemarkDao {
 
     @Query("DELETE FROM remarks")
     suspend fun clearAll(): Int
+
+    /** See [AttendanceDao.observeCachedRecords] — same shape, remarks source. */
+    @Query(
+        """
+        SELECT
+            'Remark'                                            AS recordType,
+            r.candidateId                                       AS candidateId,
+            COALESCE(c.fullName, 'Candidate #' || r.candidateId) AS candidateName,
+            COALESCE(c.examNumber, '')                          AS examNumber,
+            COALESCE(r.paperId, '')                             AS paperId,
+            COALESCE(p.title, '')                               AS paperTitle,
+            r.syncStatus                                        AS syncStatus,
+            r.syncError                                         AS syncError,
+            r.createdAt                                         AS capturedAt,
+            r.lastSyncAttemptAt                                 AS lastAttemptAt
+        FROM remarks r
+        LEFT JOIN candidates c ON c.id = r.candidateId
+        LEFT JOIN papers p ON p.id = r.paperId
+        WHERE r.syncStatus IN (:statuses)
+        ORDER BY r.createdAt DESC
+        """,
+    )
+    fun observeCachedRecords(statuses: List<String>): Flow<List<CachedRecordProjection>>
 }

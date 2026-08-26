@@ -24,6 +24,15 @@ interface CandidateDao {
     @Query("SELECT * FROM candidates WHERE id = :candidateId")
     suspend fun getById(candidateId: String): CandidateEntity?
 
+    /**
+     * Batch label-lookup used by `CachedRecordsRepositoryImpl` — the
+     * assessment-side score rows live in a different DB, so the repo
+     * pulls their candidate labels through here in one query rather
+     * than N `getById` hops.
+     */
+    @Query("SELECT * FROM candidates WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<String>): List<CandidateEntity>
+
     @Query("SELECT * FROM candidates WHERE examNumber = :examNumber LIMIT 1")
     suspend fun getByExamNumber(examNumber: String): CandidateEntity?
 

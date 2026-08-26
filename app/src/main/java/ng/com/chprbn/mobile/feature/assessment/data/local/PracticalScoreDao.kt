@@ -98,6 +98,22 @@ interface PracticalScoreDao {
     @Query("SELECT * FROM practical_scores WHERE syncStatus IN ('Pending', 'Failed') LIMIT :limit")
     suspend fun pendingAndFailed(limit: Int = 50): List<PracticalScoreEntity>
 
+    /**
+     * Live pending/failed rows for the Cached Records screen. The
+     * repo hydrates candidate + paper labels from `exam.db` since
+     * Room can't cross-DB join. [statuses] lets the same query serve
+     * the Pending tab (`['Pending']`) and the Failed tab
+     * (`['Failed', 'Abandoned']`).
+     */
+    @Query(
+        """
+        SELECT * FROM practical_scores
+        WHERE syncStatus IN (:statuses)
+        ORDER BY scoredAt DESC
+        """,
+    )
+    fun observeByStatus(statuses: List<String>): Flow<List<PracticalScoreEntity>>
+
     @Query(
         """
         SELECT COUNT(*) FROM practical_scores

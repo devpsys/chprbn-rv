@@ -31,6 +31,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamPapersScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamCandidatesScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CandidateProfileScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
+import ng.com.chprbn.mobile.feature.exam.presentation.CachedRecordsScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
@@ -192,8 +193,12 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 onExamDashboardTab = {
                     navController.popBackStack<Routes.ExamDashboard>(inclusive = false)
                 },
-                onStatisticsTab = { /* already on statistics */ }
+                onStatisticsTab = { /* already on statistics */ },
+                onViewCachedRecords = { navController.navigate(Routes.CachedRecords) },
             )
+        }
+        composable<Routes.CachedRecords> {
+            CachedRecordsScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.Verification> {
             VerificationScreen(
