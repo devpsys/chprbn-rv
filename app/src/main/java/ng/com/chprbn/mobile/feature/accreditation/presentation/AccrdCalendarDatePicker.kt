@@ -393,10 +393,10 @@ private fun YearGrid(
 ) {
     val years = remember(selectedYear) {
         val currentYear = LocalDate.now().year
-        // Always span through the current year (and a short future buffer),
-        // even when the field is seeded with a historical date like 1967.
+        // Cap at the device's current calendar year — no future years.
+        // Historical seeds (e.g. 1967) still reach back, but never past "now".
         val start = (selectedYear - 80).coerceAtLeast(1900)
-        val end = maxOf(selectedYear + 20, currentYear + 10)
+        val end = currentYear
         (start..end).toList().asReversed()
     }
     LazyVerticalGrid(
