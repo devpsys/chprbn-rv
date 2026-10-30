@@ -97,11 +97,11 @@ fun AccrdCalendarDatePickerDialog(
             usePlatformDefaultWidth = false,
         ),
     ) {
+        // Host is transparent — Android's Dialog window supplies the default
+        // dim scrim (~60% black). Outside taps dismiss via DialogProperties.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF2D322C).copy(alpha = 0.60f))
-                .clickable(onClick = onDismiss)
                 .padding(horizontal = 16.dp)
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp),
@@ -116,9 +116,10 @@ fun AccrdCalendarDatePickerDialog(
                         indication = null,
                         onClick = {},
                     ),
-                shape = RoundedCornerShape(28.dp),
+                // Match accreditation card chrome (12.dp), not the HTML's 28.dp.
+                shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 24.dp,
+                shadowElevation = 8.dp,
             ) {
                 Column(
                     modifier = Modifier
