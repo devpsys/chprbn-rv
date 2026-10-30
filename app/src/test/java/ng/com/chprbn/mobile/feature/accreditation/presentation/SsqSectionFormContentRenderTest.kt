@@ -1,0 +1,52 @@
+package ng.com.chprbn.mobile.feature.accreditation.presentation
+
+import android.app.Application
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class, qualifiers = "w411dp-h2400dp")
+class SsqSectionFormContentRenderTest {
+
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun section_a_renders_ownership_and_save_actions() {
+        composeRule.setContent {
+            ChprbnTheme {
+                SsqSectionFormContent(
+                    uiState = SsqSectionFormUiState.placeholder(sectionKey = SsqSectionKey.A),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Section A: General Information").assertExists()
+        composeRule.onNodeWithText("Federal Government").assertExists()
+        composeRule.onNodeWithText("Dr. Aisha Mohammed Garba").assertExists()
+        composeRule.onNodeWithText("Save Section Draft").assertExists()
+        composeRule.onNodeWithText("Supporting Documents & Evidence").assertExists()
+    }
+
+    @Test
+    fun section_c_renders_checklist_availability_controls() {
+        composeRule.setContent {
+            ChprbnTheme {
+                SsqSectionFormContent(
+                    uiState = SsqSectionFormUiState.placeholder(sectionKey = SsqSectionKey.C),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Section C: Curriculum & Teaching Methods").assertExists()
+        composeRule.onAllNodesWithText("Available")[0].assertExists()
+        composeRule.onNodeWithText("Save as Draft").assertExists()
+    }
+}

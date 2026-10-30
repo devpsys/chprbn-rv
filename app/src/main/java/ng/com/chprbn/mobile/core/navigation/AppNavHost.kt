@@ -35,7 +35,9 @@ import ng.com.chprbn.mobile.feature.exam.presentation.CachedRecordsScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AccreditationHubScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentOverviewScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.InstitutionProfileScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.SsqSectionFormScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
@@ -148,9 +150,26 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
         composable<Routes.InstitutionProfile> {
             InstitutionProfileScreen(
                 onBack = { navController.popBackStack() },
-                onStartNewAssessment = { /* TODO: AssessmentOverview */ },
+                onStartNewAssessment = { institutionId ->
+                    navController.navigate(Routes.AssessmentOverview(institutionId))
+                },
                 onViewDocuments = { /* TODO: documents / attachments */ },
                 onHistoryItemClick = { _, _ -> /* TODO: assessment history detail */ },
+            )
+        }
+        composable<Routes.AssessmentOverview> {
+            AssessmentOverviewScreen(
+                onBack = { navController.popBackStack() },
+                onSectionClick = { institutionId, sectionKey ->
+                    navController.navigate(Routes.SsqSectionForm(institutionId, sectionKey))
+                },
+                onContinueToChecklist = { /* TODO: CriteriaChecklist (Prompt D) */ },
+                onSaveAllDrafts = { /* TODO: persist all section drafts */ },
+            )
+        }
+        composable<Routes.SsqSectionForm> {
+            SsqSectionFormScreen(
+                onBack = { navController.popBackStack() },
             )
         }
         composable<Routes.ExamDashboard> {

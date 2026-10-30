@@ -708,4 +708,66 @@
     <string name="accreditation_profile_not_found_subtitle_format">No assigned institution matches “%1$s” on this device.</string>
     <string name="accreditation_profile_error_title">Unable to load institution</string>
     <string name="accreditation_profile_action_back_to_hub">Back to Hub</string>
+
+    <!-- ============== Accreditation — assessment overview / SSQ ============== -->
+    <string name="accreditation_overview_title">Accreditation Assessment</string>
+    <string name="accreditation_overview_audit_label">ACCREDITATION AUDIT</string>
+    <string name="accreditation_overview_facility_meta_format">Facility: %1$s • %2$s</string>
+    <string name="accreditation_overview_percent_format">%1$d%% Completed</string>
+    <string name="accreditation_overview_saved_count_format">%1$d of %2$d Sections Saved</string>
+    <string name="accreditation_overview_modules_heading">ASSESSMENT MODULES</string>
+    <string name="accreditation_overview_continue_checklist">Continue to Criteria Checklist</string>
+    <string name="accreditation_overview_continue_locked_hint">Requires 6 of 6 sections saved locally to unlock criteria review</string>
+    <string name="accreditation_overview_save_all_drafts">Save All Drafts to Vault</string>
+    <string name="accreditation_overview_error_title">Unable to load assessment</string>
+
+    <string name="accreditation_section_status_not_started">Not Started</string>
+    <string name="accreditation_section_status_in_progress">In Progress</string>
+    <string name="accreditation_section_status_saved_locally">Saved</string>
+    <string name="accreditation_section_status_pending_sync">Pending Sync</string>
+    <string name="accreditation_section_status_synced">Synced</string>
+
+    <string name="accreditation_section_error_title">Unable to load section</string>
+    <string name="accreditation_section_save_draft">Save Section Draft</string>
+    <string name="accreditation_section_save_as_draft">Save as Draft</string>
+    <string name="accreditation_section_saved_title">Section saved locally</string>
+    <string name="accreditation_section_saved_message">This section draft is stored on this device and will sync when you are online.</string>
+    <string name="accreditation_section_saved_ok">OK</string>
+    <string name="accreditation_section_checklist_title">Assessment Items</string>
+    <string name="accreditation_section_remarks">Remarks</string>
+    <string name="accreditation_section_answer_yes">Yes</string>
+    <string name="accreditation_section_answer_no">No</string>
+    <string name="accreditation_section_answer_available">Available</string>
+    <string name="accreditation_section_answer_not_available">Not Available</string>
+    <string name="accreditation_section_attachments_title">Supporting Documents &amp; Evidence</string>
+    <string name="accreditation_section_attachments_count_format">%1$d Attached</string>
+    <string name="accreditation_section_attachments_hint">Capture institutional evidence, logbooks, or syllabus gazettes.</string>
+    <string name="accreditation_section_camera">Camera</string>
+    <string name="accreditation_section_gallery">Gallery / PDF</string>
+    <string name="accreditation_section_remove_attachment_cd">Remove attachment</string>
+
+    <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
+    <string name="accreditation_section_a_ownership_hint">Institutional Ownership Status *</string>
+    <string name="accreditation_section_a_ownership_federal">Federal Government</string>
+    <string name="accreditation_section_a_ownership_state">State Government</string>
+    <string name="accreditation_section_a_ownership_lga">Local Government Authority (L.G.A)</string>
+    <string name="accreditation_section_a_ownership_private">Private / Incorporated Trustees</string>
+    <string name="accreditation_section_a_ownership_faith">Faith-Based Mission</string>
+    <string name="accreditation_section_a_campus_title">Campus &amp; Academic Affiliation</string>
+    <string name="accreditation_section_a_campus_location">Campus Location *</string>
+    <string name="accreditation_section_a_date_established">Date of Establishment *</string>
+    <string name="accreditation_section_a_year_commenced">Year Programme Commenced *</string>
+    <string name="accreditation_section_a_faculty">Faculty / School / College</string>
+    <string name="accreditation_section_a_department">Department / Institute *</string>
+    <string name="accreditation_section_a_programmes">Programme Assessed (Select all applicable) *</string>
+    <string name="accreditation_section_a_status_title">Accreditation Mandate Record</string>
+    <string name="accreditation_section_a_current_status">Current Accreditation Status *</string>
+    <string name="accreditation_section_a_last_visit">Date of Last Visit</string>
+    <string name="accreditation_section_a_expiry">Expiry Date</string>
+    <string name="accreditation_section_a_nbte">Concurrent NBTE Accreditation Active</string>
+    <string name="accreditation_section_a_staff_title">Institutional Staff Summary</string>
+    <string name="accreditation_section_a_tutors_title">Subsection A2: PHC Tutor Roster</string>
+    <string name="accreditation_section_a_tutors_count_format">%1$d Listed</string>
+    <string name="accreditation_section_a_add_tutor">Add New PHC Tutor</string>
+    <string name="accreditation_section_a_tutor_meta_format">%1$s • Reg: %2$s • %3$s • %4$s • %5$s</string>
 </resources>

@@ -192,4 +192,14 @@ object Routes {
     /** Read-only institution profile for an assigned [institutionId]. */
     @Serializable
     data class InstitutionProfile(val institutionId: String)
+
+    /** SSQ A–F progress overview for an assigned [institutionId]. */
+    @Serializable
+    data class AssessmentOverview(val institutionId: String)
+
+    /**
+     * One SSQ section form. [sectionKey] is A–F (see [ng.com.chprbn.mobile.feature.accreditation.presentation.SsqSectionKey]).
+     */
+    @Serializable
+    data class SsqSectionForm(val institutionId: String, val sectionKey: String)
 }
