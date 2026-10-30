@@ -649,4 +649,29 @@
     <string name="assessment_project_action_cancel">Cancel</string>
     <string name="assessment_project_action_save">Save Score</string>
     <string name="assessment_project_action_saving_cd">Saving score</string>
+
+    <!-- ============== Accreditation — hub ============== -->
+    <string name="accreditation_hub_officer_verified">OFFICER VERIFIED</string>
+    <string name="accreditation_hub_status_offline">OFFLINE</string>
+    <string name="accreditation_hub_tile_start_title">Start New Assessment</string>
+    <string name="accreditation_hub_tile_continue_title">Continue Assessment</string>
+    <string name="accreditation_hub_tile_drafts_title">Local Drafts</string>
+    <string name="accreditation_hub_tile_sync_title">Sync Status</string>
+    <string name="accreditation_hub_assigned_section">ASSIGNED INSTITUTION</string>
+    <string name="accreditation_hub_assigned_count_format">%1$d Active</string>
+    <string name="accreditation_hub_strict_assignment">Strict Assignment</string>
+    <string name="accreditation_hub_zonal_assignment">ZONAL ASSIGNMENT</string>
+    <string name="accreditation_hub_protocol_format">Protocol: %1$s</string>
+    <string name="accreditation_hub_last_synced_format">Last synced: %1$s</string>
+    <string name="accreditation_hub_action_start_assessment">Start Assessment</string>
+    <string name="accreditation_hub_assignment_verified_note">Officer assignment verified by CHPRBN Central Registry. Offline caching active.</string>
+    <string name="accreditation_hub_sync_synced">Synced</string>
+    <string name="accreditation_hub_sync_draft_pending">Draft Pending Sync</string>
+    <string name="accreditation_hub_sync_failed">Sync Failed</string>
+    <string name="accreditation_hub_sync_never">Never Synced</string>
+    <string name="accreditation_hub_upcoming_label">UPCOMING SCHEDULE</string>
+    <string name="accreditation_hub_upcoming_locked_cd">Locked until dispatch</string>
+    <string name="accreditation_hub_empty_title">No institutions assigned to you</string>
+    <string name="accreditation_hub_empty_subtitle">Contact your CHPRBN coordinator to be assigned an institution for accreditation.</string>
+    <string name="accreditation_hub_offline_notice">Full offline mode enabled. All responses cache locally and upload automatically.</string>
 </resources>

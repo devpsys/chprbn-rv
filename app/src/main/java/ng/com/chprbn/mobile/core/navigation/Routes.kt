@@ -183,4 +183,9 @@ object Routes {
         val scheduleId: String,
         val candidateId: String,
     )
+
+    // ============== Accreditation ==============
+    /** Accreditation Hub — first screen of the accreditation feature. */
+    @Serializable
+    data object AccreditationHub
 }

@@ -34,6 +34,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamPaperScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.CachedRecordsScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
+import ng.com.chprbn.mobile.feature.accreditation.presentation.AccreditationHubScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
@@ -117,10 +118,24 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                     navController.navigate(Routes.ExamDashboard)
                 },
                 onNavigateToPracticalAssessment = { /* TODO: Practical Assessment feature */ },
-                onNavigateToAccreditation = { /* TODO: Accreditation feature */ },
+                onNavigateToAccreditation = {
+                    navController.navigate(Routes.AccreditationHub)
+                },
                 onViewRecentLogs = {
                     navController.navigate(Routes.SyncHistory)
                 }
+            )
+        }
+        composable<Routes.AccreditationHub> {
+            AccreditationHubScreen(
+                onBack = { navController.popBackStack() },
+                onQuickSync = { /* TODO: accreditation sync */ },
+                onStartNewAssessment = { /* TODO: InstitutionProfile / AssessmentOverview */ },
+                onContinueAssessment = { /* TODO: resume in-progress assessment */ },
+                onLocalDrafts = { /* TODO: LocalDrafts */ },
+                onSyncStatus = { /* TODO: SyncStatus */ },
+                onInstitutionClick = { /* TODO: InstitutionProfile */ },
+                onStartAssessment = { /* TODO: AssessmentOverview */ },
             )
         }
         composable<Routes.ExamDashboard> {
