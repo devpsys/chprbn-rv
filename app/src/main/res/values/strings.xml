@@ -770,4 +770,15 @@
     <string name="accreditation_section_a_tutors_count_format">%1$d Listed</string>
     <string name="accreditation_section_a_add_tutor">Add New PHC Tutor</string>
     <string name="accreditation_section_a_tutor_meta_format">%1$s • Reg: %2$s • %3$s • %4$s • %5$s</string>
+    <string name="accreditation_section_pick_date_cd">Pick date</string>
+    <string name="accreditation_section_pick_year_cd">Pick year</string>
+    <string name="accreditation_section_date_ok">Confirm Date</string>
+    <string name="accreditation_section_date_cancel">Cancel</string>
+    <string name="accreditation_section_date_picker_hint">Select a date</string>
+    <string name="accreditation_section_year_picker_hint">Select a year</string>
+    <string name="accreditation_section_date_picker_title">Select date</string>
+    <string name="accreditation_section_year_picker_title">Select year</string>
+    <string name="accreditation_section_date_picker_prev_month_cd">Previous month</string>
+    <string name="accreditation_section_date_picker_next_month_cd">Next month</string>
+    <string name="accreditation_section_date_picker_month_menu_cd">Choose month and year</string>
 </resources>

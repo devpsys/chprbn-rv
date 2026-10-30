@@ -3,7 +3,10 @@ package ng.com.chprbn.mobile.feature.accreditation.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -21,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
@@ -49,12 +53,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +68,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.ErrorRed
@@ -421,15 +431,15 @@ private fun SectionAFormFields(
             value = form.campusLocation,
             onValueChange = onCampusLocationChange,
         )
-        FormOutlinedField(
+        FormDatePickerField(
             label = stringResource(R.string.accreditation_section_a_date_established),
             value = form.dateOfEstablishment,
-            onValueChange = onDateOfEstablishmentChange,
+            onDateSelected = onDateOfEstablishmentChange,
         )
-        FormOutlinedField(
+        FormYearPickerField(
             label = stringResource(R.string.accreditation_section_a_year_commenced),
             value = form.yearProgrammeCommenced,
-            onValueChange = onYearProgrammeCommencedChange,
+            onYearSelected = onYearProgrammeCommencedChange,
         )
         FormOutlinedField(
             label = stringResource(R.string.accreditation_section_a_faculty),
@@ -474,15 +484,15 @@ private fun SectionAFormFields(
             value = form.accreditationStatus,
             onValueChange = onAccreditationStatusChange,
         )
-        FormOutlinedField(
+        FormDatePickerField(
             label = stringResource(R.string.accreditation_section_a_last_visit),
             value = form.dateOfLastVisit,
-            onValueChange = onDateOfLastVisitChange,
+            onDateSelected = onDateOfLastVisitChange,
         )
-        FormOutlinedField(
+        FormDatePickerField(
             label = stringResource(R.string.accreditation_section_a_expiry),
             value = form.expiryDate,
-            onValueChange = onExpiryDateChange,
+            onDateSelected = onExpiryDateChange,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -836,6 +846,9 @@ private fun ChoiceChip(
     }
 }
 
+private val AccrdDateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+
 @Composable
 private fun FormOutlinedField(
     label: String,
@@ -870,6 +883,161 @@ private fun FormOutlinedField(
                 focusedLabelColor = PrimaryGreen,
             ),
         )
+    }
+}
+
+/** Read-only date field that opens the stitch-styled calendar picker. */
+@Composable
+private fun FormDatePickerField(
+    label: String,
+    value: String,
+    onDateSelected: (String) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    FormPickerField(
+        label = label,
+        value = value,
+        trailingContentDescription = stringResource(R.string.accreditation_section_pick_date_cd),
+        onOpen = { showPicker = true },
+    )
+
+    if (showPicker) {
+        AccrdCalendarDatePickerDialog(
+            title = label.removeSuffix("*").trim()
+                .ifBlank { stringResource(R.string.accreditation_section_date_picker_title) },
+            initialDate = parseAccrdDate(value),
+            yearOnly = false,
+            onDismiss = { showPicker = false },
+            onConfirm = { date ->
+                onDateSelected(date.format(AccrdDateFormatter))
+                showPicker = false
+            },
+        )
+    }
+}
+
+/** Year-only field; opens the same picker on the year grid and stores `yyyy`. */
+@Composable
+private fun FormYearPickerField(
+    label: String,
+    value: String,
+    onYearSelected: (String) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    FormPickerField(
+        label = label,
+        value = value,
+        trailingContentDescription = stringResource(R.string.accreditation_section_pick_year_cd),
+        onOpen = { showPicker = true },
+    )
+
+    if (showPicker) {
+        AccrdCalendarDatePickerDialog(
+            title = label.removeSuffix("*").trim()
+                .ifBlank { stringResource(R.string.accreditation_section_year_picker_title) },
+            initialDate = parseAccrdYear(value),
+            yearOnly = true,
+            onDismiss = { showPicker = false },
+            onConfirm = { date ->
+                onYearSelected(date.year.toString())
+                showPicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun FormPickerField(
+    label: String,
+    value: String,
+    trailingContentDescription: String,
+    onOpen: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            if (interaction is PressInteraction.Release) {
+                onOpen()
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.accreditation_section_date_picker_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            interactionSource = interactionSource,
+            trailingIcon = {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(PrimaryGreen.copy(alpha = 0.1f))
+                        .clickable(onClick = onOpen),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarToday,
+                        contentDescription = trailingContentDescription,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryGreen,
+                unfocusedBorderColor = PrimaryGreen.copy(alpha = 0.25f),
+                cursorColor = PrimaryGreen,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+        )
+    }
+}
+
+private fun parseAccrdDate(value: String): LocalDate? {
+    if (value.isBlank()) return null
+    return try {
+        LocalDate.parse(value.trim(), AccrdDateFormatter)
+    } catch (_: DateTimeParseException) {
+        null
+    }
+}
+
+private fun parseAccrdYear(value: String): LocalDate? {
+    if (value.isBlank()) return null
+    val year = value.trim().toIntOrNull() ?: return null
+    return try {
+        LocalDate.of(year, 1, 1)
+    } catch (_: Exception) {
+        null
     }
 }
 
