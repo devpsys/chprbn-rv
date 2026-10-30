@@ -188,4 +188,8 @@ object Routes {
     /** Accreditation Hub — first screen of the accreditation feature. */
     @Serializable
     data object AccreditationHub
+
+    /** Read-only institution profile for an assigned [institutionId]. */
+    @Serializable
+    data class InstitutionProfile(val institutionId: String)
 }

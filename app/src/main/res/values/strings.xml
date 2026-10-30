@@ -674,4 +674,38 @@
     <string name="accreditation_hub_empty_title">No institutions assigned to you</string>
     <string name="accreditation_hub_empty_subtitle">Contact your CHPRBN coordinator to be assigned an institution for accreditation.</string>
     <string name="accreditation_hub_offline_notice">Full offline mode enabled. All responses cache locally and upload automatically.</string>
+
+    <!-- ============== Accreditation — institution profile ============== -->
+    <string name="accreditation_profile_title">Institution Profile</string>
+    <string name="accreditation_profile_officer_avatar_cd">Officer profile</string>
+    <string name="accreditation_profile_verified_cd">Verified institution</string>
+    <string name="accreditation_profile_history_score_format">Score: %1$s</string>
+    <string name="accreditation_profile_facility_code">Facility Code</string>
+    <string name="accreditation_profile_last_visit">Last Council Visit</string>
+    <string name="accreditation_profile_section_general">General &amp; Geographic Info</string>
+    <string name="accreditation_profile_ownership">Ownership Type</string>
+    <string name="accreditation_profile_state">State of Location</string>
+    <string name="accreditation_profile_zone">Geopolitical Zone</string>
+    <string name="accreditation_profile_campus">Campus Address</string>
+    <string name="accreditation_profile_section_programmes">Programmes Offered</string>
+    <string name="accreditation_profile_programmes_count_format">%1$d Accredited</string>
+    <string name="accreditation_profile_programmes_subtitle">Regulated Allied Health &amp; Community Practice faculties currently in session:</string>
+    <string name="accreditation_profile_section_capacity">Institutional Capacity</string>
+    <string name="accreditation_profile_ssq_section_a">SSQ Sec A</string>
+    <string name="accreditation_profile_staff_academic">Academic / Faculty</string>
+    <string name="accreditation_profile_staff_technical">Technical Cadre</string>
+    <string name="accreditation_profile_staff_admin">Admin Staff</string>
+    <string name="accreditation_profile_staff_ratio">Ratio Tech:Acad</string>
+    <string name="accreditation_profile_capital_base">Declared Capital Base</string>
+    <string name="accreditation_profile_section_history">Accreditation History</string>
+    <string name="accreditation_profile_history_verified">Verified</string>
+    <string name="accreditation_profile_history_subtitle">CHPRBN National Registry computed audits</string>
+    <string name="accreditation_profile_history_meta_format">%1$s • Score: %2$s</string>
+    <string name="accreditation_profile_history_open_cd">Open history detail</string>
+    <string name="accreditation_profile_action_start_assessment">Start New Assessment</string>
+    <string name="accreditation_profile_action_view_documents">View Documents</string>
+    <string name="accreditation_profile_not_found_title">Institution not found</string>
+    <string name="accreditation_profile_not_found_subtitle_format">No assigned institution matches “%1$s” on this device.</string>
+    <string name="accreditation_profile_error_title">Unable to load institution</string>
+    <string name="accreditation_profile_action_back_to_hub">Back to Hub</string>
 </resources>

@@ -35,6 +35,7 @@ import ng.com.chprbn.mobile.feature.exam.presentation.CachedRecordsScreen
 import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AccreditationHubScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.InstitutionProfileScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
@@ -130,12 +131,26 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
             AccreditationHubScreen(
                 onBack = { navController.popBackStack() },
                 onQuickSync = { /* TODO: accreditation sync */ },
-                onStartNewAssessment = { /* TODO: InstitutionProfile / AssessmentOverview */ },
+                onStartNewAssessment = { institutionId ->
+                    navController.navigate(Routes.InstitutionProfile(institutionId))
+                },
                 onContinueAssessment = { /* TODO: resume in-progress assessment */ },
                 onLocalDrafts = { /* TODO: LocalDrafts */ },
                 onSyncStatus = { /* TODO: SyncStatus */ },
-                onInstitutionClick = { /* TODO: InstitutionProfile */ },
-                onStartAssessment = { /* TODO: AssessmentOverview */ },
+                onInstitutionClick = { institutionId ->
+                    navController.navigate(Routes.InstitutionProfile(institutionId))
+                },
+                onStartAssessment = { institutionId ->
+                    navController.navigate(Routes.InstitutionProfile(institutionId))
+                },
+            )
+        }
+        composable<Routes.InstitutionProfile> {
+            InstitutionProfileScreen(
+                onBack = { navController.popBackStack() },
+                onStartNewAssessment = { /* TODO: AssessmentOverview */ },
+                onViewDocuments = { /* TODO: documents / attachments */ },
+                onHistoryItemClick = { _, _ -> /* TODO: assessment history detail */ },
             )
         }
         composable<Routes.ExamDashboard> {
