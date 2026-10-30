@@ -124,11 +124,13 @@ fun AccreditationHubContent(
 @Composable
 private fun OfficerBanner(officer: OfficerBannerUiState) {
     val scheme = MaterialTheme.colorScheme
+    // Opaque surfaceVariant — alpha fills read as a watermark over the
+    // page background. Border matches assigned-institution card chrome.
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = scheme.surfaceVariant.copy(alpha = 0.45f),
-        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.6f)),
+        color = scheme.surfaceVariant,
+        border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.15f)),
     ) {
         Row(
             modifier = Modifier
@@ -140,6 +142,7 @@ private fun OfficerBanner(officer: OfficerBannerUiState) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f, fill = false),
             ) {
                 Box(
                     modifier = Modifier
@@ -155,7 +158,7 @@ private fun OfficerBanner(officer: OfficerBannerUiState) {
                         color = Color.White,
                     )
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f, fill = false)) {
                     Text(
                         text = officer.displayName,
                         style = MaterialTheme.typography.labelMedium,
@@ -195,6 +198,7 @@ private fun OfficerBanner(officer: OfficerBannerUiState) {
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = SuccessGreen,
+                            maxLines = 1,
                         )
                     }
                 }
