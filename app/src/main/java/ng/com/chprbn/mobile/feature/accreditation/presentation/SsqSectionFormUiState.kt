@@ -90,6 +90,30 @@ data class SsqChecklistSubsectionUiState(
     val attachments: List<SsqAttachmentUiState> = emptyList(),
 )
 
+/** SSQ D1 / D3 staffing table row (required / available counts + remarks). */
+data class StaffingRowUiState(
+    val id: String,
+    val label: String,
+    val required: String = "",
+    val available: String = "",
+    val fullTime: String = "",
+    val partTime: String = "",
+    val remarks: String = "",
+    /** D1 includes Full-Time / Part-Time; D3 does not. */
+    val includesEmploymentSplit: Boolean = false,
+)
+
+data class SectionDFormUiState(
+    val academicRows: List<StaffingRowUiState> = emptyList(),
+    val supportRows: List<StaffingRowUiState> = emptyList(),
+) {
+    val academicAvailableTotal: Int
+        get() = academicRows.sumOf { it.available.toIntOrNull() ?: 0 }
+
+    val supportAvailableTotal: Int
+        get() = supportRows.sumOf { it.available.toIntOrNull() ?: 0 }
+}
+
 data class SectionAFormUiState(
     val ownership: OwnershipOption? = OwnershipOption.Federal,
     val campusLocation: String = "Main Campus, Shika, Zaria",
@@ -140,16 +164,26 @@ data class SsqSectionFormData(
     val formCodeLabel: String,
     val status: SectionDraftStatus,
     val sectionA: SectionAFormUiState? = null,
+    val sectionD: SectionDFormUiState? = null,
     val checklistItems: List<SsqChecklistItemUiState> = emptyList(),
     val checklistSubsections: List<SsqChecklistSubsectionUiState> = emptyList(),
     val attachments: List<SsqAttachmentUiState> = emptyList(),
     val showSavedDialog: Boolean = false,
 ) {
     val evaluatedItemCount: Int
-        get() = checklistItems.count { it.answer != ChecklistAnswer.Unanswered }
+        get() {
+            val checklist = checklistItems.count { it.answer != ChecklistAnswer.Unanswered }
+            val sectionD = this.sectionD ?: return checklist
+            val rows = sectionD.academicRows.count { it.available.isNotBlank() } +
+                sectionD.supportRows.count { it.available.isNotBlank() }
+            return checklist + rows
+        }
 
     val totalChecklistCount: Int
-        get() = checklistItems.size
+        get() {
+            val sectionD = this.sectionD ?: return checklistItems.size
+            return checklistItems.size + sectionD.academicRows.size + sectionD.supportRows.size
+        }
 
     val compliantItemCount: Int
         get() = checklistItems.count {
@@ -206,17 +240,7 @@ sealed interface SsqSectionFormUiState {
                     SsqSectionKey.A -> sectionA(id, attachments)
                     SsqSectionKey.B -> sectionB(id)
                     SsqSectionKey.C -> sectionC(id, attachments)
-                    SsqSectionKey.D -> checklistSection(
-                        id = id,
-                        key = SsqSectionKey.D,
-                        title = "Staffing & Academic Administration",
-                        subtitle = "D1–D3 staffing and qualifications",
-                        formCode = "Standard Form SSQ D1–D3",
-                        status = SectionDraftStatus.SavedLocally,
-                        usesAvailability = false,
-                        itemTexts = dItems(),
-                        attachments = attachments.take(1),
-                    )
+                    SsqSectionKey.D -> sectionD(id, attachments)
                     SsqSectionKey.E -> checklistSection(
                         id = id,
                         key = SsqSectionKey.E,
@@ -570,20 +594,152 @@ sealed interface SsqSectionFormUiState {
             )
         }
 
-        private fun dItems(): List<String> = listOf(
-            "Professor / Chief Tutor rank filled",
-            "Senior Tutor cadre meets guideline minimum",
-            "Tutor I/II cadre documented",
-            "Clinical instructors licensed",
-            "All academic staff have current CHPRBN licenses",
-            "Qualification matrix matches posted roles",
-            "Full-time vs part-time ratios within band",
-            "Admin officer designated for programme",
-            "Technical staff certificates on file",
-            "HR files complete for sampled staff",
-            "Continuing professional development logged",
-            "Staff appraisal records current",
-        )
+        private fun sectionD(
+            id: String,
+            attachments: List<SsqAttachmentUiState>,
+        ): SsqSectionFormData {
+            // Authoritative ranks/categories from docs/accrd/SSQ.pdf — Section D.
+            val academicRanks = listOf(
+                "Professor",
+                "Associate Professor/Reader",
+                "Senior Lecturer",
+                "Lecturer I",
+                "Lecturer II",
+                "Assistant Lecturer",
+                "Clinical Instructors",
+                "Adjunct/Visiting Lecturers",
+            )
+            val supportCategories = listOf(
+                "Administrative Officers",
+                "ICT Officers",
+                "Laboratory Scientists/Technologists",
+                "Library Officers",
+                "Simulation Technicians",
+                "Clinical Skills Assistants",
+                "Data Managers",
+                "Secretarial Staff",
+                "Support Staff",
+            )
+            val d2Texts = listOf(
+                "Staff professionally registered with CHPRBN",
+                "Staff with valid license",
+                "Staff-to-student ratio compliant with NUC/CHPRBN standards",
+                "Academic staff possess postgraduate qualifications",
+                "Clinical instructors available",
+                "ICT competence among staff",
+                "Staff trained in simulation-based education",
+                "Continuous Professional Development (CPD) evidence available",
+                "Research publications evidence available",
+                "Staff mentorship programme available",
+                "Gender balance in staffing considered",
+                "International collaborations/exchanges available",
+            )
+            val academicSample = listOf(
+                Triple("2", "2", "0"),
+                Triple("3", "3", "0"),
+                Triple("6", "5", "1"),
+                Triple("8", "7", "1"),
+                Triple("6", "5", "1"),
+                Triple("4", "3", "1"),
+                Triple("6", "5", "1"),
+                Triple("4", "2", "2"),
+            )
+            val supportSample = listOf("2", "3", "5", "2", "2", "3", "2", "4", "3")
+            val sectionD = SectionDFormUiState(
+                academicRows = academicRanks.mapIndexed { index, label ->
+                    val sample = academicSample.getOrNull(index)
+                    StaffingRowUiState(
+                        id = "d1-${index + 1}",
+                        label = label,
+                        required = sample?.first.orEmpty(),
+                        available = sample?.let { (it.second.toInt() + it.third.toInt()).toString() }.orEmpty(),
+                        fullTime = sample?.second.orEmpty(),
+                        partTime = sample?.third.orEmpty(),
+                        includesEmploymentSplit = true,
+                    )
+                },
+                supportRows = supportCategories.mapIndexed { index, label ->
+                    StaffingRowUiState(
+                        id = "d3-${index + 1}",
+                        label = label,
+                        required = supportSample.getOrNull(index).orEmpty(),
+                        available = supportSample.getOrNull(index).orEmpty(),
+                        includesEmploymentSplit = false,
+                    )
+                },
+            )
+            val answeredThrough = 6
+            val d2Items = d2Texts.mapIndexed { index, text ->
+                SsqChecklistItemUiState(
+                    id = "D2-${index + 1}",
+                    text = text,
+                    answer = if (index < answeredThrough) ChecklistAnswer.Yes else ChecklistAnswer.Unanswered,
+                    remarks = when (index) {
+                        0 -> "Audited licenses against CHPRBN registry; certificates current."
+                        1 -> "All sampled staff hold valid practicing licenses."
+                        7 -> "CPD workshop attendance logs verified for 2023/2024."
+                        else -> ""
+                    },
+                    usesAvailability = false,
+                    subsectionId = "D2",
+                    numberInSubsection = index + 1,
+                )
+            }
+            return SsqSectionFormData(
+                institutionId = id,
+                sectionKey = SsqSectionKey.D,
+                title = "Staffing & Academic Administration",
+                subtitle =
+                    "Regulatory evaluation of academic cadre distribution, qualification compliance, and administrative support personnel.",
+                formCodeLabel = "CHPRBN Standards SSQ D1–D3",
+                status = SectionDraftStatus.InProgress,
+                sectionD = sectionD,
+                checklistItems = d2Items,
+                checklistSubsections = listOf(
+                    SsqChecklistSubsectionUiState(
+                        id = "D1",
+                        badge = "D1",
+                        title = "D1: Academic Teaching Cadre",
+                        subtitle = "Required / available by rank",
+                        tabLabel = "D1: Cadre",
+                        attachmentsTitle = "",
+                        attachmentsHint = "",
+                    ),
+                    SsqChecklistSubsectionUiState(
+                        id = "D2",
+                        badge = "D2",
+                        title = "D2: Staff Qualifications & Competencies",
+                        subtitle = "12 Yes/No statutory standards",
+                        tabLabel = "D2: Standards",
+                        attachmentsTitle = "",
+                        attachmentsHint = "",
+                    ),
+                    SsqChecklistSubsectionUiState(
+                        id = "D3",
+                        badge = "D3",
+                        title = "D3: Administrative & Technical Staff",
+                        subtitle = "Support cadre inventory",
+                        tabLabel = "D3: Support",
+                        attachmentsTitle = "",
+                        attachmentsHint = "",
+                    ),
+                ),
+                attachments = listOf(
+                    SsqAttachmentUiState(
+                        id = "d-att-1",
+                        title = "Academic_Staff_Roster_2024.pdf",
+                        sizeLabel = "3.1 MB",
+                        isPhoto = false,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "d-att-2",
+                        title = "CHPRBN_License_Batch.pdf",
+                        sizeLabel = "2.4 MB",
+                        isPhoto = false,
+                    ),
+                ),
+            )
+        }
 
         private fun eItems(): List<String> = buildList {
             repeat(10) { add("Lecture facility item ${it + 1}") }

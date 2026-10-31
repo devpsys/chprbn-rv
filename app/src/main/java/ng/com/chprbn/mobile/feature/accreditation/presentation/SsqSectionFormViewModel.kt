@@ -106,6 +106,26 @@ class SsqSectionFormViewModel @Inject constructor(
         form.copy(tutors = form.tutors.filterNot { it.id == tutorId })
     }
 
+    fun onAcademicStaffingRowChange(row: StaffingRowUiState) {
+        updateSectionD { section ->
+            section.copy(
+                academicRows = section.academicRows.map {
+                    if (it.id == row.id) row.withDigitCounts() else it
+                },
+            )
+        }
+    }
+
+    fun onSupportStaffingRowChange(row: StaffingRowUiState) {
+        updateSectionD { section ->
+            section.copy(
+                supportRows = section.supportRows.map {
+                    if (it.id == row.id) row.withDigitCounts() else it
+                },
+            )
+        }
+    }
+
     fun onChecklistAnswer(itemId: String, answer: ChecklistAnswer) {
         updateSuccess { data ->
             data.copy(
@@ -163,11 +183,28 @@ class SsqSectionFormViewModel @Inject constructor(
 
     private fun digitsOnly(value: String): String = value.filter { it.isDigit() }
 
+    private fun StaffingRowUiState.withDigitCounts(): StaffingRowUiState = copy(
+        required = digitsOnly(required),
+        available = digitsOnly(available),
+        fullTime = digitsOnly(fullTime),
+        partTime = digitsOnly(partTime),
+    )
+
     private fun updateSectionA(transform: (SectionAFormUiState) -> SectionAFormUiState) {
         updateSuccess { data ->
             val sectionA = data.sectionA ?: return@updateSuccess data
             data.copy(
                 sectionA = transform(sectionA),
+                status = SectionDraftStatus.InProgress,
+            )
+        }
+    }
+
+    private fun updateSectionD(transform: (SectionDFormUiState) -> SectionDFormUiState) {
+        updateSuccess { data ->
+            val sectionD = data.sectionD ?: return@updateSuccess data
+            data.copy(
+                sectionD = transform(sectionD),
                 status = SectionDraftStatus.InProgress,
             )
         }

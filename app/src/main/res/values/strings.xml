@@ -767,6 +767,23 @@
     <string name="accreditation_section_c_attachments_title">Upload Evidence &amp; Syllabi</string>
     <string name="accreditation_section_c_attachments_hint">Attach curriculum syllabus, lecture timetables, and clinical logbook samples for Section C verification.</string>
     <string name="accreditation_section_c_tab_progress_format">Units %1$d–%2$d (%3$d/%4$d)</string>
+    <string name="accreditation_section_d_heading">SECTION D: STAFFING &amp; ACADEMIC ADMINISTRATION</string>
+    <string name="accreditation_section_d_compliant_format">%1$d Compliant</string>
+    <string name="accreditation_section_d_pending_format">%1$d Pending Review</string>
+    <string name="accreditation_section_d_academic_total_format">%1$d Lecturers Total</string>
+    <string name="accreditation_section_d_support_total_format">%1$d Personnel</string>
+    <string name="accreditation_section_d_criteria_count_format">%1$d Criteria</string>
+    <string name="accreditation_section_d_item_format">D2.%1$d</string>
+    <string name="accreditation_section_d_audited">Audited</string>
+    <string name="accreditation_section_d_pending_badge">Pending Review</string>
+    <string name="accreditation_section_d_remarks">Field Observations &amp; Verification Evidence</string>
+    <string name="accreditation_section_d_required">Required</string>
+    <string name="accreditation_section_d_available">Available</string>
+    <string name="accreditation_section_d_full_time">Full-Time</string>
+    <string name="accreditation_section_d_part_time">Part-Time</string>
+    <string name="accreditation_section_d_row_remarks">Remarks</string>
+    <string name="accreditation_section_d_attachments_title">Upload Evidence &amp; Staff Dossier</string>
+    <string name="accreditation_section_d_attachments_hint">Attach certified true copies of faculty practice licenses, appointment gazettes, and academic staff CV summaries.</string>
 
     <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
     <string name="accreditation_section_a_ownership_hint">Ownership Status *</string>
