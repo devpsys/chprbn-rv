@@ -63,7 +63,7 @@
     <string name="dashboard_feature_exams_title">EXAMS</string>
     <string name="dashboard_feature_exams_subtitle">Exam attendance &amp; practical assessment</string>
     <string name="dashboard_feature_accreditation_title">ACCREDITATION</string>
-    <string name="dashboard_feature_accreditation_subtitle">Accreditation</string>
+    <string name="dashboard_feature_accreditation_subtitle">Institution assessment &amp; accreditation review</string>
     <string name="dashboard_recent_logs_cd">Recent Logs</string>
     <string name="dashboard_quick_actions_section">QUICK ACTIONS</string>
     <string name="dashboard_action_view_recent_logs">View Recent Logs</string>
