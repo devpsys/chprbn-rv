@@ -735,16 +735,27 @@
     <string name="accreditation_section_saved_ok">OK</string>
     <string name="accreditation_section_checklist_title">Assessment Items</string>
     <string name="accreditation_section_remarks">Remarks</string>
+    <string name="accreditation_section_remarks_field">Field Remarks &amp; Observations</string>
+    <string name="accreditation_section_remarks_placeholder">Record verification citations, page numbers, or observations…</string>
     <string name="accreditation_section_answer_yes">Yes</string>
     <string name="accreditation_section_answer_no">No</string>
+    <string name="accreditation_section_answer_compliant">Compliant (Yes)</string>
+    <string name="accreditation_section_answer_non_compliant">Non-Compliant (No)</string>
     <string name="accreditation_section_answer_available">Available</string>
     <string name="accreditation_section_answer_not_available">Not Available</string>
     <string name="accreditation_section_attachments_title">Supporting Documents &amp; Evidence</string>
     <string name="accreditation_section_attachments_count_format">%1$d Attached</string>
+    <string name="accreditation_section_attachments_files_format">%1$d Files Attached</string>
     <string name="accreditation_section_attachments_hint">Capture institutional evidence, logbooks, or syllabus gazettes.</string>
     <string name="accreditation_section_camera">Camera</string>
     <string name="accreditation_section_gallery">Gallery / PDF</string>
+    <string name="accreditation_section_take_photo">Take Photo</string>
+    <string name="accreditation_section_add_document">Add Document</string>
     <string name="accreditation_section_remove_attachment_cd">Remove attachment</string>
+    <string name="accreditation_section_completion_label">Completion Checklist</string>
+    <string name="accreditation_section_evaluated_format">%1$d of %2$d Evaluated</string>
+    <string name="accreditation_section_items_count_format">%1$d Items</string>
+    <string name="accreditation_section_b_heading">SECTION B: PHILOSOPHY &amp; GOVERNANCE</string>
 
     <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
     <string name="accreditation_section_a_ownership_hint">Institutional Ownership Status *</string>

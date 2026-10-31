@@ -40,6 +40,25 @@ data class SsqChecklistItemUiState(
     val answer: ChecklistAnswer,
     val remarks: String = "",
     val usesAvailability: Boolean = false,
+    /** Subsection key such as `B1` / `B2` when the section is grouped. */
+    val subsectionId: String = "",
+    val numberInSubsection: Int = 0,
+)
+
+/**
+ * Metadata for a labeled subsection (e.g. SSQ B1 / B2) with its own
+ * attachment area. Items live on [SsqSectionFormData.checklistItems]
+ * and are filtered by [id].
+ */
+data class SsqChecklistSubsectionUiState(
+    val id: String,
+    val badge: String,
+    val title: String,
+    val subtitle: String,
+    val tabLabel: String,
+    val attachmentsTitle: String,
+    val attachmentsHint: String,
+    val attachments: List<SsqAttachmentUiState> = emptyList(),
 )
 
 data class SectionAFormUiState(
@@ -69,9 +88,16 @@ data class SsqSectionFormData(
     val status: SectionDraftStatus,
     val sectionA: SectionAFormUiState? = null,
     val checklistItems: List<SsqChecklistItemUiState> = emptyList(),
+    val checklistSubsections: List<SsqChecklistSubsectionUiState> = emptyList(),
     val attachments: List<SsqAttachmentUiState> = emptyList(),
     val showSavedDialog: Boolean = false,
-)
+) {
+    val evaluatedItemCount: Int
+        get() = checklistItems.count { it.answer != ChecklistAnswer.Unanswered }
+
+    val totalChecklistCount: Int
+        get() = checklistItems.size
+}
 
 sealed interface SsqSectionFormUiState {
     data object Loading : SsqSectionFormUiState
@@ -111,17 +137,7 @@ sealed interface SsqSectionFormUiState {
             return Success(
                 when (sectionKey) {
                     SsqSectionKey.A -> sectionA(id, attachments)
-                    SsqSectionKey.B -> checklistSection(
-                        id = id,
-                        key = SsqSectionKey.B,
-                        title = "Philosophy, Objectives & Governance",
-                        subtitle = "B1 philosophy/objectives + B2 governance",
-                        formCode = "Standard Form SSQ B1 & B2",
-                        status = SectionDraftStatus.SavedLocally,
-                        usesAvailability = false,
-                        itemTexts = bItems(),
-                        attachments = attachments.take(1),
-                    )
+                    SsqSectionKey.B -> sectionB(id)
                     SsqSectionKey.C -> checklistSection(
                         id = id,
                         key = SsqSectionKey.C,
@@ -217,6 +233,140 @@ sealed interface SsqSectionFormUiState {
             attachments = attachments,
         )
 
+        private fun sectionB(id: String): SsqSectionFormData {
+            // Authoritative item text from docs/accrd/SSQ.pdf — Section B.
+            val b1Texts = listOf(
+                "Clearly stated philosophy aligned with national health goals",
+                "Philosophy aligned with Universal Health Coverage (UHC) agenda",
+                "Objectives aligned with Primary Health Care principles",
+                "Objectives reflect competency-based education",
+                "Objectives address digital health competencies",
+                "Objectives include interprofessional education",
+                "Objectives include research and innovation",
+                "Programme aligned with CHPRBN Act and NUC CCMAS",
+                "Institutional strategic plan supports programme sustainability",
+                "Quality assurance framework available",
+            )
+            // B2 items 1–2 are Available / Not Available; 3–10 are Yes / No (SSQ.pdf).
+            val b2Items = listOf(
+                "Functional departmental board" to true,
+                "Functional faculty board" to true,
+                "Crèche facility available" to false,
+                "Programme coordinator appointed" to false,
+                "Student handbook available" to false,
+                "Academic policies available" to false,
+                "Examination policy available" to false,
+                "Staff appraisal system available" to false,
+                "Anti-sexual harassment policy available" to false,
+                "ICT governance and e-learning policy available" to false,
+            )
+            // Placeholder answers: 3 of 20 evaluated (matches design progress sample).
+            val answeredIds = setOf("B1-1", "B1-3", "B2-1")
+            val items = buildList {
+                b1Texts.forEachIndexed { index, text ->
+                    val itemId = "B1-${index + 1}"
+                    add(
+                        SsqChecklistItemUiState(
+                            id = itemId,
+                            text = text,
+                            answer = if (itemId in answeredIds) {
+                                ChecklistAnswer.Yes
+                            } else {
+                                ChecklistAnswer.Unanswered
+                            },
+                            remarks = when (itemId) {
+                                "B1-1" ->
+                                    "Current vision displayed in Academic Catalog pg. 4-6 " +
+                                        "explicitly mirrors FMOH Primary Healthcare Guideline 2023."
+                                "B1-3" ->
+                                    "Triennial curriculum review documented in 2022 Senate Digest."
+                                else -> ""
+                            },
+                            usesAvailability = false,
+                            subsectionId = "B1",
+                            numberInSubsection = index + 1,
+                        ),
+                    )
+                }
+                b2Items.forEachIndexed { index, (text, usesAvailability) ->
+                    val itemId = "B2-${index + 1}"
+                    add(
+                        SsqChecklistItemUiState(
+                            id = itemId,
+                            text = text,
+                            answer = when {
+                                itemId !in answeredIds -> ChecklistAnswer.Unanswered
+                                usesAvailability -> ChecklistAnswer.Available
+                                else -> ChecklistAnswer.Yes
+                            },
+                            remarks = if (itemId == "B2-1") {
+                                "Board inaugurated under Ministry of Health Order No. 44; " +
+                                    "7 accredited external members."
+                            } else {
+                                ""
+                            },
+                            usesAvailability = usesAvailability,
+                            subsectionId = "B2",
+                            numberInSubsection = index + 1,
+                        ),
+                    )
+                }
+            }
+            return SsqSectionFormData(
+                institutionId = id,
+                sectionKey = SsqSectionKey.B,
+                title = "Philosophy & Governance",
+                subtitle = "Regulatory verification checklist for Primary Health Care institutional compliance.",
+                formCodeLabel = "CHPRBN SSQ Accreditation",
+                status = SectionDraftStatus.InProgress,
+                checklistItems = items,
+                checklistSubsections = listOf(
+                    SsqChecklistSubsectionUiState(
+                        id = "B1",
+                        badge = "B1",
+                        title = "Institutional Philosophy & Educational Objectives",
+                        subtitle = "Curricular framing & graduate capacity standard",
+                        tabLabel = "B1: Objectives",
+                        attachmentsTitle = "Upload Evidence & Minutes (B1)",
+                        attachmentsHint =
+                            "Provide scanned institutional charter, published prospectus, or board sign-off records.",
+                        attachments = listOf(
+                            SsqAttachmentUiState(
+                                id = "b1-att-1",
+                                title = "Mission_Charter.jpg",
+                                sizeLabel = "1.2 MB",
+                                isPhoto = true,
+                            ),
+                            SsqAttachmentUiState(
+                                id = "b1-att-2",
+                                title = "Handbook_2024.pdf",
+                                sizeLabel = "2.4 MB",
+                                isPhoto = false,
+                            ),
+                        ),
+                    ),
+                    SsqChecklistSubsectionUiState(
+                        id = "B2",
+                        badge = "B2",
+                        title = "Institutional Governance & Administration",
+                        subtitle = "Administrative bodies, leadership, and operational budgets",
+                        tabLabel = "B2: Governance",
+                        attachmentsTitle = "Upload Evidence & Minutes (B2)",
+                        attachmentsHint =
+                            "Attach meeting extracts, signed appointment letters, or statutory ledger summaries.",
+                        attachments = listOf(
+                            SsqAttachmentUiState(
+                                id = "b2-att-1",
+                                title = "Senate_Minutes_Q1.pdf",
+                                sizeLabel = "860 KB",
+                                isPhoto = false,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+
         private fun checklistSection(
             id: String,
             key: SsqSectionKey,
@@ -252,29 +402,6 @@ sealed interface SsqSectionFormUiState {
                 )
             },
             attachments = attachments,
-        )
-
-        private fun bItems(): List<String> = listOf(
-            "Institutional philosophy documented and displayed",
-            "Programme objectives aligned with CHPRBN guidelines",
-            "Advisory board constitution available",
-            "Governing council minutes retained for last 3 years",
-            "Organogram current and signed",
-            "Quality assurance policy in force",
-            "Student handbook published",
-            "Staff code of conduct documented",
-            "Grievance redress mechanism active",
-            "Community engagement policy available",
-            "Statutory charter filed with registry",
-            "Accreditation liaison officer designated",
-            "Budget allocation for programme visible",
-            "Internal audit schedule followed",
-            "External examiner reports archived",
-            "Curriculum review committee active",
-            "Health & safety policy posted",
-            "Equal opportunity policy documented",
-            "Research ethics board (if applicable)",
-            "Records retention schedule enforced",
         )
 
         private fun cItems(): List<String> = List(18) { index ->

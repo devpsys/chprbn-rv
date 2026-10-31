@@ -36,6 +36,32 @@ class SsqSectionFormContentRenderTest {
     }
 
     @Test
+    fun section_b_renders_ssq_b1_and_b2_items() {
+        composeRule.setContent {
+            ChprbnTheme {
+                SsqSectionFormContent(
+                    uiState = SsqSectionFormUiState.placeholder(sectionKey = SsqSectionKey.B),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("SECTION B: PHILOSOPHY & GOVERNANCE").assertExists()
+        composeRule.onNodeWithText("B1: Objectives").assertExists()
+        composeRule.onNodeWithText("B2: Governance").assertExists()
+        composeRule.onNodeWithText(
+            "Clearly stated philosophy aligned with national health goals",
+        ).assertExists()
+        composeRule.onNodeWithText(
+            "ICT governance and e-learning policy available",
+        ).assertExists()
+        composeRule.onNodeWithText("Functional departmental board").assertExists()
+        composeRule.onAllNodesWithText("Available")[0].assertExists()
+        composeRule.onNodeWithText("Upload Evidence & Minutes (B1)").assertExists()
+        composeRule.onNodeWithText("Upload Evidence & Minutes (B2)").assertExists()
+        composeRule.onNodeWithText("3 of 20 Evaluated").assertExists()
+    }
+
+    @Test
     fun section_c_renders_checklist_availability_controls() {
         composeRule.setContent {
             ChprbnTheme {
