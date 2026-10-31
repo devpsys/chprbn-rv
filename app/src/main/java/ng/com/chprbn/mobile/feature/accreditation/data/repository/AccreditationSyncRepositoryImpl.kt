@@ -8,17 +8,17 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ng.com.chprbn.mobile.core.domain.model.SyncStatus
 import ng.com.chprbn.mobile.core.sync.Clock
+import ng.com.chprbn.mobile.core.sync.SyncBatchRunner
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncJobDao
 import ng.com.chprbn.mobile.core.sync.SyncJobEntity
-import ng.com.chprbn.mobile.core.sync.SyncWorkScheduler
 import ng.com.chprbn.mobile.feature.accreditation.data.local.AccreditationAttachmentDao
 import ng.com.chprbn.mobile.feature.accreditation.data.local.AssessmentDraftDao
+import ng.com.chprbn.mobile.feature.accreditation.data.local.AssessmentDraftEntity
 import ng.com.chprbn.mobile.feature.accreditation.data.local.SsqSectionDraftDao
 import ng.com.chprbn.mobile.feature.accreditation.data.mappers.toEntity
 import ng.com.chprbn.mobile.feature.accreditation.data.mappers.toLocalDraftListItem
 import ng.com.chprbn.mobile.feature.accreditation.data.source.AccreditationDraftRemoteSource
-import ng.com.chprbn.mobile.feature.accreditation.data.source.AccreditationSyncRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.domain.model.DraftPersistenceStatus
 import ng.com.chprbn.mobile.feature.accreditation.domain.model.FailedDraftDetail
 import ng.com.chprbn.mobile.feature.accreditation.domain.model.LocalDraftListItem
@@ -32,14 +32,18 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+/**
+ * Local drafts list + sync orchestration. User-initiated sync/retry backfills
+ * the outbox and delegates upload to [SyncBatchRunner] →
+ * [ng.com.chprbn.mobile.feature.accreditation.data.sync.AccreditationDraftSyncHandler].
+ */
 class AccreditationSyncRepositoryImpl @Inject constructor(
     private val draftDao: AssessmentDraftDao,
     private val sectionDao: SsqSectionDraftDao,
     private val attachmentDao: AccreditationAttachmentDao,
     private val draftRemote: AccreditationDraftRemoteSource,
-    private val syncRemote: AccreditationSyncRemoteSource,
     private val syncJobDao: SyncJobDao,
-    private val workScheduler: SyncWorkScheduler,
+    private val batchRunner: SyncBatchRunner,
     private val clock: Clock,
 ) : AccreditationSyncRepository {
 
@@ -66,34 +70,9 @@ class AccreditationSyncRepositoryImpl @Inject constructor(
             val drafts = draftDao.getAll().filter {
                 it.status != DraftPersistenceStatus.Synced.name
             }
-            var synced = 0
-            drafts.forEach { draft ->
-                syncJobDao.enqueue(
-                    SyncJobEntity(
-                        entityType = SyncEntityType.AccreditationDraft.name,
-                        entityKey = draft.id,
-                        enqueuedAt = clock.nowMillis(),
-                        status = SyncStatus.Pending.name,
-                    ),
-                )
-                val ok = syncRemote.upload(draft.id)
-                if (ok) {
-                    draftDao.updateStatus(
-                        draft.id,
-                        DraftPersistenceStatus.Synced.name,
-                        clock.nowMillis(),
-                    )
-                    synced++
-                } else {
-                    draftDao.updateStatus(
-                        draft.id,
-                        DraftPersistenceStatus.SyncFailed.name,
-                        clock.nowMillis(),
-                    )
-                }
-            }
-            workScheduler.scheduleSyncWork()
-            SyncDraftsResult.Success(syncedCount = synced)
+            backfillQueue(drafts)
+            val result = batchRunner.runBatch(resetAbandoned = true)
+            SyncDraftsResult.Success(syncedCount = result.succeeded)
         } catch (t: Throwable) {
             SyncDraftsResult.Error(t.message ?: "Unable to sync accreditation drafts.")
         }
@@ -101,32 +80,12 @@ class AccreditationSyncRepositoryImpl @Inject constructor(
 
     override suspend fun retryFailed(): SyncDraftsResult = withContext(Dispatchers.IO) {
         try {
-            syncJobDao.resetAbandonedForRetry()
             val failed = draftDao.getAll().filter {
                 it.status == DraftPersistenceStatus.SyncFailed.name
             }
-            var synced = 0
-            failed.forEach { draft ->
-                syncJobDao.enqueue(
-                    SyncJobEntity(
-                        entityType = SyncEntityType.AccreditationDraft.name,
-                        entityKey = draft.id,
-                        enqueuedAt = clock.nowMillis(),
-                        status = SyncStatus.Pending.name,
-                    ),
-                )
-                val ok = syncRemote.upload(draft.id)
-                if (ok) {
-                    draftDao.updateStatus(
-                        draft.id,
-                        DraftPersistenceStatus.Synced.name,
-                        clock.nowMillis(),
-                    )
-                    synced++
-                }
-            }
-            workScheduler.scheduleSyncWork()
-            SyncDraftsResult.Success(syncedCount = synced)
+            backfillQueue(failed)
+            val result = batchRunner.runBatch(resetAbandoned = true)
+            SyncDraftsResult.Success(syncedCount = result.succeeded)
         } catch (t: Throwable) {
             SyncDraftsResult.Error(t.message ?: "Unable to retry failed syncs.")
         }
@@ -153,6 +112,21 @@ class AccreditationSyncRepositoryImpl @Inject constructor(
             lastSuccessfulSyncLabel = formatNow(),
             failedDrafts = failed.map { FailedDraftDetail(it) },
         )
+    }
+
+    private suspend fun backfillQueue(rows: List<AssessmentDraftEntity>) {
+        if (rows.isEmpty()) return
+        val now = clock.nowMillis()
+        rows.forEach { row ->
+            syncJobDao.enqueue(
+                SyncJobEntity(
+                    entityType = SyncEntityType.AccreditationDraft.name,
+                    entityKey = row.id,
+                    enqueuedAt = now,
+                    status = SyncStatus.Pending.name,
+                ),
+            )
+        }
     }
 
     private suspend fun buildLocalDraftItems(): List<LocalDraftListItem> =

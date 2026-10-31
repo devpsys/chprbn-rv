@@ -1,7 +1,7 @@
 # CHPRBN Mobile — Full API Documentation
 
 **Audience:** Backend, mobile, QA.
-**Status:** Authoritative reference for every HTTP endpoint the CHPRBN Android client consumes today (Verification + Auth) and every endpoint required to ship the Assessment + Examination modules.
+**Status:** Authoritative reference for every HTTP endpoint the CHPRBN Android client consumes today (Verification + Auth) and every endpoint required to ship the Assessment + Examination + Accreditation modules.
 **Source of truth:** The Retrofit interfaces under `app/src/main/java/ng/com/chprbn/mobile/feature/*/data/api/` and the DTOs under `app/src/main/java/ng/com/chprbn/mobile/feature/*/data/dto/`. When this doc and the code disagree, the code is right and this doc is stale — file a doc-drift PR.
 
 ---
@@ -17,12 +17,13 @@
 7. [Verification Module](#7-verification-module)
 8. [Examination Module](#8-examination-module)
 9. [Assessment Module](#9-assessment-module)
-10. [Cross-Endpoint Data Models](#10-cross-endpoint-data-models)
-11. [API Dependency Mapping](#11-api-dependency-mapping)
-12. [Security Considerations](#12-security-considerations)
-13. [Open Issues and Gaps](#13-open-issues-and-gaps)
-14. [Migration Notes](#14-migration-notes)
-15. [Appendix A — Endpoint Index](#appendix-a--endpoint-index)
+10. [Accreditation Module](#10-accreditation-module)
+11. [Cross-Endpoint Data Models](#11-cross-endpoint-data-models)
+12. [API Dependency Mapping](#12-api-dependency-mapping)
+13. [Security Considerations](#13-security-considerations)
+14. [Open Issues and Gaps](#14-open-issues-and-gaps)
+15. [Migration Notes](#15-migration-notes)
+16. [Appendix A — Endpoint Index](#appendix-a--endpoint-index)
 
 ---
 
@@ -492,7 +493,7 @@ Request body, response shape, and error responses are identical to §5.1. The on
 |---|---|
 | **Module** | Authentication |
 | **Feature** | Field-officer sign-out |
-| **Purpose** | Revoke the current bearer token server-side before the mobile client wipes local session state. Closes the "stolen device with cached token" hole described in §13.7. |
+| **Purpose** | Revoke the current bearer token server-side before the mobile client wipes local session state. Closes the "stolen device with cached token" hole described in §14.7. |
 | **Authentication required** | Yes |
 | **Authorization / roles** | Adhoc users only (any authenticated adhoc user can log themselves out). |
 | **HTTP method** | `POST` |
@@ -527,7 +528,7 @@ No query, path, or body parameters. The token to revoke is the one on the `Autho
 #### Effect
 
 - The Sanctum personal-access-token row corresponding to the `Authorization` header is deleted.
-- Subsequent authenticated requests with that same token return `401 Unauthorized` (which the mobile interceptor already treats as session-expired — see §13.4).
+- Subsequent authenticated requests with that same token return `401 Unauthorized` (which the mobile interceptor already treats as session-expired — see §14.4).
 - Other tokens the same user may have on other devices are **not** affected. This endpoint is per-token, not per-user.
 
 #### Error Responses
@@ -674,7 +675,7 @@ No query, path, or body parameters.
 | `data.username` | string | No | Login handle (typically the license number). |
 | `data.email` | string | No | Login email. |
 | `data.phone` | string | Yes | E.164 phone. |
-| `data.permissions` | string[] | Yes | Permission codes (see §12.4). Backend SHOULD always emit the array (possibly empty); when omitted, mobile maps to `emptyList()`. |
+| `data.permissions` | string[] | Yes | Permission codes (see §14.4). Backend SHOULD always emit the array (possibly empty); when omitted, mobile maps to `emptyList()`. |
 | `data.role` | string | Yes | Role label. |
 | `data.unit` | string | Yes | Unit / hospital. |
 | `data.lastLoginAt` | string | Yes | ISO-8601 timestamp. |
@@ -767,7 +768,7 @@ No query, path, or body parameters.
 
 ### 7.2 Submit Verified License — per-row (legacy)
 
-> **Deprecated:** this is the per-row template. The replacement is §7.4 (batched). The per-row endpoint stays live during the migration window described in §14.2. New backend deployments SHOULD ship the batched endpoint alongside; mobile will cut over as soon as §7.4 returns 2xx.
+> **Deprecated:** this is the per-row template. The replacement is §7.4 (batched). The per-row endpoint stays live during the migration window described in §15.2. New backend deployments SHOULD ship the batched endpoint alongside; mobile will cut over as soon as §7.4 returns 2xx.
 
 | Property | Value |
 |---|---|
@@ -965,7 +966,7 @@ Same set as §7.2. 413 (Payload Too Large) is additionally possible if the snaps
 }
 ```
 
-See §10.3 for the shared batch-result schema.
+See §11.3 for the shared batch-result schema.
 
 #### Business Rules
 
@@ -1149,7 +1150,7 @@ One exam sitting for this centre — a date + qualification code, carrying its o
 | `test_code` | string | Yes | Qualification/cadre code, e.g. `"CHEW"`. Not currently consumed by mobile. |
 | `test_type` | string | Yes | e.g. `"Regular Exam"`. Not currently consumed by mobile. |
 | `paper_candidates` | array | Yes | The candidate↔paper join for this schedule — see below. |
-| `candidates` | array | Yes | Full candidate roster for this schedule — see §10.1. |
+| `candidates` | array | Yes | Full candidate roster for this schedule — see §11.1. |
 
 ###### `schedules[].paper_candidates[]` (paper↔candidate assignment)
 
@@ -1257,7 +1258,7 @@ Mobile flattens `paper_candidates[]` across every schedule into one assignment l
 }
 ```
 
-See §10.3 for the shared batch-result schema.
+See §11.3 for the shared batch-result schema.
 
 #### Error Responses
 
@@ -1336,7 +1337,7 @@ See §10.3 for the shared batch-result schema.
 
 #### Success Response — `200 OK`
 
-Same shape as §8.2 — `{ data: { results: [{ client_id, accepted, server_id?, error? }] } }`. See §10.3.
+Same shape as §8.2 — `{ data: { results: [{ client_id, accepted, server_id?, error? }] } }`. See §11.3.
 
 #### Error Responses
 
@@ -1453,7 +1454,7 @@ Same as §8.2.
 
 ##### `data.candidates` (array of `Candidate`)
 
-See §10.1.
+See §11.1.
 
 ##### `data.assignments` (array of schedule↔candidate links)
 
@@ -1539,7 +1540,7 @@ See §10.1.
 }
 ```
 
-See §10.3 for the shared batch-result schema.
+See §11.3 for the shared batch-result schema.
 
 #### Error Responses
 
@@ -1616,9 +1617,340 @@ Same set as §9.2.
 
 ---
 
-## 10. Cross-Endpoint Data Models
 
-### 10.1 `Candidate` (shared by §8.1, §9.1)
+## 10. Accreditation Module
+
+> **Standalone copy:** [`accreditation-api-documentation.md`](./accreditation-api-documentation.md)
+> (prefer that file when sharing Accreditation-only contracts with backend/QA).
+>
+> **Status: To Be Implemented (backend).** Mobile Phase 2 ships Retrofit contracts,
+> DTOs, Composite Api+Fake remotes, and outbox upload against these paths so the
+> client is ready when the registry exposes them. All routes require bearer auth
+> and role `accreditation`. Source of truth for the client:
+> `AccreditationApiService` under
+> `app/src/main/java/ng/com/chprbn/mobile/feature/accreditation/data/api/`.
+>
+> Base path (relative to `/api/v1/mobile/`): `accreditation/…`.
+
+### 10.1 Get Assignments (hub)
+
+| Property | Value |
+|---|---|
+| **Module** | Accreditation |
+| **Purpose** | Officer banner, feature-grid subtitles, assigned + upcoming institutions for the hub. |
+| **Authentication required** | Yes (role `accreditation`) |
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/assignments` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getAssignments` |
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "officer": {
+      "initials": "DB",
+      "display_name": "Insp. Officer: D. Bello",
+      "registration_label": "CHPRBN REG #OFF-9942",
+      "is_verified": true
+    },
+    "feature_grid": {
+      "start_subtitle": "Protocol 2024/25",
+      "continue_subtitle": "Resume section 4 of 9",
+      "drafts_subtitle": "Ready for sync pipeline",
+      "sync_subtitle": "Last synced 5m ago",
+      "is_online": true
+    },
+    "assigned_institutions": [
+      {
+        "id": "inst-abuth",
+        "name": "Ahmadu Bello University Teaching Hospital",
+        "location_label": "Zaria, Kaduna • North West",
+        "protocol_label": "Accreditation Cycle 2024/2025",
+        "last_synced_label": "Today, 09:30 AM",
+        "sync_status": "synced",
+        "is_active": true
+      }
+    ],
+    "upcoming_institutions": [
+      {
+        "id": "inst-niht",
+        "name": "National Institute of Health Technology",
+        "schedule_label": "Scheduled dispatch • Inspection window starts tomorrow"
+      }
+    ]
+  }
+}
+```
+
+`sync_status` wire values: `synced`, `draft_pending_sync`, `sync_failed`, `never_synced`.
+
+---
+
+### 10.2 Get Institution Profile
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/institutions/{id}` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getInstitution` |
+
+#### Path Parameters
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Institution id from assignments. |
+
+#### Success Response — `200 OK`
+
+`data` mirrors the mobile `InstitutionProfile` domain: identity, ownership, staff counts, programmes, capital base, and `history[]` of prior assessment cycles (`id`, `cycle_label`, `date_label`, `score_label`, `grade_label`, `decision_label`). Grades / decisions are **server-owned** — mobile never computes them.
+
+#### Error Responses
+
+| Status | When |
+|---|---|
+| `404` | Unknown institution id. |
+| `401` / `403` | Missing / wrong role. |
+
+---
+
+### 10.3 Get Current Assessment (seed / overview aggregate)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/institutions/{id}/assessments/current` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getCurrentAssessment` |
+
+Returns the officer's in-progress (or server-seeded) assessment draft plus SSQ section / criteria / score stubs. Mobile seeds Room from this on first open for an institution; empty `payload_json` fields are allowed (UI falls back to local placeholders).
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "draft": {
+      "id": "assess-inst-abuth",
+      "institution_id": "inst-abuth",
+      "institution_name": "Ahmadu Bello University Teaching Hospital",
+      "cycle_label": "Cycle 2024/2025",
+      "facility_code": "ABUTH-ZR-049",
+      "location_label": "Zaria, Kaduna State",
+      "status": "SavedLocally",
+      "updated_at": 1730000000000
+    },
+    "sections": [
+      {
+        "section_key": "A",
+        "code_label": "Section A",
+        "range_label": "SSQ A1 + A2",
+        "title": "General Information",
+        "subtitle": "24 mandatory baseline fields",
+        "status": "NotStarted",
+        "payload_json": "",
+        "items_completed": 0,
+        "total_items": 24
+      }
+    ],
+    "criteria": {
+      "payload_json": "",
+      "evaluated_count": 0,
+      "total_criteria": 8,
+      "status": "NotStarted"
+    },
+    "scores": {
+      "payload_json": "",
+      "completed_count": 0,
+      "total_groups": 6,
+      "status": "NotStarted"
+    }
+  }
+}
+```
+
+---
+
+### 10.4 Upsert SSQ Section Draft
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `PUT` |
+| **URL path** | `/accreditation/assessments/{id}/sections/{key}` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.upsertSection` |
+
+`key` is `A`–`F`. Body is the section draft JSON (`status`, `payload_json`, progress counts, labels). Prefer the batched sync (§10.9) for offline outbox uploads; this endpoint is for optional immediate upsert when online.
+
+---
+
+### 10.5 Upsert Criteria Checklist
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `PUT` |
+| **URL path** | `/accreditation/assessments/{id}/criteria` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.upsertCriteria` |
+
+---
+
+### 10.6 Upsert Score Entry
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `PUT` |
+| **URL path** | `/accreditation/assessments/{id}/scores` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.upsertScores` |
+
+Raw scores only — **no client-side grade / quota computation**.
+
+---
+
+### 10.7 Upload Attachment (multipart)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `POST` |
+| **URL path** | `/accreditation/assessments/{id}/attachments` |
+| **Content-Type** | `multipart/form-data` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.uploadAttachment` |
+
+#### Parts
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `parent_key` | text | Yes | Section / criteria / score parent key (e.g. `ssq-A`, `criteria`). |
+| `title` | text | Yes | Display title. |
+| `location_label` | text | No | Optional geotag / place label. |
+| `file` | file | Yes | Photo or document bytes. |
+
+Mobile copies picker/camera URIs into durable `filesDir/accreditation_attachments/` before enqueue; sync handler uploads pending binaries then posts §10.9.
+
+---
+
+### 10.8 Delete Attachment
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `DELETE` |
+| **URL path** | `/accreditation/assessments/{id}/attachments/{attachmentId}` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.deleteAttachment` |
+
+---
+
+### 10.9 Sync Assessment Draft (batched local → server)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `POST` |
+| **URL path** | `/accreditation/assessments/{id}/sync` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.syncDraft` |
+| **Outbox** | `SyncEntityType.AccreditationDraft` → `AccreditationDraftSyncHandler` |
+
+#### Request Body Schema
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `institution_id` | string | Yes | Owning institution. |
+| `cycle_label` | string | Yes | Accreditation cycle label. |
+| `facility_code` | string | No | Facility / assignment code. |
+| `location_label` | string | No | Campus / city label. |
+| `sections` | array | Yes | SSQ A–F drafts (`section_key`, `status`, `payload_json`, progress, labels). |
+| `criteria` | object | No | Checklist payload + progress. |
+| `scores` | object | No | Raw score groups payload + progress. |
+| `attachments` | array | Yes | Metadata for uploaded / pending files (`id`, `parent_key`, `title`, `is_photo`, …). |
+| `updated_at` | long | No | Client epoch millis. |
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Synced",
+  "data": {
+    "assessment_id": "assess-inst-abuth",
+    "synced_at": 1730000500000
+  }
+}
+```
+
+On non-2xx / `success: false`, mobile marks the draft `SyncFailed` and keeps the outbox job for retry.
+
+---
+
+### 10.10 Submit Assessment for Review
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `POST` |
+| **URL path** | `/accreditation/assessments/{id}/submit` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.submitAssessment` |
+
+#### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Submitted",
+  "data": { "decision_id": "dec-inst-abuth-2024" }
+}
+```
+
+Server computes grade / decision / period / quota. Mobile only stores `decision_id` and navigates to the result screen.
+
+---
+
+### 10.11 Get Assessment Decision (result)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/decisions/{decisionId}` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getDecision` |
+
+`data` includes institution labels, `grade_label`, `decision_label`, `accreditation_period`, `overall_score_percent_label`, `student_quota_label`, `receipt_ref`, plus either structured `raw_score_rows` / `conditions` or their `_json` string forms.
+
+---
+
+### 10.12 Institution Documents (stub)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/institutions/{id}/documents` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getInstitutionDocuments` |
+
+Document vault for View Documents. Mobile UI remains a stub until product wires a screen.
+
+---
+
+### 10.13 Assessment Certificate PDF (stub)
+
+| Property | Value |
+|---|---|
+| **HTTP method** | `GET` |
+| **URL path** | `/accreditation/decisions/{decisionId}/certificate` |
+| **Status** | **To Be Implemented** |
+| **Mobile source** | `AccreditationApiService.getCertificatePdf` |
+| **Response** | `application/pdf` bytes |
+
+---
+
+## 11. Cross-Endpoint Data Models
+
+### 11.1 `Candidate` (shared by §8.1, §9.1)
 
 Cross-feature candidate identity. The exam dossier and the assessment package use nearly the same shape so the local Room `candidates` table holds one canonical row per person — **but the exam dossier's live field names differ from the assessment package's**, confirmed against a real device response (2026-08-14):
 
@@ -1635,7 +1967,7 @@ On the exam dossier, candidates arrive nested per-schedule (`data.schedules[].ca
 
 **Invariant:** for any candidate served by both `/attendance/fetch-record` and `/assessments/schedules/{id}/package`, the `id`, exam number, and full name MUST be identical. Mobile has a unit test (`CandidateInvariantTest`) that enforces this on the client; the backend SHOULD enforce it at the data layer.
 
-### 10.2 Enums
+### 11.2 Enums
 
 See §2.7 for the canonical wire-value table. Repeated here for visibility:
 
@@ -1646,7 +1978,7 @@ See §2.7 for the canonical wire-value table. Repeated here for visibility:
 | `RemarkSeverity` | `info`, `warning`, `critical` |
 | `SyncStatus` (mobile-only) | `pending`, `synced`, `failed` |
 
-### 10.3 Sync-write batch response shape
+### 11.3 Sync-write batch response shape
 
 Every write endpoint in the verification (§7.4) + exam (§8.2, §8.3) + assessment (§9.2, §9.3) modules returns the same shape:
 
@@ -1680,7 +2012,7 @@ Rules:
 
 This uniformity keeps the `SyncEntityHandler` contract narrow: every handler can rely on the same envelope.
 
-### 10.4 Error payload
+### 11.4 Error payload
 
 | Field | Type | Nullable | Description |
 |---|---|---|---|
@@ -1691,9 +2023,9 @@ This uniformity keeps the `SyncEntityHandler` contract narrow: every handler can
 
 ---
 
-## 11. API Dependency Mapping
+## 12. API Dependency Mapping
 
-### 11.1 Authentication module
+### 12.1 Authentication module
 
 ```
 POST /adhoc/login     ──▶ data.token ──┐
@@ -1706,7 +2038,7 @@ POST /login           ──▶ data.token ──┤
             sent on every other request as `Authorization: Bearer <token>`
 ```
 
-### 11.2 Verification module
+### 12.2 Verification module
 
 ```
 GET /practitioners/license?license_number=X
@@ -1718,7 +2050,7 @@ POST /practitioners/verified-sync/batch          (N verifications per request �
 POST /practitioners/license-irregularity-reports  (one per report — multipart, per-row)
 ```
 
-### 11.3 Examination module
+### 12.3 Examination module
 
 All three calls below run against the **exam backend** (jarabawa host, §1.3)
 and carry `X-Location` instead of the bearer token from `/adhoc/login` — the
@@ -1742,7 +2074,7 @@ POST /attendance/push-record  (X-Location, no bearer — items: N attendance row
 POST /attendance-remarks      (X-Location, no bearer — items: N remark rows per request)
 ```
 
-### 11.4 Assessment module
+### 12.4 Assessment module
 
 ```
 POST /adhoc/login ──▶ token
@@ -1763,7 +2095,31 @@ POST /assessments/practical-scores/batch  (items: N (candidate, question) scores
 POST /assessments/project-scores/batch    (items: N project scores per request)
 ```
 
-### 11.5 State transitions
+### 12.5 Accreditation module
+
+```
+POST /adhoc/login ──▶ token (role accreditation)
+            │
+            ▼
+GET  /accreditation/assignments
+GET  /accreditation/institutions/{id}
+GET  /accreditation/institutions/{id}/assessments/current
+            │
+            ▼  (officer edits SSQ / criteria / scores offline)
+POST /accreditation/assessments/{id}/attachments   (multipart, per file)
+POST /accreditation/assessments/{id}/sync            (draft aggregate)
+            │
+            ▼
+POST /accreditation/assessments/{id}/submit ──▶ data.decision_id
+            │
+            ▼
+GET  /accreditation/decisions/{decisionId}
+GET  /accreditation/decisions/{decisionId}/certificate   (PDF; UI stub)
+GET  /accreditation/institutions/{id}/documents          (vault; UI stub)
+```
+
+### 12.6 State transitions
+
 
 | Entity | Local state transitions | Trigger |
 |---|---|---|
@@ -1772,14 +2128,15 @@ POST /assessments/project-scores/batch    (items: N project scores per request)
 | `Remark` | `Pending → Synced` / `Pending → Failed → …` | `/exam/remarks`. |
 | `PracticalScore` | `Pending → Synced` / `Pending → Failed → …` | `/assessments/practical-scores`. |
 | `ProjectScore` | `Pending → Synced` / `Pending → Failed → …` | `/assessments/project-scores`. |
+| `AccreditationDraft` | `PendingSync → Synced` / `PendingSync → SyncFailed → …` | `/accreditation/assessments/{id}/sync`. |
 
 Server-side transitions are out of scope for this document.
 
 ---
 
-## 12. Security Considerations
+## 13. Security Considerations
 
-### 12.1 Authentication flow
+### 13.1 Authentication flow
 
 ```
 1. User opens app (cold) → SplashScreen
@@ -1795,24 +2152,25 @@ Server-side transitions are out of scope for this document.
      - Route to LoginScreen
 ```
 
-### 12.2 Token lifecycle
+### 13.2 Token lifecycle
 
 - **TTL:** server-controlled. Mobile does not assume any TTL.
 - **Refresh:** none. Token expiry = re-login.
 - **Revocation:** client-initiated via `POST /adhoc/logout` / `POST /logout` (§5.3 + §5.4) — mobile calls this before local wipe on the logout gesture. Server may also revoke unilaterally by deleting the Sanctum row (admin action, compromised-token response). Either way, the next authenticated request returns 401 and mobile treats it as session-expired.
 - **Storage at rest:** Bearer token persists inside SQLCipher-encrypted Room (`auth.db`) and a separate EncryptedSharedPreferences file. Both encrypt via a 256-bit random key generated by `DatabaseKeyProvider` and stored in EncryptedSharedPreferences.
 
-### 12.3 Role-based access control
+### 13.3 Role-based access control
 
 | Role | Endpoints |
 |---|---|
 | **Field officer (adhoc)** | `/adhoc/login`, `/adhoc/logout`, `/adhoc/profile`, `/practitioners/license`, `/practitioners/verified-sync`, `/practitioners/license-irregularity-reports`, `/exam/*`, `/assessments/*` |
+| **Accreditation officer** | `/adhoc/login`, `/adhoc/logout`, `/adhoc/profile`, `/accreditation/*` (role `accreditation`). |
 | **Practitioner tutor** | `/login`, `/logout`, `/dashboard/profile`, `/practitioners/license` (read-only). |
 | **Public** | `/login`, `/adhoc/login`. |
 
 Mobile does NOT enforce RBAC client-side; it reacts to 403 by surfacing a generic "Not allowed" toast. Backend MUST enforce.
 
-### 12.4 Permission matrix (mobile-visible)
+### 13.4 Permission matrix (mobile-visible)
 
 | Permission code | Granted to | Required for |
 |---|---|---|
@@ -1824,7 +2182,7 @@ Mobile does NOT enforce RBAC client-side; it reacts to 403 by surfacing a generi
 
 Permission codes are returned in `data.permissions` on the profile endpoints (§6).
 
-### 12.5 Sensitive data handling
+### 13.5 Sensitive data handling
 
 | Data | Handling |
 |---|---|
@@ -1836,13 +2194,13 @@ Permission codes are returned in `data.permissions` on the profile endpoints (§
 
 ---
 
-## 13. Open Issues and Gaps
+## 14. Open Issues and Gaps
 
-### 13.1 Inconsistent response envelope
+### 14.1 Inconsistent response envelope
 
-Existing endpoints emit `status` (boolean); the standardised name going forward is `success`. Mobile DTOs currently use `status`. **Migration plan in §14.1.**
+Existing endpoints emit `status` (boolean); the standardised name going forward is `success`. Mobile DTOs currently use `status`. **Migration plan in §15.1.**
 
-### 13.2 Inconsistent field-name casing
+### 14.2 Inconsistent field-name casing
 
 | Endpoint | Casing today | Should be |
 |---|---|---|
@@ -1852,27 +2210,27 @@ Existing endpoints emit `status` (boolean); the standardised name going forward 
 
 Mobile already tolerates both via `@SerializedName` overrides; backend should converge.
 
-### 13.3 Photo-field duality
+### 14.3 Photo-field duality
 
 `/practitioners/license` returns EITHER `photo` (Base64) OR `photo_url` (HTTPS). The mobile mapper handles both. **Decision needed:** standardise on `photo_url` and never emit Base64 inline; the latter doubles payload size and prevents lazy loading.
 
-### 13.4 No refresh-token flow
+### 14.4 No refresh-token flow
 
 Documented in §1.4. **Decision needed:** acceptable for v1 or required before assessment-day usage (where a token expiry mid-grading would be disastrous)?
 
-### 13.5 No server-side pagination
+### 14.5 No server-side pagination
 
 Not yet a problem; will be a problem the first time an officer is assigned to a centre with > ~500 candidates. **Convention in §1.7** is ready when needed.
 
-### 13.6 No rate-limiting headers consumed
+### 14.6 No rate-limiting headers consumed
 
 Mobile blindly retries failed POSTs from the sync worker. A 429 today would burn cycles. **Fix:** consume `Retry-After` in `SyncBatchRunner`. Cheap.
 
-### 13.7 Server-side logout not yet implemented
+### 14.7 Server-side logout not yet implemented
 
 Mobile currently clears local state on logout but does not revoke the server-side token. **Risk:** stolen device with cached token can be used against the API until the token's natural expiry. **Fix:** endpoints specced at §5.3 (`POST /adhoc/logout`) + §5.4 (`POST /logout`); mobile hookup follows.
 
-### 13.8 Validation gaps
+### 14.8 Validation gaps
 
 | Endpoint | Gap |
 |---|---|
@@ -1881,13 +2239,13 @@ Mobile currently clears local state on logout but does not revoke the server-sid
 | `/exam/remarks` | `id` (client UUID) should be validated as RFC 4122 v4. |
 | `/assessments/practical-scores` | `score > max_score` should be 422, not silently truncated. |
 
-### 13.9 Security concerns
+### 14.9 Security concerns
 
 - **No SPKI pinning** — covered in `docs/BACKEND_CONTRACT_AND_CERT_PINNING.md` §6.
 - **Token in EncryptedSharedPreferences** is good but a rooted device defeats it; backend should still detect anomalous IPs / impossible-travel patterns.
 - **Multipart upload (irregularity report)** has no integrity hash — a corrupted snapshot lands silently. Optional `X-Content-SHA256` header recommended.
 
-### 13.10 Naming
+### 14.10 Naming
 
 | Confusing | Suggested |
 |---|---|
@@ -1897,24 +2255,25 @@ Mobile currently clears local state on logout but does not revoke the server-sid
 
 ---
 
-## 14. Migration Notes
+## 15. Migration Notes
 
-### 14.1 Envelope rename `status → success` (in progress)
+### 15.1 Envelope rename `status → success` (in progress)
 
 The canonical envelope flag is `success` (boolean). Mobile prefers `success` but **also accepts the legacy `status` key** as an alias — every read envelope carries `@SerializedName(value = "success", alternate = ["status"])` so a backend that still emits `"status": true` decodes cleanly. Backend can migrate on its own schedule; once every endpoint emits `success`, mobile can drop the alias in a follow-up release.
 
 **Do not remove the shim from the DTOs without first confirming every response envelope (auth, profile, verification, exam, assessment, batch writes) is emitting `"success"`.** The regression test at [`AuthApiServiceTest.adhocLogin tolerates legacy status flag during backend migration`](../../app/src/test/java/ng/com/chprbn/mobile/feature/auth/data/api/AuthApiServiceTest.kt) pins the tolerant behaviour for the login envelope.
 
-### 14.2 New-endpoint rollout order
+### 15.2 New-endpoint rollout order
 
 1. **First:** `/attendance/fetch-record` + `/attendance/push-record` + `/attendance-remarks` — exam day blocks on these. The dossier response must already include PE/PA papers (`paper_kind = "practical" | "project"`) — mobile filters them into the assessment side, no separate schedules endpoint.
 2. **Second:** `/assessments/schedules/{id}/package` — assessment day needs the per-schedule reference data (sections, questions, candidates).
 3. **Third:** `/assessments/practical-scores/batch` + `/assessments/project-scores/batch` — scoring is the write half of the assessment flow.
 4. **Fourth (verification cutover):** `/practitioners/verified-sync/batch` — replaces the legacy per-row endpoint (§7.2). Both run side-by-side during the cutover window so existing client builds keep working.
+5. **Fifth (accreditation):** `/accreditation/assignments` + institution/current assessment reads, then `/accreditation/assessments/{id}/sync` + multipart attachments + submit/decision (§10). Mobile already ships Composite Api+Fake for these.
 
 The mobile client already wires Composite remote sources that prefer the live API and fall back to in-memory fakes (`Fake*RemoteSource`) so the UI keeps working through the backend rollout. Once an endpoint returns real data with a `200 + non-null data`, the Fake silently stops serving — no client redeploy required.
 
-### 14.3 Suggested PR sequence (backend)
+### 15.3 Suggested PR sequence (backend)
 
 1. PR #1 — Ensure every response envelope emits `success` (boolean). Mobile no longer reads `status`; the field can be dropped from responses whenever convenient.
 2. PR #2 — `POST /adhoc/logout` and `POST /logout` token revocation (§5.3 + §5.4).
@@ -1925,7 +2284,7 @@ The mobile client already wires Composite remote sources that prefer the live AP
 7. PR #7 — `POST /practitioners/verified-sync/batch` (legacy verified-sync replacement).
 8. PR #8 — Remove the per-row `/practitioners/verified-sync` route; bump to `v1.1`. (Legacy `status` field already dropped in the mobile client — backend may stop emitting it whenever convenient.)
 
-### 14.4 Contract tests
+### 15.4 Contract tests
 
 Each backend PR must ship with a contract test that:
 
@@ -1958,6 +2317,19 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | Assessment | `GET` | `/assessments/schedules/{schedule_id}/package` | To Be Implemented | `AssessmentPackageApiService.fetchPackage` | §9.1 |
 | Assessment | `POST` | `/assessments/practical-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadPracticalScoreBatch` | §9.2 |
 | Assessment | `POST` | `/assessments/project-scores/batch` | To Be Implemented | `AssessmentSyncApiService.uploadProjectScoreBatch` | §9.3 |
+| Accreditation | `GET` | `/accreditation/assignments` | To Be Implemented | `AccreditationApiService.getAssignments` | §10.1 |
+| Accreditation | `GET` | `/accreditation/institutions/{id}` | To Be Implemented | `AccreditationApiService.getInstitution` | §10.2 |
+| Accreditation | `GET` | `/accreditation/institutions/{id}/assessments/current` | To Be Implemented | `AccreditationApiService.getCurrentAssessment` | §10.3 |
+| Accreditation | `PUT` | `/accreditation/assessments/{id}/sections/{key}` | To Be Implemented | `AccreditationApiService.upsertSection` | §10.4 |
+| Accreditation | `PUT` | `/accreditation/assessments/{id}/criteria` | To Be Implemented | `AccreditationApiService.upsertCriteria` | §10.5 |
+| Accreditation | `PUT` | `/accreditation/assessments/{id}/scores` | To Be Implemented | `AccreditationApiService.upsertScores` | §10.6 |
+| Accreditation | `POST` | `/accreditation/assessments/{id}/attachments` | To Be Implemented | `AccreditationApiService.uploadAttachment` | §10.7 |
+| Accreditation | `DELETE` | `/accreditation/assessments/{id}/attachments/{attachmentId}` | To Be Implemented | `AccreditationApiService.deleteAttachment` | §10.8 |
+| Accreditation | `POST` | `/accreditation/assessments/{id}/sync` | To Be Implemented | `AccreditationApiService.syncDraft` | §10.9 |
+| Accreditation | `POST` | `/accreditation/assessments/{id}/submit` | To Be Implemented | `AccreditationApiService.submitAssessment` | §10.10 |
+| Accreditation | `GET` | `/accreditation/decisions/{decisionId}` | To Be Implemented | `AccreditationApiService.getDecision` | §10.11 |
+| Accreditation | `GET` | `/accreditation/institutions/{id}/documents` | To Be Implemented | `AccreditationApiService.getInstitutionDocuments` | §10.12 |
+| Accreditation | `GET` | `/accreditation/decisions/{decisionId}/certificate` | To Be Implemented | `AccreditationApiService.getCertificatePdf` | §10.13 |
 
 ---
 
@@ -1968,3 +2340,4 @@ These tests are then re-runnable from the mobile CI using MockWebServer against 
 | 1.0 | 2026-05-16 | Mobile team | Initial consolidation of every Retrofit interface + DTO in the codebase. Standardises envelope to `{success, message, data, meta}` going forward; documents 7 To-Be-Implemented endpoints for the Examination + Assessment modules. |
 | 1.1 | 2026-05-16 | Mobile team | Reshape all sync write endpoints (§7.4, §8.2, §8.3, and the former §9.3/§9.4 assessment batch endpoints) to batched `items[]` request + per-row `results[]` response. Reason: legacy per-row uploads cannot sustain CHPRBN's real campaign-day load (tens of thousands of records, multiple devices, narrow window). Legacy per-row `/practitioners/verified-sync` (§7.2) marked deprecated; batch replacement (§7.4) added as To Be Implemented. |
 | 1.2 | 2026-08-15 | Mobile team | Removed the dedicated `GET /assessments/schedules` endpoint (formerly §9.1). Assessment schedules are the PE/PA subset of the exam dossier (§8.1) — mobile filters `data.papers[]` by `paper_kind` and adapts them to `AssessmentSchedule` in `AssessmentScheduleRepositoryImpl.getSchedules`. Renumbered §9.x accordingly (Package became §9.1; batch writes became §9.2 / §9.3). |
+| 1.3 | 2026-10-31 | Mobile team | Added §10 Accreditation Module (assignments, institution profile, current assessment, section/criteria/score upserts, multipart attachments, draft sync, submit, decision, documents + certificate stubs). Renumbered former §10–§14 → §11–§15. Mobile Phase 2 wires `AccreditationApiService` + Composite Api/Fake remotes + outbox upload. |

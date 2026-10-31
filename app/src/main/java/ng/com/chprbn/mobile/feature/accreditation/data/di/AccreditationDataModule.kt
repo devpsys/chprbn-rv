@@ -13,6 +13,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import ng.com.chprbn.mobile.core.sync.SyncEntityHandler
 import ng.com.chprbn.mobile.core.sync.SyncEntityType
 import ng.com.chprbn.mobile.core.sync.SyncEntityTypeKey
+import ng.com.chprbn.mobile.feature.accreditation.data.api.AccreditationApiService
 import ng.com.chprbn.mobile.feature.accreditation.data.local.AccreditationAttachmentDao
 import ng.com.chprbn.mobile.feature.accreditation.data.local.AccreditationDatabase
 import ng.com.chprbn.mobile.feature.accreditation.data.local.AssessmentDraftDao
@@ -28,7 +29,13 @@ import ng.com.chprbn.mobile.feature.accreditation.data.repository.InstitutionRep
 import ng.com.chprbn.mobile.feature.accreditation.data.source.AccreditationAssignmentRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.source.AccreditationDraftRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.source.AccreditationSyncRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.ApiAccreditationRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.source.AssessmentSubmissionRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.CompositeAccreditationAssignmentRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.CompositeAccreditationDraftRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.CompositeAccreditationSyncRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.CompositeAssessmentSubmissionRemoteSource
+import ng.com.chprbn.mobile.feature.accreditation.data.source.CompositeInstitutionRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.source.FakeAccreditationRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.source.InstitutionRemoteSource
 import ng.com.chprbn.mobile.feature.accreditation.data.sync.AccreditationDraftSyncHandler
@@ -38,6 +45,7 @@ import ng.com.chprbn.mobile.feature.accreditation.domain.repository.Accreditatio
 import ng.com.chprbn.mobile.feature.accreditation.domain.repository.AssessmentDraftRepository
 import ng.com.chprbn.mobile.feature.accreditation.domain.repository.AssessmentSubmissionRepository
 import ng.com.chprbn.mobile.feature.accreditation.domain.repository.InstitutionRepository
+import retrofit2.Retrofit
 import javax.inject.Singleton
 
 @Module
@@ -73,31 +81,6 @@ abstract class AccreditationDataModule {
     abstract fun bindSubmissionRepository(
         impl: AssessmentSubmissionRepositoryImpl,
     ): AssessmentSubmissionRepository
-
-    @Binds
-    abstract fun bindAssignmentRemote(
-        impl: FakeAccreditationRemoteSource,
-    ): AccreditationAssignmentRemoteSource
-
-    @Binds
-    abstract fun bindInstitutionRemote(
-        impl: FakeAccreditationRemoteSource,
-    ): InstitutionRemoteSource
-
-    @Binds
-    abstract fun bindDraftRemote(
-        impl: FakeAccreditationRemoteSource,
-    ): AccreditationDraftRemoteSource
-
-    @Binds
-    abstract fun bindSyncRemote(
-        impl: FakeAccreditationRemoteSource,
-    ): AccreditationSyncRemoteSource
-
-    @Binds
-    abstract fun bindSubmissionRemote(
-        impl: FakeAccreditationRemoteSource,
-    ): AssessmentSubmissionRemoteSource
 
     @Binds
     @IntoMap
@@ -136,5 +119,50 @@ abstract class AccreditationDataModule {
         @Provides
         fun provideAccreditationAttachmentDao(db: AccreditationDatabase): AccreditationAttachmentDao =
             db.accreditationAttachmentDao()
+
+        @Provides
+        @Singleton
+        fun provideAccreditationApiService(retrofit: Retrofit): AccreditationApiService =
+            retrofit.create(AccreditationApiService::class.java)
+
+        @Provides
+        @Singleton
+        fun provideAssignmentRemoteSource(
+            api: ApiAccreditationRemoteSource,
+            fake: FakeAccreditationRemoteSource,
+        ): AccreditationAssignmentRemoteSource =
+            CompositeAccreditationAssignmentRemoteSource(api, fake)
+
+        @Provides
+        @Singleton
+        fun provideInstitutionRemoteSource(
+            api: ApiAccreditationRemoteSource,
+            fake: FakeAccreditationRemoteSource,
+        ): InstitutionRemoteSource =
+            CompositeInstitutionRemoteSource(api, fake)
+
+        @Provides
+        @Singleton
+        fun provideDraftRemoteSource(
+            api: ApiAccreditationRemoteSource,
+            fake: FakeAccreditationRemoteSource,
+        ): AccreditationDraftRemoteSource =
+            CompositeAccreditationDraftRemoteSource(api, fake)
+
+        @Provides
+        @Singleton
+        fun provideSyncRemoteSource(
+            api: ApiAccreditationRemoteSource,
+            fake: FakeAccreditationRemoteSource,
+        ): AccreditationSyncRemoteSource =
+            CompositeAccreditationSyncRemoteSource(api, fake)
+
+        @Provides
+        @Singleton
+        fun provideSubmissionRemoteSource(
+            api: ApiAccreditationRemoteSource,
+            fake: FakeAccreditationRemoteSource,
+        ): AssessmentSubmissionRemoteSource =
+            CompositeAssessmentSubmissionRemoteSource(api, fake)
     }
 }

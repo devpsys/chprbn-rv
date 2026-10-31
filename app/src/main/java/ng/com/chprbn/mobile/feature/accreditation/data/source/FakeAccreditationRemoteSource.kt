@@ -22,8 +22,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Phase-1 fake remotes matching presentation placeholder sample data (ABUTH, etc.).
- * API stubs are deferred to Phase 2.
+ * In-memory remotes matching presentation sample data (ABUTH, etc.).
+ * Used as Composite fallback while accreditation HTTP endpoints are TO BE IMPLEMENTED.
  */
 @Singleton
 class FakeAccreditationRemoteSource @Inject constructor() :
@@ -210,9 +210,9 @@ class FakeAccreditationRemoteSource @Inject constructor() :
         ),
     )
 
-    override suspend fun upload(assessmentId: String): Boolean {
+    override suspend fun uploadDraft(payload: AccreditationDraftSyncPayload): Boolean {
         delay(200L)
-        return assessmentId.isNotBlank()
+        return payload.assessmentId.isNotBlank()
     }
 
     override suspend fun submit(assessmentId: String): String {

@@ -26,6 +26,24 @@ interface AccreditationAttachmentDao {
     @Query("SELECT COUNT(*) FROM accreditation_attachments WHERE assessmentId = :assessmentId")
     suspend fun countForAssessment(assessmentId: String): Int
 
+    @Query(
+        """
+        SELECT * FROM accreditation_attachments
+        WHERE assessmentId = :assessmentId
+        ORDER BY title ASC
+        """,
+    )
+    suspend fun listForAssessment(assessmentId: String): List<AccreditationAttachmentEntity>
+
+    @Query(
+        """
+        UPDATE accreditation_attachments
+        SET uploadState = :uploadState
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateUploadState(id: String, uploadState: String): Int
+
     @Query("DELETE FROM accreditation_attachments WHERE id = :id")
     suspend fun deleteById(id: String): Int
 

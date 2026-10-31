@@ -13,7 +13,7 @@ import dagger.MapKey
  *   calls [uploadBatch] **once per type** with the whole list of entity
  *   keys for that type. Implementations send one batched HTTP request
  *   per call (matches the batched server contract — see
- *   `docs/api/full-api-documentation.md` §10.3).
+ *   `docs/api/full-api-documentation.md` §11.3).
  * - The returned map MUST contain exactly one entry per input key. A
  *   missing key is treated by the runner as a contract violation and
  *   surfaced as a synthetic [SyncOutcome.Failure]; that should never

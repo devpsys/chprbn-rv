@@ -34,8 +34,57 @@ interface AccreditationDraftRemoteSource {
     suspend fun sampleLocalDrafts(): List<LocalDraftListItem>
 }
 
+/**
+ * Full draft payload pushed via `POST accreditation/assessments/{id}/sync`.
+ */
+data class AccreditationDraftSyncPayload(
+    val assessmentId: String,
+    val institutionId: String,
+    val cycleLabel: String,
+    val facilityCode: String,
+    val locationLabel: String,
+    val updatedAt: Long,
+    val sections: List<AccreditationSectionSyncPart>,
+    val criteriaPayloadJson: String?,
+    val criteriaEvaluatedCount: Int,
+    val criteriaTotal: Int,
+    val criteriaStatus: String?,
+    val scoresPayloadJson: String?,
+    val scoresCompletedCount: Int,
+    val scoresTotalGroups: Int,
+    val scoresStatus: String?,
+    val attachments: List<AccreditationAttachmentSyncMeta>,
+)
+
+data class AccreditationSectionSyncPart(
+    val sectionKey: String,
+    val status: String,
+    val payloadJson: String,
+    val itemsCompleted: Int,
+    val totalItems: Int,
+    val codeLabel: String?,
+    val rangeLabel: String?,
+    val title: String?,
+    val subtitle: String?,
+)
+
+data class AccreditationAttachmentSyncMeta(
+    val id: String,
+    val parentKey: String,
+    val title: String,
+    val isPhoto: Boolean,
+    val sizeLabel: String?,
+    val locationLabel: String?,
+    val uploadState: String?,
+    val localPath: String,
+)
+
 interface AccreditationSyncRemoteSource {
-    suspend fun upload(assessmentId: String): Boolean
+    /**
+     * Uploads pending binary attachments (multipart) then posts the draft sync body.
+     * Returns true when the server accepts the sync.
+     */
+    suspend fun uploadDraft(payload: AccreditationDraftSyncPayload): Boolean
 }
 
 interface AssessmentSubmissionRemoteSource {
