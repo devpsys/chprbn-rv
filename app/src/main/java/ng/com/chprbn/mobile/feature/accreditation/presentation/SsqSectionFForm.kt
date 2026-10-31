@@ -121,8 +121,7 @@ internal fun SectionFFormFields(
     onChecklistRemarks: (String, String) -> Unit,
     onChecklistMouStatus: (String, String) -> Unit,
     onRemoveAttachment: (String) -> Unit,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (contentUri: String, isPhoto: Boolean) -> Unit,
 ) {
     var selectedTabId by remember {
         mutableStateOf(data.checklistSubsections.firstOrNull()?.id.orEmpty())
@@ -192,11 +191,10 @@ internal fun SectionFFormFields(
             R.string.accreditation_section_attachments_files_format,
             data.attachments.size,
         ),
-        photoLabel = stringResource(R.string.accreditation_section_take_photo),
-        documentLabel = stringResource(R.string.accreditation_section_add_document),
+        cameraLabel = stringResource(R.string.accreditation_section_take_photo),
+        galleryLabel = stringResource(R.string.accreditation_attachment_gallery),
         mutedBackground = true,
-        onAddPhoto = onAddPhoto,
-        onAddDocument = onAddDocument,
+        onAddAttachment = onAddAttachment,
         onRemoveAttachment = onRemoveAttachment,
     )
 }

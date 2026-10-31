@@ -7,8 +7,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
- * SSQ section form (A–F). Presentation-only: camera/gallery are UI stubs
- * until Prompt H attachment wiring; save shows a local SuccessDialog.
+ * SSQ section form (A–F). Presentation-only attachment capture via Prompt H;
+ * save shows a local SuccessDialog until draft repository lands.
  */
 @Composable
 fun SsqSectionFormScreen(
@@ -49,8 +49,7 @@ fun SsqSectionFormScreen(
         onChecklistRemarks = viewModel::onChecklistRemarks,
         onChecklistMouStatus = viewModel::onChecklistMouStatus,
         onRemoveAttachment = viewModel::onRemoveAttachment,
-        onAddPhoto = { /* TODO: Prompt H camera capture */ },
-        onAddDocument = { /* TODO: Prompt H gallery / PDF */ },
+        onAddAttachment = viewModel::onAttachmentAdded,
         onSaveSectionDraft = viewModel::onSaveSectionDraft,
         onSaveAsDraft = viewModel::onSaveAsDraft,
         onDismissSavedDialog = viewModel::dismissSavedDialog,

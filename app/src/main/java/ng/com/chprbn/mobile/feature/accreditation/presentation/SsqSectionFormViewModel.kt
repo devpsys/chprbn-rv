@@ -1,5 +1,6 @@
 package ng.com.chprbn.mobile.feature.accreditation.presentation
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -158,6 +159,41 @@ class SsqSectionFormViewModel @Inject constructor(
         }
     }
 
+    fun onAttachmentAdded(
+        contentUri: String,
+        isPhoto: Boolean,
+        subsectionId: String? = null,
+    ) {
+        val attachment = SsqAttachmentUiState(
+            id = "att-${UUID.randomUUID()}",
+            title = filenameFromContentUri(contentUri),
+            sizeLabel = "Local",
+            isPhoto = isPhoto,
+            contentUri = contentUri,
+        )
+        updateSuccess { data ->
+            if (!subsectionId.isNullOrBlank() &&
+                data.checklistSubsections.any { it.id == subsectionId }
+            ) {
+                data.copy(
+                    checklistSubsections = data.checklistSubsections.map { subsection ->
+                        if (subsection.id == subsectionId) {
+                            subsection.copy(attachments = subsection.attachments + attachment)
+                        } else {
+                            subsection
+                        }
+                    },
+                    status = SectionDraftStatus.InProgress,
+                )
+            } else {
+                data.copy(
+                    attachments = data.attachments + attachment,
+                    status = SectionDraftStatus.InProgress,
+                )
+            }
+        }
+    }
+
     fun onRemoveAttachment(attachmentId: String) {
         updateSuccess { data ->
             val inSubsection = data.checklistSubsections.any { subsection ->
@@ -175,6 +211,11 @@ class SsqSectionFormViewModel @Inject constructor(
                 data.copy(attachments = data.attachments.filterNot { it.id == attachmentId })
             }
         }
+    }
+
+    private fun filenameFromContentUri(contentUri: String): String {
+        val segment = Uri.parse(contentUri).lastPathSegment.orEmpty()
+        return segment.substringAfterLast('/').takeIf { it.isNotBlank() } ?: "attachment.jpg"
     }
 
     fun onSaveSectionDraft() {

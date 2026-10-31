@@ -1,8 +1,10 @@
 package ng.com.chprbn.mobile.feature.accreditation.presentation
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,10 +75,28 @@ class CriteriaChecklistViewModel @Inject constructor(
             }
         }
 
+    fun onAttachmentAdded(kind: CriteriaGroupKind, contentUri: String, isPhoto: Boolean) =
+        updateGroup(kind) { group ->
+            group.copy(
+                attachments = group.attachments + SsqAttachmentUiState(
+                    id = "att-${UUID.randomUUID()}",
+                    title = filenameFromContentUri(contentUri),
+                    sizeLabel = "Local",
+                    isPhoto = isPhoto,
+                    contentUri = contentUri,
+                ),
+            )
+        }
+
     fun onRemoveAttachment(kind: CriteriaGroupKind, attachmentId: String) =
         updateGroup(kind) { group ->
             group.copy(attachments = group.attachments.filterNot { it.id == attachmentId })
         }
+
+    private fun filenameFromContentUri(contentUri: String): String {
+        val segment = Uri.parse(contentUri).lastPathSegment.orEmpty()
+        return segment.substringAfterLast('/').takeIf { it.isNotBlank() } ?: "attachment.jpg"
+    }
 
     fun onSaveChecklistDraft() {
         updateSuccess { it.copy(showSavedDialog = true) }

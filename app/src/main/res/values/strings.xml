@@ -752,6 +752,14 @@
     <string name="accreditation_section_take_photo">Take Photo</string>
     <string name="accreditation_section_add_document">Add Document</string>
     <string name="accreditation_section_remove_attachment_cd">Remove attachment</string>
+    <string name="accreditation_attachment_supporting_documents">Supporting Documents</string>
+    <string name="accreditation_attachment_no_files">No files attached</string>
+    <string name="accreditation_attachment_gallery">Gallery</string>
+    <string name="accreditation_attachment_camera">Camera</string>
+    <string name="accreditation_attachment_remove_cd">Remove attachment</string>
+    <string name="accreditation_attachment_preview_cd">Attachment preview</string>
+    <string name="accreditation_attachment_location_cd">Capture location</string>
+    <string name="accreditation_attachment_capture_error">Could not capture image. Please try again.</string>
     <string name="accreditation_section_completion_label">Completion Checklist</string>
     <string name="accreditation_section_evaluated_format">%1$d of %2$d Evaluated</string>
     <string name="accreditation_section_items_count_format">%1$d Items</string>

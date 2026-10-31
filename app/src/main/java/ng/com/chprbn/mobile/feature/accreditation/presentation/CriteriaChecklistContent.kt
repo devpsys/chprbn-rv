@@ -71,8 +71,7 @@ fun CriteriaChecklistContent(
     onStatementOfAccountConfirmed: (Boolean) -> Unit = {},
     onSalaryChange: (CriteriaGroupKind, SalaryField, String) -> Unit = { _, _, _ -> },
     onRemoveAttachment: (CriteriaGroupKind, String) -> Unit = { _, _ -> },
-    onAddPhoto: (CriteriaGroupKind) -> Unit = {},
-    onAddDocument: (CriteriaGroupKind) -> Unit = {},
+    onAddAttachment: (CriteriaGroupKind, String, Boolean) -> Unit = { _, _, _ -> },
     onSaveChecklistDraft: () -> Unit = {},
     onSaveAsDraft: () -> Unit = {},
     onContinueToScoreEntry: (String) -> Unit = {},
@@ -157,8 +156,9 @@ fun CriteriaChecklistContent(
                             onStatementOfAccountConfirmed = onStatementOfAccountConfirmed,
                             onSalaryChange = onSalaryChange,
                             onRemoveAttachment = onRemoveAttachment,
-                            onAddPhoto = { onAddPhoto(group.kind) },
-                            onAddDocument = { onAddDocument(group.kind) },
+                            onAddAttachment = { uri, isPhoto ->
+                                onAddAttachment(group.kind, uri, isPhoto)
+                            },
                         )
                     }
                     item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -300,8 +300,7 @@ private fun CriteriaGroupCard(
     onStatementOfAccountConfirmed: (Boolean) -> Unit,
     onSalaryChange: (CriteriaGroupKind, SalaryField, String) -> Unit,
     onRemoveAttachment: (CriteriaGroupKind, String) -> Unit,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (contentUri: String, isPhoto: Boolean) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -417,13 +416,12 @@ private fun CriteriaGroupCard(
             }
             AttachmentManagementCard(
                 attachments = group.attachments,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = onAddAttachment,
                 onRemoveAttachment = { onRemoveAttachment(group.kind, it) },
                 title = stringResource(R.string.accreditation_criteria_attachments_title),
                 hint = stringResource(R.string.accreditation_criteria_attachments_hint),
-                photoLabel = stringResource(R.string.accreditation_section_take_photo),
-                documentLabel = stringResource(R.string.accreditation_section_add_document),
+                cameraLabel = stringResource(R.string.accreditation_section_take_photo),
+                galleryLabel = stringResource(R.string.accreditation_attachment_gallery),
                 mutedBackground = true,
             )
         }

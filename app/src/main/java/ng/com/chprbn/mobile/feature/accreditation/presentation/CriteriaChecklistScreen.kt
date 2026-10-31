@@ -8,7 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Accreditation criteria checklist (Guideline §1–8). Presentation-only until
- * draft persistence and attachment capture (Prompt H) land.
+ * draft persistence lands; attachment capture wired via Prompt H.
  */
 @Composable
 fun CriteriaChecklistScreen(
@@ -31,8 +31,7 @@ fun CriteriaChecklistScreen(
         onStatementOfAccountConfirmed = viewModel::onStatementOfAccountConfirmed,
         onSalaryChange = viewModel::onSalaryChange,
         onRemoveAttachment = viewModel::onRemoveAttachment,
-        onAddPhoto = { /* TODO: Prompt H camera capture */ },
-        onAddDocument = { /* TODO: Prompt H gallery / PDF */ },
+        onAddAttachment = viewModel::onAttachmentAdded,
         onSaveChecklistDraft = viewModel::onSaveChecklistDraft,
         onSaveAsDraft = viewModel::onSaveAsDraft,
         onContinueToScoreEntry = onContinueToScoreEntry,

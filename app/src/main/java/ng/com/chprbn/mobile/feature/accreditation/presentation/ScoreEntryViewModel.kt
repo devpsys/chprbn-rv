@@ -1,8 +1,10 @@
 package ng.com.chprbn.mobile.feature.accreditation.presentation
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,10 +34,28 @@ class ScoreEntryViewModel @Inject constructor(
     fun onObservationsChange(group: ScoreCriterionGroup, value: String) =
         updateRow(group) { it.copy(observations = value) }
 
+    fun onAttachmentAdded(group: ScoreCriterionGroup, contentUri: String, isPhoto: Boolean) =
+        updateRow(group) { row ->
+            row.copy(
+                attachments = row.attachments + SsqAttachmentUiState(
+                    id = "att-${UUID.randomUUID()}",
+                    title = filenameFromContentUri(contentUri),
+                    sizeLabel = "Local",
+                    isPhoto = isPhoto,
+                    contentUri = contentUri,
+                ),
+            )
+        }
+
     fun onRemoveAttachment(group: ScoreCriterionGroup, attachmentId: String) =
         updateRow(group) { row ->
             row.copy(attachments = row.attachments.filterNot { it.id == attachmentId })
         }
+
+    private fun filenameFromContentUri(contentUri: String): String {
+        val segment = Uri.parse(contentUri).lastPathSegment.orEmpty()
+        return segment.substringAfterLast('/').takeIf { it.isNotBlank() } ?: "attachment.jpg"
+    }
 
     fun onSaveDraft() {
         updateSuccess { it.copy(showSavedDialog = true) }

@@ -121,8 +121,7 @@ internal fun SectionBFormFields(
     onChecklistAnswer: (String, ChecklistAnswer) -> Unit,
     onChecklistRemarks: (String, String) -> Unit,
     onRemoveAttachment: (String) -> Unit,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (subsectionId: String, contentUri: String, isPhoto: Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val subsectionOffsets = remember { mutableMapOf<String, Int>() }
@@ -231,10 +230,11 @@ internal fun SectionBFormFields(
                     R.string.accreditation_section_attachments_files_format,
                     subsection.attachments.size,
                 ),
-                photoLabel = stringResource(R.string.accreditation_section_take_photo),
-                documentLabel = stringResource(R.string.accreditation_section_add_document),
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                cameraLabel = stringResource(R.string.accreditation_section_take_photo),
+                galleryLabel = stringResource(R.string.accreditation_attachment_gallery),
+                onAddAttachment = { uri, isPhoto ->
+                    onAddAttachment(subsection.id, uri, isPhoto)
+                },
                 onRemoveAttachment = onRemoveAttachment,
                 mutedBackground = true,
             )

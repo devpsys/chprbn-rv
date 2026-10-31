@@ -3,4 +3,7 @@
     <cache-path
         name="irregularity_snapshots"
         path="irregularity_snapshots/" />
+    <cache-path
+        name="accreditation_attachments"
+        path="accreditation_attachments/" />
 </paths>

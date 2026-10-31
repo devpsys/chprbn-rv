@@ -145,8 +145,8 @@ fun SsqSectionFormContent(
     onChecklistRemarks: (itemId: String, remarks: String) -> Unit = { _, _ -> },
     onChecklistMouStatus: (itemId: String, mouStatus: String) -> Unit = { _, _ -> },
     onRemoveAttachment: (attachmentId: String) -> Unit = {},
-    onAddPhoto: () -> Unit = {},
-    onAddDocument: () -> Unit = {},
+    onAddAttachment: (contentUri: String, isPhoto: Boolean, subsectionId: String?) -> Unit =
+        { _, _, _ -> },
     onSaveSectionDraft: () -> Unit = {},
     onSaveAsDraft: () -> Unit = {},
     onDismissSavedDialog: () -> Unit = {},
@@ -236,8 +236,7 @@ fun SsqSectionFormContent(
                     onChecklistRemarks = onChecklistRemarks,
                     onChecklistMouStatus = onChecklistMouStatus,
                     onRemoveAttachment = onRemoveAttachment,
-                    onAddPhoto = onAddPhoto,
-                    onAddDocument = onAddDocument,
+                    onAddAttachment = onAddAttachment,
                 )
                 if (uiState.data.showSavedDialog) {
                     SuccessDialog(
@@ -348,8 +347,7 @@ private fun SectionFormBody(
     onChecklistRemarks: (String, String) -> Unit,
     onChecklistMouStatus: (String, String) -> Unit,
     onRemoveAttachment: (String) -> Unit,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (contentUri: String, isPhoto: Boolean, subsectionId: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -391,8 +389,9 @@ private fun SectionFormBody(
                 }
                 AttachmentManagementCard(
                     attachments = data.attachments,
-                    onAddPhoto = onAddPhoto,
-                    onAddDocument = onAddDocument,
+                    onAddAttachment = { uri, isPhoto ->
+                        onAddAttachment(uri, isPhoto, null)
+                    },
                     onRemoveAttachment = onRemoveAttachment,
                 )
             }
@@ -402,16 +401,18 @@ private fun SectionFormBody(
                 onChecklistAnswer = onChecklistAnswer,
                 onChecklistRemarks = onChecklistRemarks,
                 onRemoveAttachment = onRemoveAttachment,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = { subsectionId, uri, isPhoto ->
+                    onAddAttachment(uri, isPhoto, subsectionId)
+                },
             )
             SsqSectionKey.C -> SectionCFormFields(
                 data = data,
                 onChecklistAnswer = onChecklistAnswer,
                 onChecklistRemarks = onChecklistRemarks,
                 onRemoveAttachment = onRemoveAttachment,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = { uri, isPhoto ->
+                    onAddAttachment(uri, isPhoto, null)
+                },
             )
             SsqSectionKey.D -> SectionDFormFields(
                 data = data,
@@ -420,16 +421,18 @@ private fun SectionFormBody(
                 onChecklistAnswer = onChecklistAnswer,
                 onChecklistRemarks = onChecklistRemarks,
                 onRemoveAttachment = onRemoveAttachment,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = { uri, isPhoto ->
+                    onAddAttachment(uri, isPhoto, null)
+                },
             )
             SsqSectionKey.E -> SectionEFormFields(
                 data = data,
                 onChecklistAnswer = onChecklistAnswer,
                 onChecklistRemarks = onChecklistRemarks,
                 onRemoveAttachment = onRemoveAttachment,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = { uri, isPhoto ->
+                    onAddAttachment(uri, isPhoto, null)
+                },
             )
             SsqSectionKey.F -> SectionFFormFields(
                 data = data,
@@ -437,8 +440,9 @@ private fun SectionFormBody(
                 onChecklistRemarks = onChecklistRemarks,
                 onChecklistMouStatus = onChecklistMouStatus,
                 onRemoveAttachment = onRemoveAttachment,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = { uri, isPhoto ->
+                    onAddAttachment(uri, isPhoto, null)
+                },
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

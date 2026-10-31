@@ -61,8 +61,7 @@ fun ScoreEntryContent(
     onRawScoreChange: (ScoreCriterionGroup, String) -> Unit = { _, _ -> },
     onObservationsChange: (ScoreCriterionGroup, String) -> Unit = { _, _ -> },
     onRemoveAttachment: (ScoreCriterionGroup, String) -> Unit = { _, _ -> },
-    onAddPhoto: (ScoreCriterionGroup) -> Unit = {},
-    onAddDocument: (ScoreCriterionGroup) -> Unit = {},
+    onAddAttachment: (ScoreCriterionGroup, String, Boolean) -> Unit = { _, _, _ -> },
     onSaveDraft: () -> Unit = {},
     onSubmitForServerReview: () -> Unit = {},
     onDismissSavedDialog: () -> Unit = {},
@@ -137,8 +136,9 @@ fun ScoreEntryContent(
                             onRawScoreChange = onRawScoreChange,
                             onObservationsChange = onObservationsChange,
                             onRemoveAttachment = onRemoveAttachment,
-                            onAddPhoto = { onAddPhoto(row.group) },
-                            onAddDocument = { onAddDocument(row.group) },
+                            onAddAttachment = { uri, isPhoto ->
+                                onAddAttachment(row.group, uri, isPhoto)
+                            },
                         )
                     }
                     item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -304,8 +304,7 @@ private fun ScoreEntryGroupCard(
     onRawScoreChange: (ScoreCriterionGroup, String) -> Unit,
     onObservationsChange: (ScoreCriterionGroup, String) -> Unit,
     onRemoveAttachment: (ScoreCriterionGroup, String) -> Unit,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (contentUri: String, isPhoto: Boolean) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -397,13 +396,12 @@ private fun ScoreEntryGroupCard(
             )
             AttachmentManagementCard(
                 attachments = row.attachments,
-                onAddPhoto = onAddPhoto,
-                onAddDocument = onAddDocument,
+                onAddAttachment = onAddAttachment,
                 onRemoveAttachment = { onRemoveAttachment(row.group, it) },
                 title = stringResource(R.string.accreditation_score_attachments_title),
                 hint = stringResource(R.string.accreditation_score_attachments_hint),
-                photoLabel = stringResource(R.string.accreditation_section_camera),
-                documentLabel = stringResource(R.string.accreditation_section_gallery),
+                cameraLabel = stringResource(R.string.accreditation_attachment_camera),
+                galleryLabel = stringResource(R.string.accreditation_attachment_gallery),
                 mutedBackground = true,
             )
         }

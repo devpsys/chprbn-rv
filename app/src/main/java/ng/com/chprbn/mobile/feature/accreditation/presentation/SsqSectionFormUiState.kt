@@ -16,11 +16,21 @@ enum class ChecklistAnswer {
     NotAvailable,
 }
 
+enum class AttachmentUploadUi {
+    Idle,
+    Uploading,
+    Failed,
+}
+
 data class SsqAttachmentUiState(
     val id: String,
     val title: String,
     val sizeLabel: String,
     val isPhoto: Boolean,
+    val contentUri: String? = null,
+    /** Optional geotag shown on evidence list rows (e.g. `11.1114° N, 7.6432° E`). */
+    val locationLabel: String? = null,
+    val uploadState: AttachmentUploadUi = AttachmentUploadUi.Idle,
 )
 
 data class PhcTutorUiState(
@@ -233,9 +243,27 @@ sealed interface SsqSectionFormUiState {
         ): Success {
             val id = institutionId.ifBlank { "inst-abuth" }
             val attachments = listOf(
-                SsqAttachmentUiState("att-1", "Kaduna_State_Gazette_1998.pdf", "1.4 MB", false),
-                SsqAttachmentUiState("att-2", "Campus_Demo_Clinic_Exterior.jpg", "3.8 MB", true),
-                SsqAttachmentUiState("att-3", "Skills_Lab_Audit_01.jpg", "2.9 MB", true),
+                SsqAttachmentUiState(
+                    id = "att-1",
+                    title = "Kaduna_State_Gazette_1998.pdf",
+                    sizeLabel = "1.4 MB",
+                    isPhoto = false,
+                    locationLabel = "11.1114° N, 7.6432° E",
+                ),
+                SsqAttachmentUiState(
+                    id = "att-2",
+                    title = "Campus_Demo_Clinic_Exterior.jpg",
+                    sizeLabel = "3.8 MB",
+                    isPhoto = true,
+                    locationLabel = "11.1119° N, 7.6428° E",
+                ),
+                SsqAttachmentUiState(
+                    id = "att-3",
+                    title = "Skills_Lab_Audit_01.jpg",
+                    sizeLabel = "2.9 MB",
+                    isPhoto = true,
+                    locationLabel = "11.1117° N, 7.6430° E",
+                ),
             )
             return Success(
                 when (sectionKey) {

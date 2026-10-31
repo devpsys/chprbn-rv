@@ -28,8 +28,7 @@ fun ScoreEntryScreen(
         onRawScoreChange = viewModel::onRawScoreChange,
         onObservationsChange = viewModel::onObservationsChange,
         onRemoveAttachment = viewModel::onRemoveAttachment,
-        onAddPhoto = { /* TODO: Prompt H camera capture */ },
-        onAddDocument = { /* TODO: Prompt H gallery / PDF */ },
+        onAddAttachment = viewModel::onAttachmentAdded,
         onSaveDraft = viewModel::onSaveDraft,
         onSubmitForServerReview = {
             val id = (uiState as? ScoreEntryUiState.Success)?.data?.institutionId.orEmpty()

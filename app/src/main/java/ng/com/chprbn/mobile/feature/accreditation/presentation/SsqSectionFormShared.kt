@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -38,22 +37,15 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.outlined.AttachFile
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -62,12 +54,10 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -108,7 +98,6 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
-import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
 import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
@@ -304,8 +293,7 @@ internal fun ChecklistItemsCard(
 @Composable
 internal fun AttachmentManagementCard(
     attachments: List<SsqAttachmentUiState>,
-    onAddPhoto: () -> Unit,
-    onAddDocument: () -> Unit,
+    onAddAttachment: (contentUri: String, isPhoto: Boolean) -> Unit,
     onRemoveAttachment: (String) -> Unit,
     title: String = stringResource(R.string.accreditation_section_attachments_title),
     hint: String = stringResource(R.string.accreditation_section_attachments_hint),
@@ -313,9 +301,10 @@ internal fun AttachmentManagementCard(
         R.string.accreditation_section_attachments_count_format,
         attachments.size,
     ),
-    photoLabel: String = stringResource(R.string.accreditation_section_camera),
-    documentLabel: String = stringResource(R.string.accreditation_section_gallery),
+    galleryLabel: String = stringResource(R.string.accreditation_attachment_gallery),
+    cameraLabel: String = stringResource(R.string.accreditation_attachment_camera),
     mutedBackground: Boolean = false,
+    errorText: String? = null,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -366,119 +355,15 @@ internal fun AttachmentManagementCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp),
             )
-            attachments.forEach { item ->
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = AccrdNestedBorder,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = if (item.isPhoto) Icons.Filled.Image else Icons.Filled.Description,
-                            contentDescription = null,
-                            tint = PrimaryGreen,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.title,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                text = item.sizeLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(
-                            onClick = { onRemoveAttachment(item.id) },
-                            modifier = Modifier.size(28.dp),
-                        ) {
-                            Icon(
-                                Icons.Filled.Close,
-                                contentDescription = stringResource(
-                                    R.string.accreditation_section_remove_attachment_cd,
-                                ),
-                                tint = ErrorRed,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onAddPhoto,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    border = AccrdCardBorder,
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                ) {
-                    Icon(
-                        Icons.Outlined.CameraAlt,
-                        null,
-                        tint = PrimaryGreen,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = photoLabel,
-                        color = PrimaryGreen,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                OutlinedButton(
-                    onClick = onAddDocument,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    border = AccrdCardBorder,
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                ) {
-                    Icon(
-                        Icons.Outlined.AttachFile,
-                        null,
-                        tint = PrimaryGreen,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = documentLabel,
-                        color = PrimaryGreen,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
+            AttachmentManager(
+                attachments = attachments,
+                onAddAttachment = onAddAttachment,
+                onRemoveAttachment = onRemoveAttachment,
+                title = "",
+                galleryLabel = galleryLabel,
+                cameraLabel = cameraLabel,
+                errorText = errorText,
+            )
         }
     }
 }
