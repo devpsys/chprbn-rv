@@ -129,7 +129,10 @@ class SsqSectionFormViewModel @Inject constructor(
 
     fun onRemoveAttachment(attachmentId: String) {
         updateSuccess { data ->
-            if (data.checklistSubsections.isNotEmpty()) {
+            val inSubsection = data.checklistSubsections.any { subsection ->
+                subsection.attachments.any { it.id == attachmentId }
+            }
+            if (inSubsection) {
                 data.copy(
                     checklistSubsections = data.checklistSubsections.map { subsection ->
                         subsection.copy(

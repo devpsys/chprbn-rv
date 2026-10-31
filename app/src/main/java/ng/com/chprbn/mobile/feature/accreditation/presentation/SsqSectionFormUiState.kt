@@ -150,6 +150,14 @@ data class SsqSectionFormData(
 
     val totalChecklistCount: Int
         get() = checklistItems.size
+
+    val compliantItemCount: Int
+        get() = checklistItems.count {
+            it.answer == ChecklistAnswer.Available || it.answer == ChecklistAnswer.Yes
+        }
+
+    val pendingItemCount: Int
+        get() = checklistItems.count { it.answer == ChecklistAnswer.Unanswered }
 }
 
 sealed interface SsqSectionFormUiState {
@@ -197,17 +205,7 @@ sealed interface SsqSectionFormUiState {
                 when (sectionKey) {
                     SsqSectionKey.A -> sectionA(id, attachments)
                     SsqSectionKey.B -> sectionB(id)
-                    SsqSectionKey.C -> checklistSection(
-                        id = id,
-                        key = SsqSectionKey.C,
-                        title = "Curriculum & Teaching Methods",
-                        subtitle = "C1 teaching methods inventory",
-                        formCode = "Standard Form SSQ C1",
-                        status = SectionDraftStatus.InProgress,
-                        usesAvailability = true,
-                        itemTexts = cItems(),
-                        attachments = attachments.take(2),
-                    )
+                    SsqSectionKey.C -> sectionC(id, attachments)
                     SsqSectionKey.D -> checklistSection(
                         id = id,
                         key = SsqSectionKey.D,
@@ -463,8 +461,113 @@ sealed interface SsqSectionFormUiState {
             attachments = attachments,
         )
 
-        private fun cItems(): List<String> = List(18) { index ->
-            "Teaching method unit ${index + 1} — available for inspection"
+        private fun sectionC(
+            id: String,
+            attachments: List<SsqAttachmentUiState>,
+        ): SsqSectionFormData {
+            // Authoritative item text from docs/accrd/SSQ.pdf — Section C1.
+            val methodTexts = listOf(
+                "Competency-Based Medical Education (CBME)",
+                "Problem-Based Learning (PBL)",
+                "Team-Based Learning (TBL)",
+                "Simulation-based training",
+                "Objective Structured Clinical Examination (OSCE)",
+                "Skills laboratory teaching",
+                "E-learning platform/LMS",
+                "Hybrid teaching system",
+                "Virtual classroom technology",
+                "Smart boards and interactive panels",
+                "Virtual reality (VR) simulation tools",
+                "Augmented reality (AR) learning tools",
+                "Digital anatomy/physiology software",
+                "Electronic assessment systems",
+                "Computer-Based Testing (CBT) facilities",
+                "Learning analytics systems",
+                "Access to online journals/databases",
+                "Open Educational Resources (OER) integration",
+            )
+            // HTML stitch groups Units 1–6 / 7–12 / 13–18 as three clusters.
+            val clusters = listOf(
+                SsqChecklistSubsectionUiState(
+                    id = "C1-core",
+                    badge = "C1.1",
+                    title = "Cluster 1: Core Pedagogy Methods",
+                    subtitle = "Units 1–6",
+                    tabLabel = "Core Methods",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "C1-digital",
+                    badge = "C1.2",
+                    title = "Cluster 2: Digital Learning Technology",
+                    subtitle = "Units 7–12",
+                    tabLabel = "Digital Tech",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "C1-assessment",
+                    badge = "C1.3",
+                    title = "Cluster 3: Assessment & Learning Resources",
+                    subtitle = "Units 13–18",
+                    tabLabel = "Assessment",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+            )
+            val clusterIds = listOf("C1-core", "C1-digital", "C1-assessment")
+            // Placeholder: 8 of 18 evaluated (matches stitch progress sample).
+            val answeredThrough = 8
+            val items = methodTexts.mapIndexed { index, text ->
+                val clusterId = clusterIds[index / 6]
+                val answered = index < answeredThrough
+                SsqChecklistItemUiState(
+                    id = "C1-${index + 1}",
+                    text = text,
+                    answer = if (answered) ChecklistAnswer.Available else ChecklistAnswer.Unanswered,
+                    remarks = when (index) {
+                        0 -> "CBME framework mapped to CHPRBN competency matrix in syllabus."
+                        3 -> "Simulation lab timetable and manikin inventory verified."
+                        6 -> "LMS licenses active for current academic session."
+                        else -> ""
+                    },
+                    usesAvailability = true,
+                    subsectionId = clusterId,
+                    numberInSubsection = index + 1,
+                )
+            }
+            return SsqSectionFormData(
+                institutionId = id,
+                sectionKey = SsqSectionKey.C,
+                title = "Curriculum & Teaching Methods",
+                subtitle =
+                    "Pedagogical compliance audit covering 18 approved teaching methods, lesson guides, and clinical logbooks.",
+                formCodeLabel = "CHPRBN STANDARDS SSQ C1",
+                status = SectionDraftStatus.InProgress,
+                checklistItems = items,
+                checklistSubsections = clusters,
+                attachments = listOf(
+                    SsqAttachmentUiState(
+                        id = "c-att-1",
+                        title = "Curriculum_Syllabus_2024.pdf",
+                        sizeLabel = "4.2 MB",
+                        isPhoto = false,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "c-att-2",
+                        title = "Lecture_Timetable_Semester1.pdf",
+                        sizeLabel = "1.8 MB",
+                        isPhoto = false,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "c-att-3",
+                        title = "Community_Logbook_Sample.jpg",
+                        sizeLabel = "2.1 MB",
+                        isPhoto = true,
+                    ),
+                ),
+            )
         }
 
         private fun dItems(): List<String> = listOf(

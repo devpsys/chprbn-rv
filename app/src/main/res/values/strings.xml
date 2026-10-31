@@ -756,6 +756,17 @@
     <string name="accreditation_section_evaluated_format">%1$d of %2$d Evaluated</string>
     <string name="accreditation_section_items_count_format">%1$d Items</string>
     <string name="accreditation_section_b_heading">SECTION B: PHILOSOPHY &amp; GOVERNANCE</string>
+    <string name="accreditation_section_c_heading">SECTION C: CURRICULUM &amp; TEACHING METHODS</string>
+    <string name="accreditation_section_c_compliant_format">%1$d Compliant</string>
+    <string name="accreditation_section_c_pending_format">%1$d Pending Review</string>
+    <string name="accreditation_section_c_cluster_progress_format">%1$d of %2$d Completed</string>
+    <string name="accreditation_section_c_unit_format">Unit %1$d</string>
+    <string name="accreditation_section_c_audited">Audited</string>
+    <string name="accreditation_section_c_pending_badge">Pending</string>
+    <string name="accreditation_section_c_remarks">Assessor Field Remarks</string>
+    <string name="accreditation_section_c_attachments_title">Upload Evidence &amp; Syllabi</string>
+    <string name="accreditation_section_c_attachments_hint">Attach curriculum syllabus, lecture timetables, and clinical logbook samples for Section C verification.</string>
+    <string name="accreditation_section_c_tab_progress_format">Units %1$d–%2$d (%3$d/%4$d)</string>
 
     <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
     <string name="accreditation_section_a_ownership_hint">Ownership Status *</string>

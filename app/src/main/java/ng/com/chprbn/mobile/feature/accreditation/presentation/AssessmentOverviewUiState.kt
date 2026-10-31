@@ -88,7 +88,7 @@ sealed interface AssessmentOverviewUiState {
                         codeLabel = "Section C",
                         rangeLabel = "C1",
                         title = "Curriculum & Teaching Methods",
-                        subtitle = "8 of 14 learning modules annotated",
+                        subtitle = "C1 teaching methods — 8 of 18 evaluated",
                         status = SectionDraftStatus.InProgress,
                         itemsCompleted = 8,
                         totalItems = 18,

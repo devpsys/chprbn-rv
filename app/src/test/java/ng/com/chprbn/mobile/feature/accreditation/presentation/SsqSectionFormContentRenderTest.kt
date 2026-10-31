@@ -75,7 +75,7 @@ class SsqSectionFormContentRenderTest {
     }
 
     @Test
-    fun section_c_renders_checklist_availability_controls() {
+    fun section_c_renders_ssq_c1_teaching_methods() {
         composeRule.setContent {
             ChprbnTheme {
                 SsqSectionFormContent(
@@ -84,8 +84,16 @@ class SsqSectionFormContentRenderTest {
             }
         }
 
-        composeRule.onNodeWithText("Section C: Curriculum & Teaching Methods").assertExists()
+        composeRule.onNodeWithText("SECTION C: CURRICULUM & TEACHING METHODS").assertExists()
+        composeRule.onNodeWithText("Core Methods").assertExists()
+        composeRule.onNodeWithText("Digital Tech").assertExists()
+        composeRule.onNodeWithText("Assessment").assertExists()
+        composeRule.onNodeWithText(
+            "Competency-Based Medical Education (CBME)",
+        ).assertExists()
         composeRule.onAllNodesWithText("Available")[0].assertExists()
+        composeRule.onNodeWithText("8 of 18 Evaluated").assertExists()
+        composeRule.onNodeWithText("Upload Evidence & Syllabi").assertExists()
         composeRule.onNodeWithText("Save as Draft").assertExists()
     }
 }
