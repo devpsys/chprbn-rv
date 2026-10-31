@@ -62,11 +62,14 @@ class SsqSectionFormViewModel @Inject constructor(
 
     fun onNbteActiveChange(value: Boolean) = updateSectionA { it.copy(nbteActive = value) }
 
-    fun onAcademicStaffChange(value: String) = updateSectionA { it.copy(academicStaff = value) }
+    fun onAcademicStaffChange(value: String) =
+        updateSectionA { it.copy(academicStaff = value.filter { ch -> ch.isDigit() }) }
 
-    fun onTechnicalStaffChange(value: String) = updateSectionA { it.copy(technicalStaff = value) }
+    fun onTechnicalStaffChange(value: String) =
+        updateSectionA { it.copy(technicalStaff = value.filter { ch -> ch.isDigit() }) }
 
-    fun onAdminStaffChange(value: String) = updateSectionA { it.copy(adminStaff = value) }
+    fun onAdminStaffChange(value: String) =
+        updateSectionA { it.copy(adminStaff = value.filter { ch -> ch.isDigit() }) }
 
     fun onChecklistAnswer(itemId: String, answer: ChecklistAnswer) {
         updateSuccess { data ->

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -64,6 +65,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -517,16 +519,22 @@ private fun SectionAFormFields(
             label = stringResource(R.string.accreditation_profile_staff_academic),
             value = form.academicStaff,
             onValueChange = onAcademicStaffChange,
+            keyboardType = KeyboardType.Number,
+            digitsOnly = true,
         )
         FormOutlinedField(
             label = stringResource(R.string.accreditation_profile_staff_technical),
             value = form.technicalStaff,
             onValueChange = onTechnicalStaffChange,
+            keyboardType = KeyboardType.Number,
+            digitsOnly = true,
         )
         FormOutlinedField(
             label = stringResource(R.string.accreditation_profile_staff_admin),
             value = form.adminStaff,
             onValueChange = onAdminStaffChange,
+            keyboardType = KeyboardType.Number,
+            digitsOnly = true,
         )
     }
 
@@ -855,6 +863,8 @@ private fun FormOutlinedField(
     value: String,
     onValueChange: (String) -> Unit,
     singleLine: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    digitsOnly: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -870,12 +880,17 @@ private fun FormOutlinedField(
         )
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { newValue ->
+                onValueChange(
+                    if (digitsOnly) newValue.filter { it.isDigit() } else newValue,
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (singleLine) Modifier.height(56.dp) else Modifier),
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 2,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryGreen,
