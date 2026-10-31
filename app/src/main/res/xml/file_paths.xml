@@ -3,7 +3,12 @@
     <cache-path
         name="irregularity_snapshots"
         path="irregularity_snapshots/" />
+    <!-- Camera capture staging (AttachmentManager) -->
     <cache-path
+        name="accreditation_attachments_cache"
+        path="accreditation_attachments/" />
+    <!-- Persisted draft attachments under filesDir -->
+    <files-path
         name="accreditation_attachments"
         path="accreditation_attachments/" />
 </paths>

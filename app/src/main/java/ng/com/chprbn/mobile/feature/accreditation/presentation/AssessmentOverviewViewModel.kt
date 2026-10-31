@@ -2,20 +2,22 @@ package ng.com.chprbn.mobile.feature.accreditation.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.accreditation.domain.model.GetOverviewResult
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.GetAssessmentOverviewUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.SaveAllSectionDraftsUseCase
 import javax.inject.Inject
 
-/**
- * Presentation-only overview VM. Reads [institutionId] from nav args and
- * emits [AssessmentOverviewUiState.placeholder] until a real lookup exists.
- */
 @HiltViewModel
 class AssessmentOverviewViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val getOverview: GetAssessmentOverviewUseCase,
+    private val saveAllSectionDrafts: SaveAllSectionDraftsUseCase,
 ) : ViewModel() {
 
     private val institutionId: String =
@@ -25,22 +27,31 @@ class AssessmentOverviewViewModel @Inject constructor(
         if (institutionId.isBlank()) {
             AssessmentOverviewUiState.Error("Missing institution")
         } else {
-            AssessmentOverviewUiState.placeholder(institutionId)
+            AssessmentOverviewUiState.Loading
         },
     )
     val uiState: StateFlow<AssessmentOverviewUiState> = _uiState.asStateFlow()
 
-    /** Marks every SSQ section as saved locally so Continue to Checklist unlocks. */
+    init {
+        if (institutionId.isNotBlank()) {
+            viewModelScope.launch { reload() }
+        }
+    }
+
     fun saveAllDrafts() {
-        _uiState.update { state ->
-            val success = state as? AssessmentOverviewUiState.Success ?: return@update state
-            AssessmentOverviewUiState.Success(
-                success.data.copy(
-                    sections = success.data.sections.map { section ->
-                        section.copy(status = SectionDraftStatus.SavedLocally)
-                    },
-                ),
-            )
+        if (institutionId.isBlank()) return
+        viewModelScope.launch {
+            saveAllSectionDrafts(institutionId)
+            reload()
+        }
+    }
+
+    private suspend fun reload() {
+        when (val result = getOverview(institutionId)) {
+            is GetOverviewResult.Success ->
+                _uiState.value = AssessmentOverviewUiState.Success(result.overview.toUiData())
+            is GetOverviewResult.Error ->
+                _uiState.value = AssessmentOverviewUiState.Error(result.message)
         }
     }
 }

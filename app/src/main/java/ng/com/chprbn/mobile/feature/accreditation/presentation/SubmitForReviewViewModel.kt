@@ -5,51 +5,90 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.accreditation.domain.model.SubmitAssessmentResult
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.GetAssessmentOverviewUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.SubmitAssessmentUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.model.GetOverviewResult
 
-/**
- * Presentation-only confirm-and-submit VM. Simulates upload delay then
- * emits a placeholder [decisionId] for navigation to Assessment Result.
- * Real registry sync lands in Prompt I.
- */
 @HiltViewModel
 class SubmitForReviewViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val submitAssessment: SubmitAssessmentUseCase,
+    private val getOverview: GetAssessmentOverviewUseCase,
 ) : ViewModel() {
 
     private val institutionId: String =
         savedStateHandle.get<String>("institutionId").orEmpty()
-    private val assessmentId: String =
+    private val assessmentIdArg: String =
         savedStateHandle.get<String>("assessmentId").orEmpty()
 
     private val _uiState = MutableStateFlow<SubmitForReviewUiState>(
         if (institutionId.isBlank()) {
             SubmitForReviewUiState.Error("Missing institution")
         } else {
-            SubmitForReviewUiState.placeholder(
-                institutionId = institutionId,
-                assessmentId = assessmentId.ifBlank { "assess-$institutionId" },
-            )
+            SubmitForReviewUiState.Loading
         },
     )
     val uiState: StateFlow<SubmitForReviewUiState> = _uiState.asStateFlow()
 
+    init {
+        if (institutionId.isNotBlank()) {
+            viewModelScope.launch { load() }
+        }
+    }
+
+    private suspend fun load() {
+        val overview = when (val result = getOverview(institutionId)) {
+            is GetOverviewResult.Success -> result.overview
+            is GetOverviewResult.Error -> null
+        }
+        val assessmentId = assessmentIdArg.ifBlank {
+            overview?.assessmentId ?: "assess-$institutionId"
+        }
+        val placeholder = SubmitForReviewUiState.placeholder(
+            institutionId = institutionId,
+            assessmentId = assessmentId,
+        ).data
+        _uiState.value = SubmitForReviewUiState.Success(
+            if (overview == null) {
+                placeholder
+            } else {
+                placeholder.copy(
+                    institutionName = overview.institutionName,
+                    locationLabel = overview.locationLabel,
+                    facilityCode = overview.facilityCode,
+                    cycleLabel = overview.cycleLabel,
+                    sectionsCompleted = overview.sections.count {
+                        it.status != ng.com.chprbn.mobile.feature.accreditation.domain.model.DraftPersistenceStatus.NotStarted &&
+                            it.status != ng.com.chprbn.mobile.feature.accreditation.domain.model.DraftPersistenceStatus.InProgress
+                    },
+                    sectionsTotal = overview.sections.size.coerceAtLeast(6),
+                    assessmentId = assessmentId,
+                )
+            },
+        )
+    }
+
     fun onSubmitAssessment() {
+        val success = _uiState.value as? SubmitForReviewUiState.Success ?: return
         updateSuccess { it.copy(isSubmitting = true, showErrorDialog = false) }
         viewModelScope.launch {
-            delay(1_200)
-            val decisionId = "dec-${institutionId.ifBlank { "inst-abuth" }}-2024"
-            updateSuccess {
-                it.copy(
-                    isSubmitting = false,
-                    requestResultNavigation = true,
-                    submittedDecisionId = decisionId,
-                )
+            when (val result = submitAssessment(success.data.assessmentId)) {
+                is SubmitAssessmentResult.Success -> updateSuccess {
+                    it.copy(
+                        isSubmitting = false,
+                        requestResultNavigation = true,
+                        submittedDecisionId = result.decisionId,
+                    )
+                }
+                is SubmitAssessmentResult.Error -> updateSuccess {
+                    it.copy(isSubmitting = false, showErrorDialog = true)
+                }
             }
         }
     }

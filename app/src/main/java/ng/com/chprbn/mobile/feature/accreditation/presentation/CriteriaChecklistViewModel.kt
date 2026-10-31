@@ -3,6 +3,7 @@ package ng.com.chprbn.mobile.feature.accreditation.presentation
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
@@ -10,10 +11,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.AddAccreditationAttachmentUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.GetCriteriaChecklistDraftUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.RemoveAccreditationAttachmentUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.SaveCriteriaChecklistDraftUseCase
 
 @HiltViewModel
 class CriteriaChecklistViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val getCriteriaDraft: GetCriteriaChecklistDraftUseCase,
+    private val saveCriteriaDraft: SaveCriteriaChecklistDraftUseCase,
+    private val addAttachment: AddAccreditationAttachmentUseCase,
+    private val removeAttachment: RemoveAccreditationAttachmentUseCase,
 ) : ViewModel() {
 
     private val institutionId: String =
@@ -23,10 +33,26 @@ class CriteriaChecklistViewModel @Inject constructor(
         if (institutionId.isBlank()) {
             CriteriaChecklistUiState.Error("Missing institution")
         } else {
-            CriteriaChecklistUiState.placeholder(institutionId)
+            CriteriaChecklistUiState.Loading
         },
     )
     val uiState: StateFlow<CriteriaChecklistUiState> = _uiState.asStateFlow()
+
+    init {
+        if (institutionId.isNotBlank()) {
+            viewModelScope.launch { load() }
+        }
+    }
+
+    private suspend fun load() {
+        val record = getCriteriaDraft(institutionId)
+        val fromJson = parseCriteriaChecklistData(record?.payloadJson)
+        val base = fromJson
+            ?: CriteriaChecklistUiState.placeholder(institutionId).data
+        _uiState.value = CriteriaChecklistUiState.Success(
+            base.copy(institutionId = institutionId, showSavedDialog = false),
+        )
+    }
 
     fun onMetStatusChange(kind: CriteriaGroupKind, status: CriterionMetStatus) =
         updateGroup(kind) { it.copy(metStatus = status) }
@@ -75,23 +101,36 @@ class CriteriaChecklistViewModel @Inject constructor(
             }
         }
 
-    fun onAttachmentAdded(kind: CriteriaGroupKind, contentUri: String, isPhoto: Boolean) =
-        updateGroup(kind) { group ->
-            group.copy(
-                attachments = group.attachments + SsqAttachmentUiState(
-                    id = "att-${UUID.randomUUID()}",
-                    title = filenameFromContentUri(contentUri),
-                    sizeLabel = "Local",
-                    isPhoto = isPhoto,
-                    contentUri = contentUri,
-                ),
+    fun onAttachmentAdded(kind: CriteriaGroupKind, contentUri: String, isPhoto: Boolean) {
+        viewModelScope.launch {
+            val stored = addAttachment(
+                institutionId = institutionId,
+                parentKey = "criteria:${kind.name}",
+                fromUri = Uri.parse(contentUri),
+                isPhoto = isPhoto,
             )
+            updateGroup(kind) { group ->
+                group.copy(
+                    attachments = group.attachments + SsqAttachmentUiState(
+                        id = stored?.id ?: "att-${UUID.randomUUID()}",
+                        title = stored?.title ?: filenameFromContentUri(contentUri),
+                        sizeLabel = stored?.sizeLabel ?: "Local",
+                        isPhoto = isPhoto,
+                        contentUri = stored?.contentUri ?: contentUri,
+                    ),
+                )
+            }
         }
+    }
 
-    fun onRemoveAttachment(kind: CriteriaGroupKind, attachmentId: String) =
-        updateGroup(kind) { group ->
-            group.copy(attachments = group.attachments.filterNot { it.id == attachmentId })
+    fun onRemoveAttachment(kind: CriteriaGroupKind, attachmentId: String) {
+        viewModelScope.launch {
+            removeAttachment(attachmentId)
+            updateGroup(kind) { group ->
+                group.copy(attachments = group.attachments.filterNot { it.id == attachmentId })
+            }
         }
+    }
 
     private fun filenameFromContentUri(contentUri: String): String {
         val segment = Uri.parse(contentUri).lastPathSegment.orEmpty()
@@ -99,7 +138,17 @@ class CriteriaChecklistViewModel @Inject constructor(
     }
 
     fun onSaveChecklistDraft() {
-        updateSuccess { it.copy(showSavedDialog = true) }
+        val success = _uiState.value as? CriteriaChecklistUiState.Success ?: return
+        val data = success.data.copy(showSavedDialog = true)
+        _uiState.value = CriteriaChecklistUiState.Success(data)
+        viewModelScope.launch {
+            saveCriteriaDraft(
+                institutionId = institutionId,
+                payloadJson = data.copy(showSavedDialog = false).toPayloadJson(),
+                evaluatedCount = data.evaluatedCount,
+                totalCriteria = data.totalCriteria,
+            )
+        }
     }
 
     fun onSaveAsDraft() = onSaveChecklistDraft()

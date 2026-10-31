@@ -4,36 +4,44 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.accreditation.domain.model.SyncDraftsResult
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.GetAccreditationSyncStatusUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.RetryFailedAccreditationSyncUseCase
 
-/**
- * Presentation-only Sync Status VM. Placeholder failed rows prove
- * [ng.com.chprbn.mobile.core.network.stripHostsAndUrls] sanitisation
- * until accreditation SyncBatchRunner jobs exist.
- */
 @HiltViewModel
-class SyncStatusViewModel @Inject constructor() : ViewModel() {
+class SyncStatusViewModel @Inject constructor(
+    private val getSyncStatus: GetAccreditationSyncStatusUseCase,
+    private val retryFailed: RetryFailedAccreditationSyncUseCase,
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SyncStatusUiState.placeholder())
+    private val _uiState = MutableStateFlow(SyncStatusUiState(isLoading = true))
     val uiState: StateFlow<SyncStatusUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch { reload() }
+    }
+
     fun onRetryDraft(draftId: String) {
-        _uiState.update { state ->
-            val remaining = state.failedDrafts.filterNot { it.id == draftId }
-            state.copy(
-                failedDrafts = remaining,
-                overallStatus = if (remaining.isEmpty()) {
-                    OverallSyncStatusUi.Synced
-                } else {
-                    OverallSyncStatusUi.SyncFailed
-                },
-                progressFraction = if (remaining.isEmpty()) 1f else state.progressFraction,
-            )
+        viewModelScope.launch {
+            retryFailed()
+            reload()
+            _uiState.update { state ->
+                val remaining = state.failedDrafts.filterNot { it.id == draftId }
+                state.copy(
+                    failedDrafts = remaining,
+                    overallStatus = if (remaining.isEmpty()) {
+                        OverallSyncStatusUi.Synced
+                    } else {
+                        OverallSyncStatusUi.SyncFailed
+                    },
+                    progressFraction = if (remaining.isEmpty()) 1f else state.progressFraction,
+                )
+            }
         }
     }
 
@@ -47,15 +55,12 @@ class SyncStatusViewModel @Inject constructor() : ViewModel() {
             )
         }
         viewModelScope.launch {
-            delay(1_200)
-            _uiState.update {
-                it.copy(
+            val result = retryFailed()
+            reload()
+            _uiState.update { state ->
+                state.copy(
                     isRetrying = false,
-                    failedDrafts = emptyList(),
-                    overallStatus = OverallSyncStatusUi.Synced,
-                    progressFraction = 1f,
-                    showRetrySuccess = true,
-                    lastSuccessfulSyncLabel = "Just now",
+                    showRetrySuccess = result is SyncDraftsResult.Success,
                 )
             }
         }
@@ -63,5 +68,10 @@ class SyncStatusViewModel @Inject constructor() : ViewModel() {
 
     fun dismissRetrySuccess() {
         _uiState.update { it.copy(showRetrySuccess = false) }
+    }
+
+    private suspend fun reload() {
+        val snapshot = getSyncStatus()
+        _uiState.value = snapshot.toUiState()
     }
 }

@@ -3,21 +3,27 @@ package ng.com.chprbn.mobile.feature.accreditation.presentation
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.AddAccreditationAttachmentUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.GetSsqSectionDraftUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.RemoveAccreditationAttachmentUseCase
+import ng.com.chprbn.mobile.feature.accreditation.domain.usecase.SaveSsqSectionDraftUseCase
 import java.util.UUID
 import javax.inject.Inject
 
-/**
- * Presentation-only SSQ section form VM. Reads institutionId + sectionKey
- * from nav args; local edits stay in memory until a draft repository lands.
- */
 @HiltViewModel
 class SsqSectionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val getSectionDraft: GetSsqSectionDraftUseCase,
+    private val saveSectionDraft: SaveSsqSectionDraftUseCase,
+    private val addAttachment: AddAccreditationAttachmentUseCase,
+    private val removeAttachment: RemoveAccreditationAttachmentUseCase,
 ) : ViewModel() {
 
     private val institutionId: String =
@@ -29,10 +35,32 @@ class SsqSectionFormViewModel @Inject constructor(
         if (institutionId.isBlank()) {
             SsqSectionFormUiState.Error("Missing institution")
         } else {
-            SsqSectionFormUiState.placeholder(institutionId, sectionKey)
+            SsqSectionFormUiState.Loading
         },
     )
     val uiState: StateFlow<SsqSectionFormUiState> = _uiState.asStateFlow()
+
+    init {
+        if (institutionId.isNotBlank()) {
+            viewModelScope.launch { load() }
+        }
+    }
+
+    private suspend fun load() {
+        val record = getSectionDraft(institutionId, sectionKey.toDomain())
+        val fromJson = parseSsqSectionFormData(record?.payloadJson)
+        val base = fromJson
+            ?: SsqSectionFormUiState.placeholder(institutionId, sectionKey).data
+        val status = record?.status?.toSectionDraftStatus() ?: base.status
+        _uiState.value = SsqSectionFormUiState.Success(
+            base.copy(
+                institutionId = institutionId,
+                sectionKey = sectionKey,
+                status = status,
+                showSavedDialog = false,
+            ),
+        )
+    }
 
     fun onOwnershipSelected(option: OwnershipOption) = updateSectionA { it.copy(ownership = option) }
 
@@ -164,51 +192,67 @@ class SsqSectionFormViewModel @Inject constructor(
         isPhoto: Boolean,
         subsectionId: String? = null,
     ) {
-        val attachment = SsqAttachmentUiState(
-            id = "att-${UUID.randomUUID()}",
-            title = filenameFromContentUri(contentUri),
-            sizeLabel = "Local",
-            isPhoto = isPhoto,
-            contentUri = contentUri,
-        )
-        updateSuccess { data ->
-            if (!subsectionId.isNullOrBlank() &&
-                data.checklistSubsections.any { it.id == subsectionId }
-            ) {
-                data.copy(
-                    checklistSubsections = data.checklistSubsections.map { subsection ->
-                        if (subsection.id == subsectionId) {
-                            subsection.copy(attachments = subsection.attachments + attachment)
-                        } else {
-                            subsection
-                        }
-                    },
-                    status = SectionDraftStatus.InProgress,
-                )
+        viewModelScope.launch {
+            val parentKey = if (!subsectionId.isNullOrBlank()) {
+                "section:${sectionKey.key}:$subsectionId"
             } else {
-                data.copy(
-                    attachments = data.attachments + attachment,
-                    status = SectionDraftStatus.InProgress,
-                )
+                "section:${sectionKey.key}"
+            }
+            val stored = addAttachment(
+                institutionId = institutionId,
+                parentKey = parentKey,
+                fromUri = Uri.parse(contentUri),
+                isPhoto = isPhoto,
+            )
+            val attachment = SsqAttachmentUiState(
+                id = stored?.id ?: "att-${UUID.randomUUID()}",
+                title = stored?.title ?: filenameFromContentUri(contentUri),
+                sizeLabel = stored?.sizeLabel ?: "Local",
+                isPhoto = isPhoto,
+                contentUri = stored?.contentUri ?: contentUri,
+            )
+            updateSuccess { data ->
+                if (!subsectionId.isNullOrBlank() &&
+                    data.checklistSubsections.any { it.id == subsectionId }
+                ) {
+                    data.copy(
+                        checklistSubsections = data.checklistSubsections.map { subsection ->
+                            if (subsection.id == subsectionId) {
+                                subsection.copy(attachments = subsection.attachments + attachment)
+                            } else {
+                                subsection
+                            }
+                        },
+                        status = SectionDraftStatus.InProgress,
+                    )
+                } else {
+                    data.copy(
+                        attachments = data.attachments + attachment,
+                        status = SectionDraftStatus.InProgress,
+                    )
+                }
             }
         }
     }
 
     fun onRemoveAttachment(attachmentId: String) {
-        updateSuccess { data ->
-            val inSubsection = data.checklistSubsections.any { subsection ->
-                subsection.attachments.any { it.id == attachmentId }
-            }
-            if (inSubsection) {
-                data.copy(
-                    checklistSubsections = data.checklistSubsections.map { subsection ->
-                        subsection.copy(
-                            attachments = subsection.attachments.filterNot { it.id == attachmentId },
-                        )
-                    },
-                )
-            } else {
-                data.copy(attachments = data.attachments.filterNot { it.id == attachmentId })
+        viewModelScope.launch {
+            removeAttachment(attachmentId)
+            updateSuccess { data ->
+                val inSubsection = data.checklistSubsections.any { subsection ->
+                    subsection.attachments.any { it.id == attachmentId }
+                }
+                if (inSubsection) {
+                    data.copy(
+                        checklistSubsections = data.checklistSubsections.map { subsection ->
+                            subsection.copy(
+                                attachments = subsection.attachments.filterNot { it.id == attachmentId },
+                            )
+                        },
+                    )
+                } else {
+                    data.copy(attachments = data.attachments.filterNot { it.id == attachmentId })
+                }
             }
         }
     }
@@ -219,10 +263,20 @@ class SsqSectionFormViewModel @Inject constructor(
     }
 
     fun onSaveSectionDraft() {
-        updateSuccess { data ->
-            data.copy(
-                status = SectionDraftStatus.SavedLocally,
-                showSavedDialog = true,
+        val success = _uiState.value as? SsqSectionFormUiState.Success ?: return
+        val data = success.data.copy(
+            status = SectionDraftStatus.SavedLocally,
+            showSavedDialog = true,
+        )
+        _uiState.value = SsqSectionFormUiState.Success(data)
+        viewModelScope.launch {
+            saveSectionDraft(
+                institutionId = institutionId,
+                sectionKey = sectionKey.toDomain(),
+                payloadJson = data.copy(showSavedDialog = false).toPayloadJson(),
+                itemsCompleted = data.evaluatedItemCount.coerceAtLeast(1),
+                totalItems = data.totalChecklistCount.coerceAtLeast(1),
+                status = data.status.toDomain(),
             )
         }
     }

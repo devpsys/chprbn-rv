@@ -16,4 +16,5 @@ enum class SyncEntityType {
     PracticalScore,
     ProjectScore,
     VerifiedLicense,
+    AccreditationDraft,
 }
