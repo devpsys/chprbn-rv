@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -209,43 +210,21 @@ private fun ProfileBottomActionBar(
         shadowElevation = 8.dp,
         tonalElevation = 0.dp,
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Button(
-                onClick = onStartNewAssessment,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryGreen,
-                    contentColor = Color.White,
-                ),
-            ) {
-                Text(
-                    text = stringResource(R.string.accreditation_profile_action_start_assessment),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
             OutlinedButton(
                 onClick = onViewDocuments,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
+                    .weight(1f)
+                    .height(48.dp),
                 shape = RoundedCornerShape(8.dp),
                 border = ProfileCardBorder,
+                contentPadding = PaddingValues(horizontal = 8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = PrimaryGreen,
                 ),
@@ -254,14 +233,44 @@ private fun ProfileBottomActionBar(
                     imageVector = Icons.Filled.FolderOpen,
                     contentDescription = null,
                     tint = PrimaryGreen,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = stringResource(R.string.accreditation_profile_action_view_documents),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = PrimaryGreen,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Button(
+                onClick = onStartNewAssessment,
+                modifier = Modifier
+                    .weight(1.25f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryGreen,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text(
+                    text = stringResource(R.string.accreditation_profile_action_start_assessment),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
