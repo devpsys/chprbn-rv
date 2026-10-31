@@ -796,6 +796,21 @@
     <string name="accreditation_section_e_remarks">Remarks</string>
     <string name="accreditation_section_e_attachments_title">Geotagged Facility Photographs</string>
     <string name="accreditation_section_e_attachments_hint">Photos are stamped for visual verification. Attach lecture halls, labs, and simulation suite evidence for Section E.</string>
+    <string name="accreditation_section_f_heading">SECTION F: AFFILIATED CLINICAL FACILITIES &amp; COMMUNITY POSTINGS</string>
+    <string name="accreditation_section_f_coverage_title">Statutory Coverage</string>
+    <string name="accreditation_section_f_compliant_format">%1$d Compliant</string>
+    <string name="accreditation_section_f_pending_format">%1$d Pending</string>
+    <string name="accreditation_section_f_unit_format">Unit %1$d</string>
+    <string name="accreditation_section_f_audited">Audited &amp; Active</string>
+    <string name="accreditation_section_f_pending_badge">Pending Review</string>
+    <string name="accreditation_section_f_compliance_label">Operational Compliance Verification</string>
+    <string name="accreditation_section_f_available">Compliant (Available)</string>
+    <string name="accreditation_section_f_not_available">Non-Compliant</string>
+    <string name="accreditation_section_f_mou_label">MoU Statutory Legal Status</string>
+    <string name="accreditation_section_f_mou_placeholder">Record MoU reference, expiry, or renewal status…</string>
+    <string name="accreditation_section_f_remarks">Assessor Field Verification Remarks</string>
+    <string name="accreditation_section_f_attachments_title">Upload MoU &amp; Geotagged Field Evidence</string>
+    <string name="accreditation_section_f_attachments_hint">Attach certified true copies of signed Memoranda of Understanding, institutional posting rosters, and geotagged field photos of posting clinics.</string>
 
     <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
     <string name="accreditation_section_a_ownership_hint">Ownership Status *</string>

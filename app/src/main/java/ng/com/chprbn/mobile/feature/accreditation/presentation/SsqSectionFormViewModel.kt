@@ -147,6 +147,17 @@ class SsqSectionFormViewModel @Inject constructor(
         }
     }
 
+    fun onChecklistMouStatus(itemId: String, mouStatus: String) {
+        updateSuccess { data ->
+            data.copy(
+                checklistItems = data.checklistItems.map { item ->
+                    if (item.id == itemId) item.copy(mouStatus = mouStatus) else item
+                },
+                status = SectionDraftStatus.InProgress,
+            )
+        }
+    }
+
     fun onRemoveAttachment(attachmentId: String) {
         updateSuccess { data ->
             val inSubsection = data.checklistSubsections.any { subsection ->

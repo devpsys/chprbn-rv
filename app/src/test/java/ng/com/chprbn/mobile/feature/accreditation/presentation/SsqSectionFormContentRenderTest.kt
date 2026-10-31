@@ -171,4 +171,37 @@ class SsqSectionFormContentRenderTest {
         composeRule.onNodeWithText("Learning management systems (LMS)").assertExists()
         composeRule.onNodeWithText("Drone-assisted healthcare demonstration technology").assertExists()
     }
+
+    @Test
+    fun section_f_renders_ssq_f1_facilities() {
+        composeRule.setContent {
+            ChprbnTheme {
+                SsqSectionFormContent(
+                    uiState = SsqSectionFormUiState.placeholder(sectionKey = SsqSectionKey.F),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(
+            "SECTION F: AFFILIATED CLINICAL FACILITIES & COMMUNITY POSTINGS",
+        ).assertExists()
+        composeRule.onNodeWithText("F1.1: Primary").assertExists()
+        composeRule.onNodeWithText("F1.2: Referral").assertExists()
+        composeRule.onNodeWithText("F1.3: Outreach").assertExists()
+        composeRule.onNodeWithText("Teaching hospital affiliation").assertExists()
+        composeRule.onNodeWithText("Primary healthcare centres for posting").assertExists()
+        composeRule.onNodeWithText("Comprehensive health centres").assertExists()
+        composeRule.onNodeWithText("4 of 7 Evaluated").assertExists()
+        composeRule.onNodeWithText("Upload MoU & Geotagged Field Evidence").assertExists()
+        composeRule.onAllNodesWithText("MoU Statutory Legal Status")[0].assertExists()
+        composeRule.onAllNodesWithText("Compliant (Available)")[0].assertExists()
+
+        composeRule.onNodeWithText("F1.2: Referral").performClick()
+        composeRule.onNodeWithText("Specialist hospitals").assertExists()
+        composeRule.onNodeWithText("Rural community practice sites").assertExists()
+
+        composeRule.onNodeWithText("F1.3: Outreach").performClick()
+        composeRule.onNodeWithText("Urban community practice sites").assertExists()
+        composeRule.onNodeWithText("Policy for Community Linkages").assertExists()
+    }
 }

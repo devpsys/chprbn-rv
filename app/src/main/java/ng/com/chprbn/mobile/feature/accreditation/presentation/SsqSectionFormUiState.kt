@@ -72,6 +72,8 @@ data class SsqChecklistItemUiState(
     /** Subsection key such as `B1` / `B2` when the section is grouped. */
     val subsectionId: String = "",
     val numberInSubsection: Int = 0,
+    /** Section F MoU status note (stitch + prompt C); unused elsewhere. */
+    val mouStatus: String = "",
 )
 
 /**
@@ -242,17 +244,7 @@ sealed interface SsqSectionFormUiState {
                     SsqSectionKey.C -> sectionC(id, attachments)
                     SsqSectionKey.D -> sectionD(id, attachments)
                     SsqSectionKey.E -> sectionE(id, attachments)
-                    SsqSectionKey.F -> checklistSection(
-                        id = id,
-                        key = SsqSectionKey.F,
-                        title = "Affiliated Clinical Facilities & Sites",
-                        subtitle = "F1 clinical/community facilities + MoU",
-                        formCode = "Standard Form SSQ F1",
-                        status = SectionDraftStatus.NotStarted,
-                        usesAvailability = true,
-                        itemTexts = fItems(),
-                        attachments = emptyList(),
-                    )
+                    SsqSectionKey.F -> sectionF(id, attachments)
                 },
             )
         }
@@ -875,14 +867,147 @@ sealed interface SsqSectionFormUiState {
             )
         }
 
-        private fun fItems(): List<String> = listOf(
-            "Primary affiliated teaching hospital",
-            "Secondary clinical posting site",
-            "PHC centre attachment site",
-            "Community posting LGA site",
-            "Skills lab partner facility",
-            "MoU current for primary site",
-            "MoU current for community postings",
-        )
+        private fun sectionF(
+            id: String,
+            attachments: List<SsqAttachmentUiState>,
+        ): SsqSectionFormData {
+            // Authoritative facility text from docs/accrd/SSQ.pdf — Section F1.
+            // HTML stitch groups Units 1–3 / 4–5 / 6–7 as three clusters.
+            data class FacilitySeed(
+                val text: String,
+                val clusterId: String,
+                val mouStatus: String = "",
+                val remarks: String = "",
+                val answered: Boolean = false,
+            )
+            val facilities = listOf(
+                FacilitySeed(
+                    text = "Teaching hospital affiliation",
+                    clusterId = "F1-primary",
+                    mouStatus = "Signed Active MoU (Expires: Oct 2026)",
+                    remarks = "Teaching hospital affiliation letter and preceptor roster verified.",
+                    answered = true,
+                ),
+                FacilitySeed(
+                    text = "Primary healthcare centres for posting",
+                    clusterId = "F1-primary",
+                    mouStatus = "Signed Active MoU (Expires: Aug 2025)",
+                    remarks = "PHC posting sites with community immersion schedule on file.",
+                    answered = true,
+                ),
+                FacilitySeed(
+                    text = "Comprehensive health centres",
+                    clusterId = "F1-primary",
+                    mouStatus = "State MOH Tripartite MoU Active",
+                    remarks = "Functional labor room, triage, and immunization clinic verified.",
+                    answered = true,
+                ),
+                FacilitySeed(
+                    text = "Specialist hospitals",
+                    clusterId = "F1-referral",
+                    mouStatus = "MoU Renewal In Progress (Pending Signature)",
+                    answered = false,
+                ),
+                FacilitySeed(
+                    text = "Rural community practice sites",
+                    clusterId = "F1-referral",
+                    mouStatus = "Signed Active MoU",
+                    remarks = "Inspection of rural posting hostel and WDC engagement completed.",
+                    answered = true,
+                ),
+                FacilitySeed(
+                    text = "Urban community practice sites",
+                    clusterId = "F1-outreach",
+                    answered = false,
+                ),
+                FacilitySeed(
+                    text = "Policy for Community Linkages",
+                    clusterId = "F1-outreach",
+                    answered = false,
+                ),
+            )
+            val clusters = listOf(
+                SsqChecklistSubsectionUiState(
+                    id = "F1-primary",
+                    badge = "F1.1",
+                    title = "F1.1: Primary & CHC Sites",
+                    subtitle = "Units 1–3",
+                    tabLabel = "F1.1: Primary",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "F1-referral",
+                    badge = "F1.2",
+                    title = "F1.2: Referral & Specialized",
+                    subtitle = "Units 4–5",
+                    tabLabel = "F1.2: Referral",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "F1-outreach",
+                    badge = "F1.3",
+                    title = "F1.3: Outreach & Community",
+                    subtitle = "Units 6–7",
+                    tabLabel = "F1.3: Outreach",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+            )
+            val items = facilities.mapIndexed { index, seed ->
+                SsqChecklistItemUiState(
+                    id = "F1-${index + 1}",
+                    text = seed.text,
+                    answer = if (seed.answered) {
+                        ChecklistAnswer.Available
+                    } else {
+                        ChecklistAnswer.Unanswered
+                    },
+                    remarks = seed.remarks,
+                    usesAvailability = true,
+                    subsectionId = seed.clusterId,
+                    numberInSubsection = index + 1,
+                    mouStatus = seed.mouStatus,
+                )
+            }
+            return SsqSectionFormData(
+                institutionId = id,
+                sectionKey = SsqSectionKey.F,
+                title = "Affiliated Clinical Facilities & Sites",
+                subtitle =
+                    "Regulatory verification of accredited clinical training facilities, field posting rotations, community practice sites, and statutory Memoranda of Understanding (MoU).",
+                formCodeLabel = "CHPRBN STANDARDS SSQ F1",
+                status = SectionDraftStatus.InProgress,
+                checklistItems = items,
+                checklistSubsections = clusters,
+                attachments = listOf(
+                    SsqAttachmentUiState(
+                        id = "f-att-1",
+                        title = "CHC_Shika_Tripartite_MoU_2023.pdf",
+                        sizeLabel = "4.6 MB",
+                        isPhoto = false,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "f-att-2",
+                        title = "Teaching_Hospital_Affiliation.pdf",
+                        sizeLabel = "2.1 MB",
+                        isPhoto = false,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "f-att-3",
+                        title = "PHC_Bomo_Field_Photo.jpg",
+                        sizeLabel = "3.2 MB",
+                        isPhoto = true,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "f-att-4",
+                        title = "Community_Posting_Roster.pdf",
+                        sizeLabel = "1.4 MB",
+                        isPhoto = false,
+                    ),
+                ),
+            )
+        }
     }
 }

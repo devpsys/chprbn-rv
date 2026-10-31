@@ -47,6 +47,7 @@ fun SsqSectionFormScreen(
         onSupportStaffingRowChange = viewModel::onSupportStaffingRowChange,
         onChecklistAnswer = viewModel::onChecklistAnswer,
         onChecklistRemarks = viewModel::onChecklistRemarks,
+        onChecklistMouStatus = viewModel::onChecklistMouStatus,
         onRemoveAttachment = viewModel::onRemoveAttachment,
         onAddPhoto = { /* TODO: Prompt H camera capture */ },
         onAddDocument = { /* TODO: Prompt H gallery / PDF */ },
