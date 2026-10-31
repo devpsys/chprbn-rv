@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -93,6 +94,7 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -293,6 +295,7 @@ internal fun ChecklistItemsCard(
                 value = item.remarks,
                 onValueChange = { onChecklistRemarks(item.id, it) },
                 singleLine = false,
+                capitalization = KeyboardCapitalization.Sentences,
             )
         }
     }
@@ -424,6 +427,7 @@ internal fun AttachmentManagementCard(
                         .height(44.dp),
                     shape = RoundedCornerShape(8.dp),
                     border = AccrdCardBorder,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),
@@ -434,12 +438,15 @@ internal fun AttachmentManagementCard(
                         tint = PrimaryGreen,
                         modifier = Modifier.size(16.dp),
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = photoLabel,
                         color = PrimaryGreen,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 OutlinedButton(
@@ -449,6 +456,7 @@ internal fun AttachmentManagementCard(
                         .height(44.dp),
                     shape = RoundedCornerShape(8.dp),
                     border = AccrdCardBorder,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),
@@ -459,12 +467,15 @@ internal fun AttachmentManagementCard(
                         tint = PrimaryGreen,
                         modifier = Modifier.size(16.dp),
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = documentLabel,
                         color = PrimaryGreen,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -546,6 +557,7 @@ internal fun FormOutlinedField(
     onValueChange: (String) -> Unit,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     digitsOnly: Boolean = false,
 ) {
     Column(
@@ -572,7 +584,10 @@ internal fun FormOutlinedField(
                 .then(if (singleLine) Modifier.height(56.dp) else Modifier),
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 2,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                capitalization = capitalization,
+            ),
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryGreen,

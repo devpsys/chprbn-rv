@@ -202,4 +202,12 @@ object Routes {
      */
     @Serializable
     data class SsqSectionForm(val institutionId: String, val sectionKey: String)
+
+    /** Guideline criteria checklist for an assigned [institutionId]. */
+    @Serializable
+    data class CriteriaChecklist(val institutionId: String)
+
+    /** Raw score entry per criterion group for [institutionId]. */
+    @Serializable
+    data class ScoreEntry(val institutionId: String)
 }

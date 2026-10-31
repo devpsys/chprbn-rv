@@ -37,6 +37,8 @@ import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AccreditationHubScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentOverviewScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.InstitutionProfileScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.CriteriaChecklistScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.ScoreEntryScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.SsqSectionFormScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
@@ -163,8 +165,23 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
                 onSectionClick = { institutionId, sectionKey ->
                     navController.navigate(Routes.SsqSectionForm(institutionId, sectionKey))
                 },
-                onContinueToChecklist = { /* TODO: CriteriaChecklist (Prompt D) */ },
-                onSaveAllDrafts = { /* TODO: persist all section drafts */ },
+                onContinueToChecklist = { institutionId ->
+                    navController.navigate(Routes.CriteriaChecklist(institutionId))
+                },
+            )
+        }
+        composable<Routes.CriteriaChecklist> {
+            CriteriaChecklistScreen(
+                onBack = { navController.popBackStack() },
+                onContinueToScoreEntry = { institutionId ->
+                    navController.navigate(Routes.ScoreEntry(institutionId))
+                },
+            )
+        }
+        composable<Routes.ScoreEntry> {
+            ScoreEntryScreen(
+                onBack = { navController.popBackStack() },
+                onSubmitForReview = { /* TODO: SubmitForReview / AssessmentResult (Prompt E) */ },
             )
         }
         composable<Routes.SsqSectionForm> {

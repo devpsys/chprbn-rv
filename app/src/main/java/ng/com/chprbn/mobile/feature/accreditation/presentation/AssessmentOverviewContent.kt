@@ -69,7 +69,7 @@ fun AssessmentOverviewContent(
     onBack: () -> Unit = {},
     onSectionClick: (institutionId: String, sectionKey: String) -> Unit = { _, _ -> },
     onContinueToChecklist: (institutionId: String) -> Unit = {},
-    onSaveAllDrafts: (institutionId: String) -> Unit = {},
+    onSaveAllDrafts: () -> Unit = {},
 ) {
     val success = uiState as? AssessmentOverviewUiState.Success
 
@@ -84,7 +84,7 @@ fun AssessmentOverviewContent(
                     onContinueToChecklist = {
                         onContinueToChecklist(success.data.institutionId)
                     },
-                    onSaveAllDrafts = { onSaveAllDrafts(success.data.institutionId) },
+                    onSaveAllDrafts = onSaveAllDrafts,
                 )
             }
         },

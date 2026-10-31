@@ -8,8 +8,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Assessment Overview — SSQ A–F progress tracker. Reached from Institution
- * Profile "Start New Assessment". Section taps and continue/save are
- * nav-host callbacks until Checklist (Prompt D) lands.
+ * Profile "Start New Assessment". Continue navigates to Criteria Checklist;
+ * Save All Drafts marks sections saved locally (presentation until Prompt I).
  */
 @Composable
 fun AssessmentOverviewScreen(
@@ -17,7 +17,6 @@ fun AssessmentOverviewScreen(
     onBack: () -> Unit = {},
     onSectionClick: (institutionId: String, sectionKey: String) -> Unit = { _, _ -> },
     onContinueToChecklist: (institutionId: String) -> Unit = {},
-    onSaveAllDrafts: (institutionId: String) -> Unit = {},
     viewModel: AssessmentOverviewViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -28,6 +27,6 @@ fun AssessmentOverviewScreen(
         onBack = onBack,
         onSectionClick = onSectionClick,
         onContinueToChecklist = onContinueToChecklist,
-        onSaveAllDrafts = onSaveAllDrafts,
+        onSaveAllDrafts = { viewModel.saveAllDrafts() },
     )
 }

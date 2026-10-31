@@ -52,7 +52,8 @@ sealed interface AssessmentOverviewUiState {
 
     companion object {
         /**
-         * Placeholder matching Prompt C overview HTML — 3/6 saved (50%).
+         * Placeholder overview with all SSQ sections saved locally so
+         * Continue → Criteria Checklist is reachable for Prompt D review.
          * Replaced once a GetAssessmentOverview use case exists.
          */
         fun placeholder(institutionId: String = "inst-abuth"): Success = Success(
@@ -79,8 +80,8 @@ sealed interface AssessmentOverviewUiState {
                         rangeLabel = "B1 + B2",
                         title = "Philosophy & Governance",
                         subtitle = "B1 philosophy/objectives + B2 governance (20 items)",
-                        status = SectionDraftStatus.InProgress,
-                        itemsCompleted = 3,
+                        status = SectionDraftStatus.SavedLocally,
+                        itemsCompleted = 20,
                         totalItems = 20,
                     ),
                     SsqSectionSummaryUiState(
@@ -88,9 +89,9 @@ sealed interface AssessmentOverviewUiState {
                         codeLabel = "Section C",
                         rangeLabel = "C1",
                         title = "Curriculum & Teaching Methods",
-                        subtitle = "C1 teaching methods — 8 of 18 evaluated",
-                        status = SectionDraftStatus.InProgress,
-                        itemsCompleted = 8,
+                        subtitle = "C1 teaching methods — 18 of 18 evaluated",
+                        status = SectionDraftStatus.SavedLocally,
+                        itemsCompleted = 18,
                         totalItems = 18,
                     ),
                     SsqSectionSummaryUiState(
@@ -109,8 +110,8 @@ sealed interface AssessmentOverviewUiState {
                         rangeLabel = "E1 - E3",
                         title = "Physical Facilities, Labs & Technology",
                         subtitle = "Equipment, simulation centre & IT inventory",
-                        status = SectionDraftStatus.NotStarted,
-                        itemsCompleted = 0,
+                        status = SectionDraftStatus.SavedLocally,
+                        itemsCompleted = 40,
                         totalItems = 40,
                     ),
                     SsqSectionSummaryUiState(
@@ -119,8 +120,8 @@ sealed interface AssessmentOverviewUiState {
                         rangeLabel = "F1",
                         title = "Affiliated Clinical Facilities & Sites",
                         subtitle = "Community postings & MoU verification",
-                        status = SectionDraftStatus.NotStarted,
-                        itemsCompleted = 0,
+                        status = SectionDraftStatus.SavedLocally,
+                        itemsCompleted = 7,
                         totalItems = 7,
                     ),
                 ),
