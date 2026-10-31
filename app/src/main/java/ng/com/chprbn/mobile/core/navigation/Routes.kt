@@ -210,4 +210,24 @@ object Routes {
     /** Raw score entry per criterion group for [institutionId]. */
     @Serializable
     data class ScoreEntry(val institutionId: String)
+
+    /**
+     * Confirm and submit a local accreditation draft for server review.
+     * [assessmentId] identifies the in-progress assessment draft.
+     */
+    @Serializable
+    data class SubmitForReview(
+        val institutionId: String,
+        val assessmentId: String = "",
+    )
+
+    /**
+     * Server-computed accreditation decision for [institutionId].
+     * [decisionId] is the server receipt / decision token.
+     */
+    @Serializable
+    data class AssessmentResult(
+        val institutionId: String,
+        val decisionId: String = "",
+    )
 }

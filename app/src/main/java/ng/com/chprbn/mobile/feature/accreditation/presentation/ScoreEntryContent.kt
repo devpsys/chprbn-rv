@@ -52,7 +52,6 @@ import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
 import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 import ng.com.chprbn.mobile.core.designsystem.components.PrimaryButton
 import ng.com.chprbn.mobile.core.designsystem.components.SuccessDialog
-import ng.com.chprbn.mobile.core.designsystem.components.SyncingOverlay
 
 @Composable
 fun ScoreEntryContent(
@@ -81,7 +80,7 @@ fun ScoreEntryContent(
                 )
             },
             bottomBar = {
-                if (success != null && !success.data.isSubmitting) {
+                if (success != null) {
                     ScoreEntryBottomBar(
                         onSaveDraft = onSaveDraft,
                         onSubmitForServerReview = onSubmitForServerReview,
@@ -145,14 +144,6 @@ fun ScoreEntryContent(
                     item { Spacer(modifier = Modifier.height(8.dp)) }
                 }
             }
-        }
-
-        if (success?.data?.isSubmitting == true) {
-            SyncingOverlay(
-                title = stringResource(R.string.accreditation_score_sync_title),
-                subtitle = stringResource(R.string.accreditation_score_sync_subtitle),
-                encryptedLabel = stringResource(R.string.sync_loading_encrypted_badge),
-            )
         }
 
         if (success?.data?.showSavedDialog == true) {

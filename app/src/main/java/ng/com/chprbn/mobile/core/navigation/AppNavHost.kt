@@ -36,10 +36,12 @@ import ng.com.chprbn.mobile.feature.exam.presentation.ExamStatisticsScreen
 import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AccreditationHubScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentOverviewScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentResultScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.InstitutionProfileScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.CriteriaChecklistScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.ScoreEntryScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.SsqSectionFormScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.SubmitForReviewScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
@@ -181,7 +183,35 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
         composable<Routes.ScoreEntry> {
             ScoreEntryScreen(
                 onBack = { navController.popBackStack() },
-                onSubmitForReview = { /* TODO: SubmitForReview / AssessmentResult (Prompt E) */ },
+                onSubmitForReview = { institutionId ->
+                    navController.navigate(
+                        Routes.SubmitForReview(
+                            institutionId = institutionId,
+                            assessmentId = "assess-$institutionId",
+                        ),
+                    )
+                },
+            )
+        }
+        composable<Routes.SubmitForReview> {
+            SubmitForReviewScreen(
+                onBack = { navController.popBackStack() },
+                onSubmitted = { institutionId, decisionId ->
+                    navController.navigate(
+                        Routes.AssessmentResult(
+                            institutionId = institutionId,
+                            decisionId = decisionId,
+                        ),
+                    )
+                },
+            )
+        }
+        composable<Routes.AssessmentResult> {
+            AssessmentResultScreen(
+                onBack = { navController.popBackStack() },
+                onDone = {
+                    navController.popBackStack<Routes.AccreditationHub>(inclusive = false)
+                },
             )
         }
         composable<Routes.SsqSectionForm> {

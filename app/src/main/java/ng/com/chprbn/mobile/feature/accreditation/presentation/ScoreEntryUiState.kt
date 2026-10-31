@@ -36,8 +36,6 @@ data class ScoreEntryData(
     val facilityCode: String,
     val rows: List<ScoreEntryRowUiState>,
     val showSavedDialog: Boolean = false,
-    val isSubmitting: Boolean = false,
-    val requestSubmitNavigation: Boolean = false,
 ) {
     val totalGroups: Int
         get() = rows.size

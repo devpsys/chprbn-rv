@@ -1,7 +1,6 @@
 package ng.com.chprbn.mobile.feature.accreditation.presentation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -10,6 +9,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 /**
  * Raw score entry for accreditation criteria groups. Server computes grades;
  * this screen only captures officer-entered numbers locally.
+ * "Submit for Review" navigates to the confirmation screen (Prompt E) —
+ * sync overlay lives on [SubmitForReviewScreen].
  */
 @Composable
 fun ScoreEntryScreen(
@@ -19,14 +20,6 @@ fun ScoreEntryScreen(
     viewModel: ScoreEntryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val success = uiState as? ScoreEntryUiState.Success
-
-    LaunchedEffect(success?.data?.requestSubmitNavigation) {
-        if (success?.data?.requestSubmitNavigation == true) {
-            viewModel.consumeSubmitNavigation()
-            onSubmitForReview(success.data.institutionId)
-        }
-    }
 
     ScoreEntryContent(
         modifier = modifier,
@@ -38,7 +31,10 @@ fun ScoreEntryScreen(
         onAddPhoto = { /* TODO: Prompt H camera capture */ },
         onAddDocument = { /* TODO: Prompt H gallery / PDF */ },
         onSaveDraft = viewModel::onSaveDraft,
-        onSubmitForServerReview = viewModel::onSubmitForServerReview,
+        onSubmitForServerReview = {
+            val id = (uiState as? ScoreEntryUiState.Success)?.data?.institutionId.orEmpty()
+            if (id.isNotBlank()) onSubmitForReview(id)
+        },
         onDismissSavedDialog = viewModel::dismissSavedDialog,
     )
 }

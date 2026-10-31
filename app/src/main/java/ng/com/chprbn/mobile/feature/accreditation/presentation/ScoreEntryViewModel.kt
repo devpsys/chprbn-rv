@@ -2,15 +2,12 @@ package ng.com.chprbn.mobile.feature.accreditation.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 @HiltViewModel
 class ScoreEntryViewModel @Inject constructor(
@@ -46,23 +43,6 @@ class ScoreEntryViewModel @Inject constructor(
 
     fun dismissSavedDialog() {
         updateSuccess { it.copy(showSavedDialog = false) }
-    }
-
-    fun onSubmitForServerReview() {
-        updateSuccess { it.copy(isSubmitting = true) }
-        viewModelScope.launch {
-            delay(1_200)
-            updateSuccess {
-                it.copy(
-                    isSubmitting = false,
-                    requestSubmitNavigation = true,
-                )
-            }
-        }
-    }
-
-    fun consumeSubmitNavigation() {
-        updateSuccess { it.copy(requestSubmitNavigation = false) }
     }
 
     private fun digitsOnly(value: String): String = value.filter { it.isDigit() }
