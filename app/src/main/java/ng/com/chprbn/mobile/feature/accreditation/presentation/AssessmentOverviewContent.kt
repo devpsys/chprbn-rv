@@ -62,8 +62,6 @@ import ng.com.chprbn.mobile.core.designsystem.WarningYellow
 import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 import ng.com.chprbn.mobile.core.designsystem.components.PrimaryButton
 
-private val AccrdCardBorder = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.15f))
-
 @Composable
 fun AssessmentOverviewContent(
     modifier: Modifier = Modifier,
