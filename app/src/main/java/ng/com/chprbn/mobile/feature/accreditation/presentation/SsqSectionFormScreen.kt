@@ -43,8 +43,6 @@ fun SsqSectionFormScreen(
         onTechnicalStaffChange = viewModel::onTechnicalStaffChange,
         onAdminStaffChange = viewModel::onAdminStaffChange,
         onAddTutor = viewModel::onAddTutor,
-        onRemoveTutor = viewModel::onRemoveTutor,
-        onTutorUpdated = viewModel::onTutorUpdated,
         onChecklistAnswer = viewModel::onChecklistAnswer,
         onChecklistRemarks = viewModel::onChecklistRemarks,
         onRemoveAttachment = viewModel::onRemoveAttachment,

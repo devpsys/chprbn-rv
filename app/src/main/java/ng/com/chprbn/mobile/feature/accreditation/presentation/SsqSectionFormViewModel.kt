@@ -94,30 +94,16 @@ class SsqSectionFormViewModel @Inject constructor(
     fun onAdminStaffChange(value: String) =
         updateSectionA { it.copy(adminStaff = digitsOnly(value)) }
 
-    fun onAddTutor() = updateSectionA { form ->
+    fun onAddTutor(tutor: PhcTutorUiState) = updateSectionA { form ->
         form.copy(
-            tutors = form.tutors + PhcTutorUiState(
-                id = "tutor-${UUID.randomUUID()}",
-                name = "",
-                sex = "Female",
-                licenseNo = "",
-                phone = "",
-                qualification = "",
-                employmentStatus = "Full-Time",
+            tutors = form.tutors + tutor.copy(
+                id = tutor.id.ifBlank { "tutor-${UUID.randomUUID()}" },
             ),
         )
     }
 
     fun onRemoveTutor(tutorId: String) = updateSectionA { form ->
         form.copy(tutors = form.tutors.filterNot { it.id == tutorId })
-    }
-
-    fun onTutorUpdated(tutor: PhcTutorUiState) = updateSectionA { form ->
-        form.copy(
-            tutors = form.tutors.map { existing ->
-                if (existing.id == tutor.id) tutor else existing
-            },
-        )
     }
 
     fun onChecklistAnswer(itemId: String, answer: ChecklistAnswer) {

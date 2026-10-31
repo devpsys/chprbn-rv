@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,6 +41,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -58,12 +61,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,6 +82,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
@@ -131,9 +137,7 @@ fun SsqSectionFormContent(
     onAcademicStaffChange: (String) -> Unit = {},
     onTechnicalStaffChange: (String) -> Unit = {},
     onAdminStaffChange: (String) -> Unit = {},
-    onAddTutor: () -> Unit = {},
-    onRemoveTutor: (tutorId: String) -> Unit = {},
-    onTutorUpdated: (PhcTutorUiState) -> Unit = {},
+    onAddTutor: (PhcTutorUiState) -> Unit = {},
     onChecklistAnswer: (itemId: String, answer: ChecklistAnswer) -> Unit = { _, _ -> },
     onChecklistRemarks: (itemId: String, remarks: String) -> Unit = { _, _ -> },
     onRemoveAttachment: (attachmentId: String) -> Unit = {},
@@ -222,8 +226,6 @@ fun SsqSectionFormContent(
                     onTechnicalStaffChange = onTechnicalStaffChange,
                     onAdminStaffChange = onAdminStaffChange,
                     onAddTutor = onAddTutor,
-                    onRemoveTutor = onRemoveTutor,
-                    onTutorUpdated = onTutorUpdated,
                     onChecklistAnswer = onChecklistAnswer,
                     onChecklistRemarks = onChecklistRemarks,
                     onRemoveAttachment = onRemoveAttachment,
@@ -332,9 +334,7 @@ private fun SectionFormBody(
     onAcademicStaffChange: (String) -> Unit,
     onTechnicalStaffChange: (String) -> Unit,
     onAdminStaffChange: (String) -> Unit,
-    onAddTutor: () -> Unit,
-    onRemoveTutor: (String) -> Unit,
-    onTutorUpdated: (PhcTutorUiState) -> Unit,
+    onAddTutor: (PhcTutorUiState) -> Unit,
     onChecklistAnswer: (String, ChecklistAnswer) -> Unit,
     onChecklistRemarks: (String, String) -> Unit,
     onRemoveAttachment: (String) -> Unit,
@@ -377,8 +377,6 @@ private fun SectionFormBody(
                         onTechnicalStaffChange = onTechnicalStaffChange,
                         onAdminStaffChange = onAdminStaffChange,
                         onAddTutor = onAddTutor,
-                        onRemoveTutor = onRemoveTutor,
-                        onTutorUpdated = onTutorUpdated,
                     )
                 }
                 AttachmentManagementCard(
@@ -479,10 +477,9 @@ private fun SectionAFormFields(
     onAcademicStaffChange: (String) -> Unit,
     onTechnicalStaffChange: (String) -> Unit,
     onAdminStaffChange: (String) -> Unit,
-    onAddTutor: () -> Unit,
-    onRemoveTutor: (String) -> Unit,
-    onTutorUpdated: (PhcTutorUiState) -> Unit,
+    onAddTutor: (PhcTutorUiState) -> Unit,
 ) {
+    var showAddTutorDialog by remember { mutableStateOf(false) }
     FormCard(title = stringResource(R.string.accreditation_section_a_ownership_title)) {
         Text(
             text = stringResource(R.string.accreditation_section_a_ownership_hint),
@@ -696,49 +693,67 @@ private fun SectionAFormFields(
         }
     }
 
-    FormCard(
-        title = stringResource(R.string.accreditation_section_a_tutors_title),
-        trailing = {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.accreditation_section_a_tutors_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
             Text(
                 text = stringResource(
                     R.string.accreditation_section_a_tutors_count_format,
                     form.tutors.size,
                 ),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryGreen,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        },
+        }
+    }
+
+    form.tutors.forEach { tutor ->
+        TutorRosterCard(tutor = tutor)
+    }
+
+    OutlinedButton(
+        onClick = { showAddTutorDialog = true },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = AccrdCardBorder,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        ),
     ) {
-        form.tutors.forEachIndexed { index, tutor ->
-            if (index > 0) {
-                HorizontalDivider(
-                    color = PrimaryGreen.copy(alpha = 0.05f),
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
-            }
-            TutorEditorCard(
-                tutor = tutor,
-                onTutorUpdated = onTutorUpdated,
-                onRemoveTutor = onRemoveTutor,
-            )
-        }
-        OutlinedButton(
-            onClick = onAddTutor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            shape = RoundedCornerShape(8.dp),
-            border = AccrdCardBorder,
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null, tint = PrimaryGreen)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.accreditation_section_a_add_tutor),
-                color = PrimaryGreen,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
+        Icon(Icons.Filled.Add, contentDescription = null, tint = PrimaryGreen)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.accreditation_section_a_add_tutor),
+            color = PrimaryGreen,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+
+    if (showAddTutorDialog) {
+        AddPhcTutorBottomSheet(
+            onDismiss = { showAddTutorDialog = false },
+            onConfirm = { tutor ->
+                onAddTutor(tutor)
+                showAddTutorDialog = false
+            },
+        )
     }
 }
 
@@ -981,125 +996,491 @@ private fun CompactNumberField(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TutorEditorCard(
-    tutor: PhcTutorUiState,
-    onTutorUpdated: (PhcTutorUiState) -> Unit,
-    onRemoveTutor: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+private fun TutorRosterCard(tutor: PhcTutorUiState) {
+    val isFullTime = tutor.employmentStatus.equals("Full-Time", ignoreCase = true)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = AccrdCardBorder,
+        shadowElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = tutor.name.ifBlank { stringResource(R.string.accreditation_section_a_tutor_name) },
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            IconButton(onClick = { onRemoveTutor(tutor.id) }) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.accreditation_section_a_remove_tutor_cd),
-                    tint = ErrorRed,
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = tutor.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (tutor.roleTitle.isNotBlank()) {
+                        Text(
+                            text = tutor.roleTitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = if (isFullTime) {
+                        PrimaryGreen.copy(alpha = 0.12f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ) {
+                    Text(
+                        text = tutor.employmentStatus.uppercase(),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isFullTime) {
+                            PrimaryGreen
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TutorMetaCell(
+                            label = stringResource(R.string.accreditation_section_a_tutor_license_label),
+                            value = tutor.licenseNo,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TutorMetaCell(
+                            label = stringResource(R.string.accreditation_section_a_tutor_sex_label),
+                            value = tutor.sex,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TutorMetaCell(
+                            label = stringResource(R.string.accreditation_section_a_tutor_qualification_label),
+                            value = tutor.qualification,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TutorMetaCell(
+                            label = stringResource(R.string.accreditation_section_a_tutor_phone_label),
+                            value = tutor.phone,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_section_a_tutor_name),
-            value = tutor.name,
-            onValueChange = { onTutorUpdated(tutor.copy(name = it)) },
+    }
+}
+
+@Composable
+private fun TutorMetaCell(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        FormSimpleDropdown(
-            label = stringResource(R.string.accreditation_section_a_tutor_sex),
-            value = tutor.sex,
-            options = SsqSectionFormUiState.sexOptions(),
-            onValueChange = { onTutorUpdated(tutor.copy(sex = it)) },
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_section_a_tutor_license),
-            value = tutor.licenseNo,
-            onValueChange = { onTutorUpdated(tutor.copy(licenseNo = it)) },
+    }
+}
+
+/** Soft fills work on dark surfaces; light mode needs opaque fills + outline. */
+@Composable
+private fun isLightThemeSurface(): Boolean =
+    MaterialTheme.colorScheme.surface.luminance() > 0.5f
+
+@Composable
+private fun sheetFieldFillColor(): Color {
+    val scheme = MaterialTheme.colorScheme
+    return if (isLightThemeSurface()) {
+        scheme.surfaceVariant
+    } else {
+        scheme.surfaceVariant.copy(alpha = 0.55f)
+    }
+}
+
+@Composable
+private fun sheetFieldUnfocusedBorder(): Color {
+    val scheme = MaterialTheme.colorScheme
+    return if (isLightThemeSurface()) {
+        scheme.outline
+    } else {
+        Color.Transparent
+    }
+}
+
+@Composable
+private fun SheetFilledField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String = "",
+    keyboardType: KeyboardType = KeyboardType.Text,
+) {
+    val fill = sheetFieldFillColor()
+    val unfocusedBorder = sheetFieldUnfocusedBorder()
+    val placeholderColor = if (isLightThemeSurface()) {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label.uppercase(Locale.ENGLISH),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 0.6.sp,
+            modifier = Modifier.padding(bottom = 8.dp),
         )
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_section_a_tutor_phone),
-            value = tutor.phone,
-            onValueChange = { onTutorUpdated(tutor.copy(phone = it)) },
-            keyboardType = KeyboardType.Phone,
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            singleLine = true,
+            placeholder = {
+                if (placeholder.isNotEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = placeholderColor,
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = fill,
+                unfocusedContainerColor = fill,
+                disabledContainerColor = fill.copy(alpha = 0.7f),
+                focusedBorderColor = PrimaryGreen,
+                unfocusedBorderColor = unfocusedBorder,
+                cursorColor = PrimaryGreen,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Medium,
+            ),
         )
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_section_a_tutor_qualification),
-            value = tutor.qualification,
-            onValueChange = { onTutorUpdated(tutor.copy(qualification = it)) },
+    }
+}
+
+@Composable
+private fun SheetSegmentedField(
+    label: String,
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit,
+) {
+    val light = isLightThemeSurface()
+    val trackColor = if (light) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    }
+    val trackBorder = if (light) AccrdNestedBorder else null
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label.uppercase(Locale.ENGLISH),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 0.6.sp,
+            modifier = Modifier.padding(bottom = 8.dp),
         )
-        FormSimpleDropdown(
-            label = stringResource(R.string.accreditation_section_a_tutor_employment),
-            value = tutor.employmentStatus,
-            options = SsqSectionFormUiState.employmentStatusOptions(),
-            onValueChange = { onTutorUpdated(tutor.copy(employmentStatus = it)) },
-        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = trackColor,
+            border = trackBorder,
+        ) {
+            Row(
+                modifier = Modifier.padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                options.forEach { option ->
+                    val isSelected = selected == option
+                    Surface(
+                        onClick = { onSelected(option) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = when {
+                            isSelected -> PrimaryGreen
+                            light -> MaterialTheme.colorScheme.surface
+                            else -> Color.Transparent
+                        },
+                        shadowElevation = if (isSelected || light) 1.dp else 0.dp,
+                        border = if (!isSelected && light) AccrdNestedBorder else null,
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = option,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isSelected) {
+                                    Color.White
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FormSimpleDropdown(
-    label: String,
-    value: String,
-    options: List<String>,
-    onValueChange: (String) -> Unit,
+private fun AddPhcTutorBottomSheet(
+    onDismiss: () -> Unit,
+    onConfirm: (PhcTutorUiState) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp),
+    var name by remember { mutableStateOf("") }
+    var roleTitle by remember { mutableStateOf("") }
+    var sex by remember { mutableStateOf(SsqSectionFormUiState.sexOptions().first()) }
+    var licenseNo by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var qualification by remember { mutableStateOf("") }
+    var employmentStatus by remember {
+        mutableStateOf(SsqSectionFormUiState.employmentStatusOptions().first())
+    }
+    val canSave = name.isNotBlank() && licenseNo.isNotBlank()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.45f),
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 6.dp),
-        )
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.92f)
+                .navigationBarsPadding()
+                .imePadding(),
         ) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .height(56.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryGreen,
-                    cursorColor = PrimaryGreen,
-                    focusedLabelColor = PrimaryGreen,
-                ),
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            onValueChange(option)
-                            expanded = false
-                        },
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PrimaryGreen.copy(alpha = 0.12f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PersonAdd,
+                            contentDescription = null,
+                            tint = PrimaryGreen,
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .size(22.dp),
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = stringResource(R.string.accreditation_section_a_add_tutor_dialog_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(R.string.accreditation_section_a_add_tutor_dialog_subtitle),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(
+                            R.string.accreditation_section_a_add_tutor_close_cd,
+                        ),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 12.dp),
+                color = if (isLightThemeSurface()) {
+                    MaterialTheme.colorScheme.outline
+                } else {
+                    PrimaryGreen.copy(alpha = 0.12f)
+                },
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                SheetFilledField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_name),
+                    value = name,
+                    onValueChange = { name = it },
+                    placeholder = stringResource(R.string.accreditation_section_a_tutor_name_hint),
+                )
+                SheetFilledField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_role),
+                    value = roleTitle,
+                    onValueChange = { roleTitle = it },
+                    placeholder = stringResource(R.string.accreditation_section_a_tutor_role_hint),
+                )
+                SheetSegmentedField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_sex),
+                    options = SsqSectionFormUiState.sexOptions(),
+                    selected = sex,
+                    onSelected = { sex = it },
+                )
+                SheetFilledField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_license),
+                    value = licenseNo,
+                    onValueChange = { licenseNo = it },
+                    placeholder = stringResource(R.string.accreditation_section_a_tutor_license_hint),
+                )
+                SheetFilledField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_phone),
+                    value = phone,
+                    onValueChange = { phone = it },
+                    placeholder = stringResource(R.string.accreditation_section_a_tutor_phone_hint),
+                    keyboardType = KeyboardType.Phone,
+                )
+                SheetFilledField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_qualification),
+                    value = qualification,
+                    onValueChange = { qualification = it },
+                    placeholder = stringResource(R.string.accreditation_section_a_tutor_qualification_hint),
+                )
+                SheetSegmentedField(
+                    label = stringResource(R.string.accreditation_section_a_tutor_employment),
+                    options = SsqSectionFormUiState.employmentStatusOptions(),
+                    selected = employmentStatus,
+                    onSelected = { employmentStatus = it },
+                )
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        onClick = {
+                            onConfirm(
+                                PhcTutorUiState(
+                                    id = "",
+                                    name = name.trim(),
+                                    sex = sex,
+                                    licenseNo = licenseNo.trim(),
+                                    phone = phone.trim(),
+                                    qualification = qualification.trim(),
+                                    employmentStatus = employmentStatus,
+                                    roleTitle = roleTitle.trim(),
+                                ),
+                            )
+                        },
+                        enabled = canSave,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryGreen,
+                            contentColor = Color.White,
+                            disabledContainerColor = PrimaryGreen.copy(alpha = 0.35f),
+                            disabledContentColor = Color.White.copy(alpha = 0.8f),
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PersonAdd,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.accreditation_section_a_add_tutor_dialog_save),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = AccrdCardBorder,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.accreditation_section_a_add_tutor_dialog_cancel),
+                            color = PrimaryGreen,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
             }
         }
