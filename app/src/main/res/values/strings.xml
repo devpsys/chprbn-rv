@@ -784,6 +784,18 @@
     <string name="accreditation_section_d_row_remarks">Remarks</string>
     <string name="accreditation_section_d_attachments_title">Upload Evidence &amp; Staff Dossier</string>
     <string name="accreditation_section_d_attachments_hint">Attach certified true copies of faculty practice licenses, appointment gazettes, and academic staff CV summaries.</string>
+    <string name="accreditation_section_e_heading">SECTION E: PHYSICAL FACILITIES &amp; CLINICAL LABS</string>
+    <string name="accreditation_section_e_progress_title">Inspection Progress</string>
+    <string name="accreditation_section_e_items_marked_format">%1$d of %2$d items marked</string>
+    <string name="accreditation_section_e_gps_verified">GPS Verified</string>
+    <string name="accreditation_section_e_part_format">Part %1$d/3</string>
+    <string name="accreditation_section_e_count_format">%1$d Standards</string>
+    <string name="accreditation_section_e_item_format">%1$s.%2$d</string>
+    <string name="accreditation_section_e_audited">Marked</string>
+    <string name="accreditation_section_e_pending_badge">Pending</string>
+    <string name="accreditation_section_e_remarks">Remarks</string>
+    <string name="accreditation_section_e_attachments_title">Geotagged Facility Photographs</string>
+    <string name="accreditation_section_e_attachments_hint">Photos are stamped for visual verification. Attach lecture halls, labs, and simulation suite evidence for Section E.</string>
 
     <string name="accreditation_section_a_ownership_title">Subsection A1: Institutional Profile</string>
     <string name="accreditation_section_a_ownership_hint">Ownership Status *</string>

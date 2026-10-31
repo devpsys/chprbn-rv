@@ -137,4 +137,38 @@ class SsqSectionFormContentRenderTest {
         composeRule.onNodeWithText("Simulation Technicians").assertExists()
         composeRule.onNodeWithText("Support Staff").assertExists()
     }
+
+    @Test
+    fun section_e_renders_ssq_e1_e2_e3() {
+        composeRule.setContent {
+            ChprbnTheme {
+                SsqSectionFormContent(
+                    uiState = SsqSectionFormUiState.placeholder(sectionKey = SsqSectionKey.E),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("SECTION E: PHYSICAL FACILITIES & CLINICAL LABS").assertExists()
+        composeRule.onNodeWithText("E1: Lecture").assertExists()
+        composeRule.onNodeWithText("E2: Labs").assertExists()
+        composeRule.onNodeWithText("E3: Sim").assertExists()
+        composeRule.onNodeWithText("Lecture theatres").assertExists()
+        composeRule.onNodeWithText("Accessibility for persons with disabilities").assertExists()
+        composeRule.onNodeWithText("CCTV and security systems").assertExists()
+        composeRule.onNodeWithText("4 of 40 items marked").assertExists()
+        composeRule.onNodeWithText("Geotagged Facility Photographs").assertExists()
+        composeRule.onAllNodesWithText("Available")[0].assertExists()
+
+        composeRule.onNodeWithText("E2: Labs").performClick()
+        composeRule.onNodeWithText("Community Health Skill Laboratory").assertExists()
+        composeRule.onNodeWithText(
+            "SOP and other treatment protocol (CHO National Standing Orders)",
+        ).assertExists()
+        composeRule.onNodeWithText("AI-enabled health training systems").assertExists()
+
+        composeRule.onNodeWithText("E3: Sim").performClick()
+        composeRule.onNodeWithText("High-fidelity patient simulators").assertExists()
+        composeRule.onNodeWithText("Learning management systems (LMS)").assertExists()
+        composeRule.onNodeWithText("Drone-assisted healthcare demonstration technology").assertExists()
+    }
 }

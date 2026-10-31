@@ -241,17 +241,7 @@ sealed interface SsqSectionFormUiState {
                     SsqSectionKey.B -> sectionB(id)
                     SsqSectionKey.C -> sectionC(id, attachments)
                     SsqSectionKey.D -> sectionD(id, attachments)
-                    SsqSectionKey.E -> checklistSection(
-                        id = id,
-                        key = SsqSectionKey.E,
-                        title = "Physical Facilities, Labs & Technology",
-                        subtitle = "E1–E3 facilities inventory",
-                        formCode = "Standard Form SSQ E1–E3",
-                        status = SectionDraftStatus.NotStarted,
-                        usesAvailability = true,
-                        itemTexts = eItems(),
-                        attachments = emptyList(),
-                    )
+                    SsqSectionKey.E -> sectionE(id, attachments)
                     SsqSectionKey.F -> checklistSection(
                         id = id,
                         key = SsqSectionKey.F,
@@ -741,10 +731,148 @@ sealed interface SsqSectionFormUiState {
             )
         }
 
-        private fun eItems(): List<String> = buildList {
-            repeat(10) { add("Lecture facility item ${it + 1}") }
-            repeat(15) { add("Laboratory item ${it + 1}") }
-            repeat(15) { add("Simulation / modern tech item ${it + 1}") }
+        private fun sectionE(
+            id: String,
+            attachments: List<SsqAttachmentUiState>,
+        ): SsqSectionFormData {
+            // Authoritative facility text from docs/accrd/SSQ.pdf — Section E.
+            val e1Texts = listOf(
+                "Lecture theatres",
+                "Smart classrooms",
+                "Audio-visual systems",
+                "Interactive whiteboards",
+                "Public address system",
+                "Internet connectivity",
+                "Backup power supply",
+                "Ergonomic seating",
+                "Accessibility for persons with disabilities",
+                "CCTV and security systems",
+            )
+            val e2Texts = listOf(
+                "Community Health Skill Laboratory",
+                "SOP and other treatment protocol (CHO National Standing Orders)",
+                "Anatomy laboratory",
+                "Physiology laboratory",
+                "Microbiology laboratory",
+                "Chemistry laboratory",
+                "Nutrition laboratory",
+                "ICT laboratory",
+                "Simulation laboratory",
+                "Telemedicine laboratory",
+                "Public health emergency response simulation unit",
+                "Maternal and child health demonstration unit",
+                "Disease surveillance and GIS unit",
+                "Digital diagnostics demonstration unit",
+                "AI-enabled health training systems",
+            )
+            val e3Texts = listOf(
+                "High-fidelity patient simulators",
+                "Low-fidelity mannequins",
+                "Maternal delivery simulators",
+                "Neonatal resuscitation simulators",
+                "Emergency response simulators",
+                "VR clinical simulation systems",
+                "AR anatomy teaching systems",
+                "Digital stethoscopes",
+                "Electronic medical record training software",
+                "Mobile health (mHealth) demonstration tools",
+                "Drone-assisted healthcare demonstration technology",
+                "AI-supported diagnostic training software",
+                "Digital microscopy systems",
+                "Smart attendance and biometric systems",
+                "Learning management systems (LMS)",
+            )
+            val subsections = listOf(
+                SsqChecklistSubsectionUiState(
+                    id = "E1",
+                    badge = "E1",
+                    title = "E1: Lecture & Classroom Facilities",
+                    subtitle = "10 lecture facilities",
+                    tabLabel = "E1: Lecture",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "E2",
+                    badge = "E2",
+                    title = "E2: Laboratories and Skills Facilities",
+                    subtitle = "15 labs & skills units",
+                    tabLabel = "E2: Labs",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+                SsqChecklistSubsectionUiState(
+                    id = "E3",
+                    badge = "E3",
+                    title = "E3: Simulation & Modern Technology",
+                    subtitle = "15 modern facilities",
+                    tabLabel = "E3: Sim",
+                    attachmentsTitle = "",
+                    attachmentsHint = "",
+                ),
+            )
+            fun itemsFor(
+                texts: List<String>,
+                subsectionId: String,
+                answeredThrough: Int,
+            ): List<SsqChecklistItemUiState> = texts.mapIndexed { index, text ->
+                SsqChecklistItemUiState(
+                    id = "$subsectionId-${index + 1}",
+                    text = text,
+                    answer = if (index < answeredThrough) {
+                        ChecklistAnswer.Available
+                    } else {
+                        ChecklistAnswer.Unanswered
+                    },
+                    remarks = when {
+                        subsectionId == "E1" && index == 0 ->
+                            "Main theatre seats 180; dual exit doors verified."
+                        subsectionId == "E1" && index == 2 ->
+                            "Four projection rigs with HDMI sync active."
+                        subsectionId == "E2" && index == 0 ->
+                            "Skill lab inventory and SOP binder reviewed."
+                        else -> ""
+                    },
+                    usesAvailability = true,
+                    subsectionId = subsectionId,
+                    numberInSubsection = index + 1,
+                )
+            }
+            // Sample progress: 4 of 10 E1 answered (matches partial inspection).
+            val items = itemsFor(e1Texts, "E1", answeredThrough = 4) +
+                itemsFor(e2Texts, "E2", answeredThrough = 0) +
+                itemsFor(e3Texts, "E3", answeredThrough = 0)
+            return SsqSectionFormData(
+                institutionId = id,
+                sectionKey = SsqSectionKey.E,
+                title = "Physical Facilities, Labs & Technology",
+                subtitle =
+                    "Verify institutional learning environments, lab equipment, and simulation capacity per CHPRBN regulatory minimums.",
+                formCodeLabel = "CHPRBN Standards SSQ E1–E3",
+                status = SectionDraftStatus.InProgress,
+                checklistItems = items,
+                checklistSubsections = subsections,
+                attachments = listOf(
+                    SsqAttachmentUiState(
+                        id = "e-att-1",
+                        title = "Lecture_Hall_A.jpg",
+                        sizeLabel = "3.8 MB",
+                        isPhoto = true,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "e-att-2",
+                        title = "Microbiology_Lab.jpg",
+                        sizeLabel = "2.9 MB",
+                        isPhoto = true,
+                    ),
+                    SsqAttachmentUiState(
+                        id = "e-att-3",
+                        title = "MCH_Simulation.jpg",
+                        sizeLabel = "3.1 MB",
+                        isPhoto = true,
+                    ),
+                ),
+            )
         }
 
         private fun fItems(): List<String> = listOf(
