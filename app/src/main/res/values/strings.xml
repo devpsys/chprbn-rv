@@ -1095,10 +1095,66 @@
     <string name="accreditation_result_view_certificate">View Certificate</string>
     <string name="accreditation_result_done">Done</string>
     <string name="accreditation_result_cert_dialog_title">Official Certificate</string>
-    <string name="accreditation_result_cert_dialog_message">Certificate download will be available when the CHPRBN registry syncs the signed PDF (Prompt I).</string>
+    <string name="accreditation_result_cert_dialog_message">Certificate will be available after the registry issues the signed PDF.</string>
     <string name="accreditation_result_cert_dialog_ok">OK</string>
     <string name="accreditation_result_error_dialog_title">Could not load decision</string>
     <string name="accreditation_result_error_dialog_message">The server decision could not be displayed. Try again or return to the hub.</string>
     <string name="accreditation_result_error_retry">Retry</string>
     <string name="accreditation_result_error_dismiss">Dismiss</string>
+
+    <!-- Prompt I — Local Drafts -->
+    <string name="accreditation_drafts_title">LOCAL DRAFTS</string>
+    <string name="accreditation_drafts_search_placeholder">Search by institution…</string>
+    <string name="accreditation_drafts_filter_all">All</string>
+    <string name="accreditation_drafts_filter_pending">Pending Sync</string>
+    <string name="accreditation_drafts_filter_synced">Synced</string>
+    <string name="accreditation_drafts_filter_failed">Sync Failed</string>
+    <string name="accreditation_drafts_sections_format">%1$d of %2$d sections</string>
+    <string name="accreditation_drafts_attachments_format">%1$d files</string>
+    <string name="accreditation_drafts_modified_format">Modified: %1$s</string>
+    <string name="accreditation_drafts_resume_cd">Resume assessment</string>
+    <string name="accreditation_drafts_empty_title">No local drafts</string>
+    <string name="accreditation_drafts_empty_subtitle">Assessments started or saved offline will appear here.</string>
+    <string name="accreditation_drafts_sync_all">Sync All Drafts</string>
+    <string name="accreditation_drafts_discard_selected">Discard Selected</string>
+    <string name="accreditation_drafts_discard_selected_count_format">Discard Selected (%1$d)</string>
+    <string name="accreditation_drafts_discard_title">Discard selected drafts?</string>
+    <string name="accreditation_drafts_discard_message">Unsynced observations, attachments, and marks in the selected drafts will be permanently removed from this device.</string>
+    <string name="accreditation_drafts_discard_confirm">Discard</string>
+    <string name="accreditation_drafts_discard_keep">Keep Drafts</string>
+    <string name="accreditation_drafts_sync_overlay_title">Synchronizing Drafts</string>
+    <string name="accreditation_drafts_sync_overlay_subtitle">Uploading local assessment dossiers to the CHPRBN registry.</string>
+    <string name="accreditation_drafts_sync_success_title">Sync Complete</string>
+    <string name="accreditation_drafts_sync_success_message_format">Successfully synchronized %1$d assessment draft(s).</string>
+    <string name="accreditation_drafts_sync_success_done">Done</string>
+    <string name="accreditation_drafts_status_pending">Pending Sync</string>
+    <string name="accreditation_drafts_status_syncing">Syncing…</string>
+    <string name="accreditation_drafts_status_synced">Synced</string>
+    <string name="accreditation_drafts_status_failed">Sync Failed</string>
+    <string name="accreditation_drafts_vault_note">Encrypted Device Vault: Assessments persist offline until verified by the central server.</string>
+
+    <!-- Prompt I — Sync Status -->
+    <string name="accreditation_sync_status_title">SYNC STATUS</string>
+    <string name="accreditation_sync_status_monitor_label">OUTBOX SYNC MONITOR</string>
+    <string name="accreditation_sync_status_queue_progress">Queue Progress</string>
+    <string name="accreditation_sync_status_progress_format">%1$d%% Transmitted</string>
+    <string name="accreditation_sync_status_last_success_label">Last Successful Sync:</string>
+    <string name="accreditation_sync_status_failed_jobs_format">FAILED SYNC JOBS (%1$d)</string>
+    <string name="accreditation_sync_status_outbox_label">WorkManager Outbox</string>
+    <string name="accreditation_sync_status_attempts_format">Sync attempts: %1$d</string>
+    <string name="accreditation_sync_status_meta_format">%1$d of %2$d sections • %3$d files</string>
+    <string name="accreditation_sync_status_retry">Retry</string>
+    <string name="accreditation_sync_status_retry_failed">Retry Failed</string>
+    <string name="accreditation_sync_status_close">Close</string>
+    <string name="accreditation_sync_status_empty_title">All sync outbox queues clear</string>
+    <string name="accreditation_sync_status_empty_subtitle">All officer draft submissions are verified with the central Board server.</string>
+    <string name="accreditation_sync_status_overall_synced">All Drafts Synced</string>
+    <string name="accreditation_sync_status_overall_syncing">Synchronizing Outbox…</string>
+    <string name="accreditation_sync_status_overall_failed">Sync Errors Detected</string>
+    <string name="accreditation_sync_status_overall_offline">Offline Mode Active</string>
+    <string name="accreditation_sync_status_overlay_title">Retrying failed syncs…</string>
+    <string name="accreditation_sync_status_overlay_subtitle">Re-queuing failed accreditation drafts through SyncBatchRunner.</string>
+    <string name="accreditation_sync_status_success_title">Retry Complete</string>
+    <string name="accreditation_sync_status_success_message">Failed sync jobs were re-queued successfully.</string>
+    <string name="accreditation_sync_status_success_done">Done</string>
 </resources>

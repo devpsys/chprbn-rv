@@ -39,9 +39,11 @@ import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentOvervie
 import ng.com.chprbn.mobile.feature.accreditation.presentation.AssessmentResultScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.InstitutionProfileScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.CriteriaChecklistScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.LocalDraftsScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.ScoreEntryScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.SsqSectionFormScreen
 import ng.com.chprbn.mobile.feature.accreditation.presentation.SubmitForReviewScreen
+import ng.com.chprbn.mobile.feature.accreditation.presentation.SyncStatusScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentCandidatesScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPaperDetailScreen
 import ng.com.chprbn.mobile.feature.assessment.presentation.AssessmentPracticalScoringScreen
@@ -136,19 +138,40 @@ fun AppNavHost(sessionEventBus: SessionEventBus) {
         composable<Routes.AccreditationHub> {
             AccreditationHubScreen(
                 onBack = { navController.popBackStack() },
-                onQuickSync = { /* TODO: accreditation sync */ },
+                onQuickSync = {
+                    navController.navigate(Routes.SyncStatus)
+                },
                 onStartNewAssessment = { institutionId ->
                     navController.navigate(Routes.InstitutionProfile(institutionId))
                 },
-                onContinueAssessment = { /* TODO: resume in-progress assessment */ },
-                onLocalDrafts = { /* TODO: LocalDrafts */ },
-                onSyncStatus = { /* TODO: SyncStatus */ },
+                onContinueAssessment = {
+                    navController.navigate(Routes.AssessmentOverview("inst-abuth"))
+                },
+                onLocalDrafts = {
+                    navController.navigate(Routes.LocalDrafts)
+                },
+                onSyncStatus = {
+                    navController.navigate(Routes.SyncStatus)
+                },
                 onInstitutionClick = { institutionId ->
                     navController.navigate(Routes.InstitutionProfile(institutionId))
                 },
                 onStartAssessment = { institutionId ->
                     navController.navigate(Routes.InstitutionProfile(institutionId))
                 },
+            )
+        }
+        composable<Routes.LocalDrafts> {
+            LocalDraftsScreen(
+                onBack = { navController.popBackStack() },
+                onResumeDraft = { institutionId ->
+                    navController.navigate(Routes.AssessmentOverview(institutionId))
+                },
+            )
+        }
+        composable<Routes.SyncStatus> {
+            SyncStatusScreen(
+                onBack = { navController.popBackStack() },
             )
         }
         composable<Routes.InstitutionProfile> {

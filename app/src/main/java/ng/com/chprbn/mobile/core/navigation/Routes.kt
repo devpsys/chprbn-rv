@@ -230,4 +230,12 @@ object Routes {
         val institutionId: String,
         val decisionId: String = "",
     )
+
+    /** Offline assessment drafts pending sync / discard. */
+    @Serializable
+    data object LocalDrafts
+
+    /** Outbox sync monitor for accreditation drafts. */
+    @Serializable
+    data object SyncStatus
 }
