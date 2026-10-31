@@ -264,7 +264,9 @@ private fun DashboardFeatureGridSection(
 //        )
     )
     val normalizedRoles = roles.map { it.lowercase() }.toSet()
-    val items = allItems.filter { it.requiredRole.lowercase() in normalizedRoles }
+    val items = allItems
+        .filter { it.requiredRole.lowercase() in normalizedRoles }
+        .sortedBy { it.title.lowercase() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
