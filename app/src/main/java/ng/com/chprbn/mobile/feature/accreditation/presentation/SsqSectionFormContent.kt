@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CameraAlt
@@ -72,17 +75,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -115,10 +121,19 @@ fun SsqSectionFormContent(
     onAccreditationStatusChange: (String) -> Unit = {},
     onDateOfLastVisitChange: (String) -> Unit = {},
     onExpiryDateChange: (String) -> Unit = {},
-    onNbteActiveChange: (Boolean) -> Unit = {},
+    onNbteNdChange: (Boolean) -> Unit = {},
+    onNbteHndChange: (Boolean) -> Unit = {},
+    onApprovedStudentChange: (level: String, value: String) -> Unit = { _, _ -> },
+    onIndexedStudentChange: (key: String, value: String) -> Unit = { _, _ -> },
+    onUnindexedStudentChange: (key: String, value: String) -> Unit = { _, _ -> },
+    onEnrolledNdChange: (level: String, value: String) -> Unit = { _, _ -> },
+    onEnrolledHndChange: (level: String, value: String) -> Unit = { _, _ -> },
     onAcademicStaffChange: (String) -> Unit = {},
     onTechnicalStaffChange: (String) -> Unit = {},
     onAdminStaffChange: (String) -> Unit = {},
+    onAddTutor: () -> Unit = {},
+    onRemoveTutor: (tutorId: String) -> Unit = {},
+    onTutorUpdated: (PhcTutorUiState) -> Unit = {},
     onChecklistAnswer: (itemId: String, answer: ChecklistAnswer) -> Unit = { _, _ -> },
     onChecklistRemarks: (itemId: String, remarks: String) -> Unit = { _, _ -> },
     onRemoveAttachment: (attachmentId: String) -> Unit = {},
@@ -196,10 +211,19 @@ fun SsqSectionFormContent(
                     onAccreditationStatusChange = onAccreditationStatusChange,
                     onDateOfLastVisitChange = onDateOfLastVisitChange,
                     onExpiryDateChange = onExpiryDateChange,
-                    onNbteActiveChange = onNbteActiveChange,
+                    onNbteNdChange = onNbteNdChange,
+                    onNbteHndChange = onNbteHndChange,
+                    onApprovedStudentChange = onApprovedStudentChange,
+                    onIndexedStudentChange = onIndexedStudentChange,
+                    onUnindexedStudentChange = onUnindexedStudentChange,
+                    onEnrolledNdChange = onEnrolledNdChange,
+                    onEnrolledHndChange = onEnrolledHndChange,
                     onAcademicStaffChange = onAcademicStaffChange,
                     onTechnicalStaffChange = onTechnicalStaffChange,
                     onAdminStaffChange = onAdminStaffChange,
+                    onAddTutor = onAddTutor,
+                    onRemoveTutor = onRemoveTutor,
+                    onTutorUpdated = onTutorUpdated,
                     onChecklistAnswer = onChecklistAnswer,
                     onChecklistRemarks = onChecklistRemarks,
                     onRemoveAttachment = onRemoveAttachment,
@@ -298,10 +322,19 @@ private fun SectionFormBody(
     onAccreditationStatusChange: (String) -> Unit,
     onDateOfLastVisitChange: (String) -> Unit,
     onExpiryDateChange: (String) -> Unit,
-    onNbteActiveChange: (Boolean) -> Unit,
+    onNbteNdChange: (Boolean) -> Unit,
+    onNbteHndChange: (Boolean) -> Unit,
+    onApprovedStudentChange: (String, String) -> Unit,
+    onIndexedStudentChange: (String, String) -> Unit,
+    onUnindexedStudentChange: (String, String) -> Unit,
+    onEnrolledNdChange: (String, String) -> Unit,
+    onEnrolledHndChange: (String, String) -> Unit,
     onAcademicStaffChange: (String) -> Unit,
     onTechnicalStaffChange: (String) -> Unit,
     onAdminStaffChange: (String) -> Unit,
+    onAddTutor: () -> Unit,
+    onRemoveTutor: (String) -> Unit,
+    onTutorUpdated: (PhcTutorUiState) -> Unit,
     onChecklistAnswer: (String, ChecklistAnswer) -> Unit,
     onChecklistRemarks: (String, String) -> Unit,
     onRemoveAttachment: (String) -> Unit,
@@ -333,10 +366,19 @@ private fun SectionFormBody(
                         onAccreditationStatusChange = onAccreditationStatusChange,
                         onDateOfLastVisitChange = onDateOfLastVisitChange,
                         onExpiryDateChange = onExpiryDateChange,
-                        onNbteActiveChange = onNbteActiveChange,
+                        onNbteNdChange = onNbteNdChange,
+                        onNbteHndChange = onNbteHndChange,
+                        onApprovedStudentChange = onApprovedStudentChange,
+                        onIndexedStudentChange = onIndexedStudentChange,
+                        onUnindexedStudentChange = onUnindexedStudentChange,
+                        onEnrolledNdChange = onEnrolledNdChange,
+                        onEnrolledHndChange = onEnrolledHndChange,
                         onAcademicStaffChange = onAcademicStaffChange,
                         onTechnicalStaffChange = onTechnicalStaffChange,
                         onAdminStaffChange = onAdminStaffChange,
+                        onAddTutor = onAddTutor,
+                        onRemoveTutor = onRemoveTutor,
+                        onTutorUpdated = onTutorUpdated,
                     )
                 }
                 AttachmentManagementCard(
@@ -427,10 +469,19 @@ private fun SectionAFormFields(
     onAccreditationStatusChange: (String) -> Unit,
     onDateOfLastVisitChange: (String) -> Unit,
     onExpiryDateChange: (String) -> Unit,
-    onNbteActiveChange: (Boolean) -> Unit,
+    onNbteNdChange: (Boolean) -> Unit,
+    onNbteHndChange: (Boolean) -> Unit,
+    onApprovedStudentChange: (String, String) -> Unit,
+    onIndexedStudentChange: (String, String) -> Unit,
+    onUnindexedStudentChange: (String, String) -> Unit,
+    onEnrolledNdChange: (String, String) -> Unit,
+    onEnrolledHndChange: (String, String) -> Unit,
     onAcademicStaffChange: (String) -> Unit,
     onTechnicalStaffChange: (String) -> Unit,
     onAdminStaffChange: (String) -> Unit,
+    onAddTutor: () -> Unit,
+    onRemoveTutor: (String) -> Unit,
+    onTutorUpdated: (PhcTutorUiState) -> Unit,
 ) {
     FormCard(title = stringResource(R.string.accreditation_section_a_ownership_title)) {
         Text(
@@ -532,46 +583,117 @@ private fun SectionAFormFields(
             value = form.expiryDate,
             onDateSelected = onExpiryDateChange,
         )
+    }
+
+    StudentCountMatrixCard(
+        title = stringResource(R.string.accreditation_section_a_approved_title),
+        subtitle = stringResource(R.string.accreditation_section_a_approved_subtitle),
+    ) {
+        LevelCountGrid(
+            levels = SsqA1StudentGrids.approvedBchsLevels,
+            valueFor = { level -> form.approvedStudents[level].orEmpty() },
+            onValueChange = onApprovedStudentChange,
+        )
+    }
+
+    StudentCountMatrixCard(
+        title = stringResource(R.string.accreditation_section_a_indexed_title),
+        subtitle = stringResource(R.string.accreditation_section_a_indexed_subtitle),
+    ) {
+        ProgrammeLevelCountFields(
+            values = form.indexedStudents,
+            onValueChange = onIndexedStudentChange,
+        )
+    }
+
+    StudentCountMatrixCard(
+        title = stringResource(R.string.accreditation_section_a_unindexed_title),
+        subtitle = stringResource(R.string.accreditation_section_a_unindexed_subtitle),
+    ) {
+        ProgrammeLevelCountFields(
+            values = form.unindexedStudents,
+            onValueChange = onUnindexedStudentChange,
+        )
+    }
+
+    FormCard(title = stringResource(R.string.accreditation_section_a_nbte_title)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onNbteActiveChange(!form.nbteActive) },
+                .clickable { onNbteNdChange(!form.nbteNd) },
         ) {
             Checkbox(
-                checked = form.nbteActive,
-                onCheckedChange = onNbteActiveChange,
+                checked = form.nbteNd,
+                onCheckedChange = onNbteNdChange,
                 colors = CheckboxDefaults.colors(checkedColor = PrimaryGreen),
             )
             Text(
-                text = stringResource(R.string.accreditation_section_a_nbte),
+                text = stringResource(R.string.accreditation_section_a_nbte_nd),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNbteHndChange(!form.nbteHnd) },
+        ) {
+            Checkbox(
+                checked = form.nbteHnd,
+                onCheckedChange = onNbteHndChange,
+                colors = CheckboxDefaults.colors(checkedColor = PrimaryGreen),
+            )
+            Text(
+                text = stringResource(R.string.accreditation_section_a_nbte_hnd),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
 
+    StudentCountMatrixCard(
+        title = stringResource(R.string.accreditation_section_a_enrolled_title),
+        subtitle = stringResource(R.string.accreditation_section_a_enrolled_subtitle),
+    ) {
+        ProgrammeGroupLabel(stringResource(R.string.accreditation_section_a_enrolled_nd))
+        LevelCountGrid(
+            levels = SsqA1StudentGrids.enrolledLevels,
+            valueFor = { level -> form.enrolledNd[level].orEmpty() },
+            onValueChange = onEnrolledNdChange,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        ProgrammeGroupLabel(stringResource(R.string.accreditation_section_a_enrolled_hnd))
+        LevelCountGrid(
+            levels = SsqA1StudentGrids.enrolledLevels,
+            valueFor = { level -> form.enrolledHnd[level].orEmpty() },
+            onValueChange = onEnrolledHndChange,
+        )
+    }
+
     FormCard(title = stringResource(R.string.accreditation_section_a_staff_title)) {
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_profile_staff_academic),
-            value = form.academicStaff,
-            onValueChange = onAcademicStaffChange,
-            keyboardType = KeyboardType.Number,
-            digitsOnly = true,
-        )
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_profile_staff_technical),
-            value = form.technicalStaff,
-            onValueChange = onTechnicalStaffChange,
-            keyboardType = KeyboardType.Number,
-            digitsOnly = true,
-        )
-        FormOutlinedField(
-            label = stringResource(R.string.accreditation_profile_staff_admin),
-            value = form.adminStaff,
-            onValueChange = onAdminStaffChange,
-            keyboardType = KeyboardType.Number,
-            digitsOnly = true,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StaffCountTile(
+                label = stringResource(R.string.accreditation_section_a_staff_academic),
+                value = form.academicStaff,
+                onValueChange = onAcademicStaffChange,
+                modifier = Modifier.weight(1f),
+            )
+            StaffCountTile(
+                label = stringResource(R.string.accreditation_section_a_staff_technical),
+                value = form.technicalStaff,
+                onValueChange = onTechnicalStaffChange,
+                modifier = Modifier.weight(1f),
+            )
+            StaffCountTile(
+                label = stringResource(R.string.accreditation_section_a_staff_admin),
+                value = form.adminStaff,
+                onValueChange = onAdminStaffChange,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 
     FormCard(
@@ -595,10 +717,14 @@ private fun SectionAFormFields(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
-            TutorRow(tutor = tutor)
+            TutorEditorCard(
+                tutor = tutor,
+                onTutorUpdated = onTutorUpdated,
+                onRemoveTutor = onRemoveTutor,
+            )
         }
         OutlinedButton(
-            onClick = { /* TODO: add tutor row */ },
+            onClick = onAddTutor,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp),
@@ -617,31 +743,366 @@ private fun SectionAFormFields(
 }
 
 @Composable
-private fun TutorRow(tutor: PhcTutorUiState) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            text = tutor.name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+private fun StudentCountMatrixCard(
+    title: String,
+    subtitle: String,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = AccrdCardBorder,
+        shadowElevation = 1.dp,
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen,
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Filled.Groups,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun ProgrammeLevelCountFields(
+    values: Map<String, String>,
+    onValueChange: (String, String) -> Unit,
+) {
+    SsqA1StudentGrids.indexedUnindexedGroups.forEachIndexed { index, (group, levels) ->
+        if (index > 0) Spacer(modifier = Modifier.height(10.dp))
+        ProgrammeGroupLabel(group)
+        LevelCountGrid(
+            levels = levels,
+            valueFor = { level -> values[SsqA1StudentGrids.key(group, level)].orEmpty() },
+            onValueChange = { level, value ->
+                onValueChange(SsqA1StudentGrids.key(group, level), value)
+            },
         )
+    }
+}
+
+@Composable
+private fun ProgrammeGroupLabel(label: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = PrimaryGreen.copy(alpha = 0.1f),
+        modifier = Modifier.padding(bottom = 8.dp),
+    ) {
         Text(
-            text = tutor.roleTitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(
-                R.string.accreditation_section_a_tutor_meta_format,
-                tutor.employmentStatus,
-                tutor.licenseNo,
-                tutor.sex,
-                tutor.qualification,
-                tutor.phone,
-            ),
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryGreen,
         )
+    }
+}
+
+@Composable
+private fun LevelCountGrid(
+    levels: List<String>,
+    valueFor: (String) -> String,
+    onValueChange: (String, String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        levels.chunked(2).forEach { rowLevels ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowLevels.forEach { level ->
+                    LevelCountTile(
+                        label = level,
+                        value = valueFor(level),
+                        onValueChange = { onValueChange(level, it) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowLevels.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LevelCountTile(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val countHint = stringResource(R.string.accreditation_section_a_count_hint)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = countHint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+                CompactNumberField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StaffCountTile(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            CompactNumberField(
+                value = value,
+                onValueChange = onValueChange,
+                textAlign = TextAlign.Center,
+                emphasize = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactNumberField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.End,
+    emphasize: Boolean = false,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = { onValueChange(it.filter { ch -> ch.isDigit() }) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        cursorBrush = SolidColor(PrimaryGreen),
+        textStyle = TextStyle(
+            color = if (emphasize) PrimaryGreen else MaterialTheme.colorScheme.onSurface,
+            fontSize = if (emphasize) 22.sp else 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = textAlign,
+            lineHeight = if (emphasize) 26.sp else 22.sp,
+        ),
+        modifier = modifier
+            .widthIn(min = 64.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        decorationBox = { inner ->
+            Box(
+                contentAlignment = when (textAlign) {
+                    TextAlign.Center -> Alignment.Center
+                    TextAlign.Start -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                },
+            ) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = "0",
+                        fontSize = if (emphasize) 22.sp else 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = textAlign,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TutorEditorCard(
+    tutor: PhcTutorUiState,
+    onTutorUpdated: (PhcTutorUiState) -> Unit,
+    onRemoveTutor: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = tutor.name.ifBlank { stringResource(R.string.accreditation_section_a_tutor_name) },
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            IconButton(onClick = { onRemoveTutor(tutor.id) }) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.accreditation_section_a_remove_tutor_cd),
+                    tint = ErrorRed,
+                )
+            }
+        }
+        FormOutlinedField(
+            label = stringResource(R.string.accreditation_section_a_tutor_name),
+            value = tutor.name,
+            onValueChange = { onTutorUpdated(tutor.copy(name = it)) },
+        )
+        FormSimpleDropdown(
+            label = stringResource(R.string.accreditation_section_a_tutor_sex),
+            value = tutor.sex,
+            options = SsqSectionFormUiState.sexOptions(),
+            onValueChange = { onTutorUpdated(tutor.copy(sex = it)) },
+        )
+        FormOutlinedField(
+            label = stringResource(R.string.accreditation_section_a_tutor_license),
+            value = tutor.licenseNo,
+            onValueChange = { onTutorUpdated(tutor.copy(licenseNo = it)) },
+        )
+        FormOutlinedField(
+            label = stringResource(R.string.accreditation_section_a_tutor_phone),
+            value = tutor.phone,
+            onValueChange = { onTutorUpdated(tutor.copy(phone = it)) },
+            keyboardType = KeyboardType.Phone,
+        )
+        FormOutlinedField(
+            label = stringResource(R.string.accreditation_section_a_tutor_qualification),
+            value = tutor.qualification,
+            onValueChange = { onTutorUpdated(tutor.copy(qualification = it)) },
+        )
+        FormSimpleDropdown(
+            label = stringResource(R.string.accreditation_section_a_tutor_employment),
+            value = tutor.employmentStatus,
+            options = SsqSectionFormUiState.employmentStatusOptions(),
+            onValueChange = { onTutorUpdated(tutor.copy(employmentStatus = it)) },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FormSimpleDropdown(
+    label: String,
+    value: String,
+    options: List<String>,
+    onValueChange: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .height(56.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryGreen,
+                    cursorColor = PrimaryGreen,
+                    focusedLabelColor = PrimaryGreen,
+                ),
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onValueChange(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 

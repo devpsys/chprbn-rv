@@ -26,13 +26,42 @@ data class SsqAttachmentUiState(
 data class PhcTutorUiState(
     val id: String,
     val name: String,
-    val roleTitle: String,
-    val employmentStatus: String,
-    val licenseNo: String,
     val sex: String,
-    val qualification: String,
+    val licenseNo: String,
     val phone: String,
+    val qualification: String,
+    val employmentStatus: String,
+    /** Optional display title; not an SSQ A2 column. */
+    val roleTitle: String = "",
 )
+
+/** SSQ A1.11–A1.15 programme/level count grids keyed as `group|level`. */
+object SsqA1StudentGrids {
+    val approvedBchsLevels = listOf("300L", "400L", "500L")
+
+    val indexedUnindexedGroups: List<Pair<String, List<String>>> = listOf(
+        "BCHS" to listOf("300L", "400L", "500L"),
+        "CHOs" to listOf("100L", "200L"),
+        "CHEWs" to listOf("100L", "200L", "300L"),
+        "JCHEWs" to listOf("100L", "200L"),
+    )
+
+    val enrolledLevels = listOf("100L", "200L")
+
+    fun key(group: String, level: String): String = "$group|$level"
+
+    fun emptyGroupMap(
+        groups: List<Pair<String, List<String>>> = indexedUnindexedGroups,
+    ): Map<String, String> = groups
+        .flatMap { (group, levels) -> levels.map { level -> key(group, level) to "" } }
+        .toMap()
+
+    fun emptyApprovedMap(): Map<String, String> =
+        approvedBchsLevels.associateWith { "" }
+
+    fun emptyEnrolledMap(): Map<String, String> =
+        enrolledLevels.associateWith { "" }
+}
 
 data class SsqChecklistItemUiState(
     val id: String,
@@ -68,11 +97,35 @@ data class SectionAFormUiState(
     val yearProgrammeCommenced: String = "1975",
     val faculty: String = "College of Health Sciences",
     val department: String = "Community Health",
-    val programmesSelected: Set<String> = setOf("BCHS / CHO", "CHEW", "JCHEW"),
-    val accreditationStatus: String = "Full Accreditation",
+    /** SSQ A1.4: BCHS, CHO, CHEW / HND, JCHEW / ND. */
+    val programmesSelected: Set<String> = setOf("BCHS", "CHO", "CHEW / HND"),
+    val accreditationStatus: String = "Full",
     val dateOfLastVisit: String = "14 Nov 2021",
     val expiryDate: String = "13 Nov 2026",
-    val nbteActive: Boolean = true,
+    /** SSQ A1.11 — Approved Number of Students (BCHS levels). */
+    val approvedStudents: Map<String, String> = mapOf(
+        "300L" to "120",
+        "400L" to "110",
+        "500L" to "95",
+    ),
+    /** SSQ A1.12 — keys `programme|level`. */
+    val indexedStudents: Map<String, String> = SsqA1StudentGrids.emptyGroupMap().toMutableMap().apply {
+        put(SsqA1StudentGrids.key("BCHS", "300L"), "98")
+        put(SsqA1StudentGrids.key("BCHS", "400L"), "88")
+        put(SsqA1StudentGrids.key("CHOs", "100L"), "42")
+        put(SsqA1StudentGrids.key("CHEWs", "100L"), "36")
+    },
+    /** SSQ A1.13 — keys `programme|level`. */
+    val unindexedStudents: Map<String, String> = SsqA1StudentGrids.emptyGroupMap().toMutableMap().apply {
+        put(SsqA1StudentGrids.key("BCHS", "300L"), "6")
+        put(SsqA1StudentGrids.key("CHEWs", "200L"), "4")
+    },
+    /** SSQ A1.14 NBTE Accreditation. */
+    val nbteNd: Boolean = true,
+    val nbteHnd: Boolean = false,
+    /** SSQ A1.15 — Number of Students Enrolled (ND / HND). */
+    val enrolledNd: Map<String, String> = mapOf("100L" to "65", "200L" to "58"),
+    val enrolledHnd: Map<String, String> = mapOf("100L" to "45", "200L" to "40"),
     val academicStaff: String = "128",
     val technicalStaff: String = "42",
     val adminStaff: String = "85",
@@ -107,22 +160,28 @@ sealed interface SsqSectionFormUiState {
     data class Error(val message: String) : SsqSectionFormUiState
 
     companion object {
+        /** SSQ A1.4 Programme Assessed options. */
         private val programmeOptions = listOf(
-            "BCHS / CHO",
-            "CHEW",
-            "HND Health Tech",
-            "JCHEW",
+            "BCHS",
+            "CHO",
+            "CHEW / HND",
+            "JCHEW / ND",
         )
 
         fun programmeOptions(): List<String> = programmeOptions
 
+        /** SSQ A1.8 Current Accreditation Status. */
         fun accreditationStatusOptions(): List<String> = listOf(
-            "Full Accreditation",
-            "Provisional Accreditation",
+            "Full",
+            "Provisional",
             "Denial",
             "Suspension",
             "Others Specify",
         )
+
+        fun employmentStatusOptions(): List<String> = listOf("Full-Time", "Part-Time")
+
+        fun sexOptions(): List<String> = listOf("Male", "Female")
 
         fun placeholder(
             institutionId: String = "inst-abuth",
@@ -201,32 +260,32 @@ sealed interface SsqSectionFormUiState {
                     PhcTutorUiState(
                         id = "tutor-1",
                         name = "Dr. Aisha Mohammed Garba",
-                        roleTitle = "Senior Primary Health Care Tutor",
-                        employmentStatus = "Full-Time",
-                        licenseNo = "CHPRBN/2012/0488",
                         sex = "Female",
-                        qualification = "M.Sc. PH, CHO",
+                        licenseNo = "CHPRBN/2012/0488",
                         phone = "+234 803 441 2980",
+                        qualification = "M.Sc. PH, CHO",
+                        employmentStatus = "Full-Time",
+                        roleTitle = "Senior Primary Health Care Tutor",
                     ),
                     PhcTutorUiState(
                         id = "tutor-2",
                         name = "Mr. Emmanuel Chukwu",
-                        roleTitle = "Clinical Instructor / Tutor I",
-                        employmentStatus = "Full-Time",
-                        licenseNo = "CHPRBN/2016/1129",
                         sex = "Male",
-                        qualification = "B.Sc. Comm Health",
+                        licenseNo = "CHPRBN/2016/1129",
                         phone = "+234 802 879 5041",
+                        qualification = "B.Sc. Comm Health",
+                        employmentStatus = "Full-Time",
+                        roleTitle = "Clinical Instructor / Tutor I",
                     ),
                     PhcTutorUiState(
                         id = "tutor-3",
                         name = "Mrs. Fatima Bello Yakubu",
-                        roleTitle = "Adjunct Community Field Supervisor",
-                        employmentStatus = "Part-Time",
-                        licenseNo = "CHPRBN/2019/3301",
                         sex = "Female",
-                        qualification = "PGD Epidem., CHO",
+                        licenseNo = "CHPRBN/2019/3301",
                         phone = "+234 814 309 6712",
+                        qualification = "PGD Epidem., CHO",
+                        employmentStatus = "Part-Time",
+                        roleTitle = "Adjunct Community Field Supervisor",
                     ),
                 ),
             ),

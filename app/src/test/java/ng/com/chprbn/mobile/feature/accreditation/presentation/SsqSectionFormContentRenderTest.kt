@@ -19,7 +19,7 @@ class SsqSectionFormContentRenderTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun section_a_renders_ownership_and_save_actions() {
+    fun section_a_renders_ssq_a1_and_a2_fields() {
         composeRule.setContent {
             ChprbnTheme {
                 SsqSectionFormContent(
@@ -29,8 +29,21 @@ class SsqSectionFormContentRenderTest {
         }
 
         composeRule.onNodeWithText("Section A: General Information").assertExists()
-        composeRule.onNodeWithText("Federal Government").assertExists()
-        composeRule.onNodeWithText("Dr. Aisha Mohammed Garba").assertExists()
+        composeRule.onNodeWithText("Federal").assertExists()
+        composeRule.onNodeWithText("CHEW / HND").assertExists()
+        composeRule.onNodeWithText("JCHEW / ND").assertExists()
+        composeRule.onNodeWithText("Approved Number of Students (BCHS)").assertExists()
+        composeRule.onNodeWithText("Number of Indexed Students").assertExists()
+        composeRule.onNodeWithText("Number of Unindexed Students").assertExists()
+        composeRule.onNodeWithText("NBTE Accreditation").assertExists()
+        composeRule.onNodeWithText("Number of Students Enrolled").assertExists()
+        composeRule.onNodeWithText("Institutional Staff Summary").assertExists()
+        composeRule.onNodeWithText("Academic").assertExists()
+        composeRule.onNodeWithText("Technical").assertExists()
+        composeRule.onAllNodesWithText("Dr. Aisha Mohammed Garba")[0].assertExists()
+        composeRule.onAllNodesWithText("Highest Qualification")[0].assertExists()
+        composeRule.onAllNodesWithText("Employment Status")[0].assertExists()
+        composeRule.onNodeWithText("Add New PHC Tutor").assertExists()
         composeRule.onNodeWithText("Save Section Draft").assertExists()
         composeRule.onNodeWithText("Supporting Documents & Evidence").assertExists()
     }

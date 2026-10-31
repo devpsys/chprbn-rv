@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -60,16 +61,64 @@ class SsqSectionFormViewModel @Inject constructor(
 
     fun onExpiryDateChange(value: String) = updateSectionA { it.copy(expiryDate = value) }
 
-    fun onNbteActiveChange(value: Boolean) = updateSectionA { it.copy(nbteActive = value) }
+    fun onNbteNdChange(value: Boolean) = updateSectionA { it.copy(nbteNd = value) }
+
+    fun onNbteHndChange(value: Boolean) = updateSectionA { it.copy(nbteHnd = value) }
+
+    fun onApprovedStudentChange(level: String, value: String) = updateSectionA { form ->
+        form.copy(approvedStudents = form.approvedStudents + (level to digitsOnly(value)))
+    }
+
+    fun onIndexedStudentChange(key: String, value: String) = updateSectionA { form ->
+        form.copy(indexedStudents = form.indexedStudents + (key to digitsOnly(value)))
+    }
+
+    fun onUnindexedStudentChange(key: String, value: String) = updateSectionA { form ->
+        form.copy(unindexedStudents = form.unindexedStudents + (key to digitsOnly(value)))
+    }
+
+    fun onEnrolledNdChange(level: String, value: String) = updateSectionA { form ->
+        form.copy(enrolledNd = form.enrolledNd + (level to digitsOnly(value)))
+    }
+
+    fun onEnrolledHndChange(level: String, value: String) = updateSectionA { form ->
+        form.copy(enrolledHnd = form.enrolledHnd + (level to digitsOnly(value)))
+    }
 
     fun onAcademicStaffChange(value: String) =
-        updateSectionA { it.copy(academicStaff = value.filter { ch -> ch.isDigit() }) }
+        updateSectionA { it.copy(academicStaff = digitsOnly(value)) }
 
     fun onTechnicalStaffChange(value: String) =
-        updateSectionA { it.copy(technicalStaff = value.filter { ch -> ch.isDigit() }) }
+        updateSectionA { it.copy(technicalStaff = digitsOnly(value)) }
 
     fun onAdminStaffChange(value: String) =
-        updateSectionA { it.copy(adminStaff = value.filter { ch -> ch.isDigit() }) }
+        updateSectionA { it.copy(adminStaff = digitsOnly(value)) }
+
+    fun onAddTutor() = updateSectionA { form ->
+        form.copy(
+            tutors = form.tutors + PhcTutorUiState(
+                id = "tutor-${UUID.randomUUID()}",
+                name = "",
+                sex = "Female",
+                licenseNo = "",
+                phone = "",
+                qualification = "",
+                employmentStatus = "Full-Time",
+            ),
+        )
+    }
+
+    fun onRemoveTutor(tutorId: String) = updateSectionA { form ->
+        form.copy(tutors = form.tutors.filterNot { it.id == tutorId })
+    }
+
+    fun onTutorUpdated(tutor: PhcTutorUiState) = updateSectionA { form ->
+        form.copy(
+            tutors = form.tutors.map { existing ->
+                if (existing.id == tutor.id) tutor else existing
+            },
+        )
+    }
 
     fun onChecklistAnswer(itemId: String, answer: ChecklistAnswer) {
         updateSuccess { data ->
@@ -122,6 +171,8 @@ class SsqSectionFormViewModel @Inject constructor(
     fun dismissSavedDialog() {
         updateSuccess { it.copy(showSavedDialog = false) }
     }
+
+    private fun digitsOnly(value: String): String = value.filter { it.isDigit() }
 
     private fun updateSectionA(transform: (SectionAFormUiState) -> SectionAFormUiState) {
         updateSuccess { data ->
