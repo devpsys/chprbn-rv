@@ -1,7 +1,9 @@
 package ng.com.chprbn.mobile.feature.accreditation.presentation
 
 import android.app.Application
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import org.junit.Rule
@@ -27,8 +29,9 @@ class AssessmentOverviewContentRenderTest {
 
         composeRule.onNodeWithText("Accreditation Assessment").assertExists()
         composeRule.onNodeWithText("Ahmadu Bello University Teaching Hospital").assertExists()
-        composeRule.onNodeWithText("50% Completed").assertExists()
-        composeRule.onNodeWithText("Section A: General Information").assertExists()
+        composeRule.onNodeWithText("100% Completed").assertExists()
+        composeRule.onAllNodesWithText("Saved Locally", substring = true).assertCountEquals(6)
+        composeRule.onNodeWithText("Section A: General Information", substring = true).assertExists()
         composeRule.onNodeWithText("Continue to Criteria Checklist").assertExists()
         composeRule.onNodeWithText("Save All Drafts to Vault").assertExists()
     }

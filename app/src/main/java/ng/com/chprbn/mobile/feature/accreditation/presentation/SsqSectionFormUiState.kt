@@ -477,9 +477,13 @@ sealed interface SsqSectionFormUiState {
             status = status,
             checklistItems = itemTexts.mapIndexed { index, text ->
                 val answered = when (status) {
-                    SectionDraftStatus.SavedLocally, SectionDraftStatus.Synced -> true
+                    SectionDraftStatus.SavedLocally,
+                    SectionDraftStatus.PendingSync,
+                    SectionDraftStatus.Synced,
+                    SectionDraftStatus.SyncFailed,
+                    -> true
                     SectionDraftStatus.InProgress -> index < itemTexts.size / 2
-                    else -> false
+                    SectionDraftStatus.NotStarted -> false
                 }
                 SsqChecklistItemUiState(
                     id = "${key.key}-${index + 1}",

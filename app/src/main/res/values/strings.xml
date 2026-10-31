@@ -726,6 +726,33 @@
     <string name="accreditation_section_status_saved_locally">Saved</string>
     <string name="accreditation_section_status_pending_sync">Pending Sync</string>
     <string name="accreditation_section_status_synced">Synced</string>
+    <string name="accreditation_section_status_sync_failed">Sync Failed</string>
+
+    <!-- Prompt F — shared components & modals -->
+    <string name="accreditation_component_status_not_started">Not Started</string>
+    <string name="accreditation_component_status_in_progress">In Progress</string>
+    <string name="accreditation_component_status_saved_locally">Saved Locally</string>
+    <string name="accreditation_component_status_pending_sync">Pending Sync</string>
+    <string name="accreditation_component_status_synced">Synced</string>
+    <string name="accreditation_component_status_sync_failed">Sync Failed</string>
+    <string name="accreditation_component_draft_saved_locally">Saved Locally</string>
+    <string name="accreditation_component_draft_synced">Synced</string>
+    <string name="accreditation_component_draft_sync_failed">Sync Failed</string>
+    <string name="accreditation_component_sync_error_retry">Retry</string>
+    <string name="accreditation_dialog_discard_title">Discard unsaved assessment?</string>
+    <string name="accreditation_dialog_discard_message">Changes will be lost</string>
+    <string name="accreditation_dialog_discard_confirm">Discard</string>
+    <string name="accreditation_dialog_discard_keep_editing">Keep Editing</string>
+    <string name="accreditation_dialog_submit_title">Submit assessment for server review?</string>
+    <string name="accreditation_dialog_submit_message">Grade will be determined by the server</string>
+    <string name="accreditation_dialog_submit_confirm">Submit</string>
+    <string name="accreditation_dialog_submit_cancel">Cancel</string>
+    <string name="accreditation_dialog_sync_failed_title">Sync Failed</string>
+    <string name="accreditation_dialog_sync_failed_retry">Retry</string>
+    <string name="accreditation_dialog_sync_failed_close">Close</string>
+    <string name="accreditation_dialog_grading_title">How grading works</string>
+    <string name="accreditation_dialog_grading_message">Grades, accreditation periods, and approved student quotas are determined by the CHPRBN server after you submit. This app only records verified field observations and raw marks.</string>
+    <string name="accreditation_dialog_grading_got_it">Got it</string>
 
     <string name="accreditation_section_error_title">Unable to load section</string>
     <string name="accreditation_section_save_draft">Save Section Draft</string>

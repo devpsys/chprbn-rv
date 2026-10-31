@@ -35,6 +35,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,6 +72,7 @@ fun SubmitForReviewContent(
     onDismissError: () -> Unit = {},
 ) {
     val success = uiState as? SubmitForReviewUiState.Success
+    var showSubmitConfirm by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
@@ -82,7 +87,7 @@ fun SubmitForReviewContent(
             bottomBar = {
                 if (success != null && !success.data.isSubmitting) {
                     SubmitForReviewBottomBar(
-                        onSubmitAssessment = onSubmitAssessment,
+                        onSubmitAssessment = { showSubmitConfirm = true },
                         onCancel = onCancel,
                     )
                 }
@@ -144,6 +149,17 @@ fun SubmitForReviewContent(
                 title = stringResource(R.string.accreditation_submit_sync_title),
                 subtitle = stringResource(R.string.accreditation_submit_sync_subtitle),
                 encryptedLabel = stringResource(R.string.sync_loading_encrypted_badge),
+            )
+        }
+
+        if (showSubmitConfirm) {
+            SubmitAssessmentDialog(
+                onSubmit = {
+                    showSubmitConfirm = false
+                    onSubmitAssessment()
+                },
+                onCancel = { showSubmitConfirm = false },
+                onDismiss = { showSubmitConfirm = false },
             )
         }
 

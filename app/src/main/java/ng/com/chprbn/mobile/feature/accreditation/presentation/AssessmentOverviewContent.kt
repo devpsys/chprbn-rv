@@ -23,13 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.Pending
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -46,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,8 +51,6 @@ import ng.com.chprbn.mobile.R
 import ng.com.chprbn.mobile.core.designsystem.ChprbnTheme
 import ng.com.chprbn.mobile.core.designsystem.ErrorRed
 import ng.com.chprbn.mobile.core.designsystem.PrimaryGreen
-import ng.com.chprbn.mobile.core.designsystem.SuccessGreen
-import ng.com.chprbn.mobile.core.designsystem.WarningYellow
 import ng.com.chprbn.mobile.core.designsystem.components.LoadingState
 import ng.com.chprbn.mobile.core.designsystem.components.PrimaryButton
 
@@ -380,9 +372,16 @@ private fun SectionSummaryRow(
     onClick: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val saved = section.status == SectionDraftStatus.SavedLocally ||
-        section.status == SectionDraftStatus.PendingSync ||
-        section.status == SectionDraftStatus.Synced
+    val saved = when (section.status) {
+        SectionDraftStatus.SavedLocally,
+        SectionDraftStatus.PendingSync,
+        SectionDraftStatus.Synced,
+        SectionDraftStatus.SyncFailed,
+        -> true
+        SectionDraftStatus.NotStarted,
+        SectionDraftStatus.InProgress,
+        -> false
+    }
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -438,7 +437,7 @@ private fun SectionSummaryRow(
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            SectionStatusChip(status = section.status)
+            SectionCompletionChip(status = section.status)
             Spacer(modifier = Modifier.width(4.dp))
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -450,77 +449,14 @@ private fun SectionSummaryRow(
     }
 }
 
+/** Delegates to [SectionCompletionChip] so section forms keep a stable call site. */
 @Composable
 internal fun SectionStatusChip(
     status: SectionDraftStatus,
     modifier: Modifier = Modifier,
 ) {
-    val (labelRes, tint, bg, icon) = statusChipVisuals(status)
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = bg,
-        border = BorderStroke(1.dp, tint.copy(alpha = 0.25f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(12.dp),
-            )
-            Text(
-                text = stringResource(labelRes),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = tint,
-                maxLines = 1,
-            )
-        }
-    }
+    SectionCompletionChip(status = status, modifier = modifier)
 }
-
-@Composable
-private fun statusChipVisuals(
-    status: SectionDraftStatus,
-): Quad<Int, Color, Color, ImageVector> = when (status) {
-    SectionDraftStatus.NotStarted -> Quad(
-        R.string.accreditation_section_status_not_started,
-        MaterialTheme.colorScheme.onSurfaceVariant,
-        MaterialTheme.colorScheme.surfaceVariant,
-        Icons.Outlined.RadioButtonUnchecked,
-    )
-    SectionDraftStatus.InProgress -> Quad(
-        R.string.accreditation_section_status_in_progress,
-        WarningYellow,
-        WarningYellow.copy(alpha = 0.12f),
-        Icons.Outlined.Pending,
-    )
-    SectionDraftStatus.SavedLocally -> Quad(
-        R.string.accreditation_section_status_saved_locally,
-        SuccessGreen,
-        SuccessGreen.copy(alpha = 0.12f),
-        Icons.Filled.CheckCircle,
-    )
-    SectionDraftStatus.PendingSync -> Quad(
-        R.string.accreditation_section_status_pending_sync,
-        Color(0xFF0277BD),
-        Color(0xFF0277BD).copy(alpha = 0.12f),
-        Icons.Filled.CloudUpload,
-    )
-    SectionDraftStatus.Synced -> Quad(
-        R.string.accreditation_section_status_synced,
-        SuccessGreen,
-        SuccessGreen.copy(alpha = 0.12f),
-        Icons.Filled.CloudDone,
-    )
-}
-
-private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 private fun OverviewErrorContent(

@@ -37,6 +37,7 @@ private fun SectionDraftStatus.isSavedLocallyOrBeyond(): Boolean = when (this) {
     SectionDraftStatus.SavedLocally,
     SectionDraftStatus.PendingSync,
     SectionDraftStatus.Synced,
+    SectionDraftStatus.SyncFailed,
     -> true
     SectionDraftStatus.NotStarted,
     SectionDraftStatus.InProgress,

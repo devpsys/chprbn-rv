@@ -10,6 +10,7 @@ enum class SectionDraftStatus {
     SavedLocally,
     PendingSync,
     Synced,
+    SyncFailed,
 }
 
 enum class SsqSectionKey(val key: String) {
